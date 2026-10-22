@@ -1,0 +1,195 @@
+# Diary
+
+**Diary is a private, local memory for future AI sessions.** It turns daily Markdown
+logs into dated, searchable entries. A human can read and curate the history; an AI
+can search it and append new entries without being able to rewrite the writing rules
+or erase history.
+
+## What it does
+
+- Lists days newest-first, seven per page, in `YYYY-MM-DD` form. Arrows load the
+  previous or next window on demand, a badge shows the total entry count, and
+  choosing a day reveals its entries.
+- Opens entries on the main page and searches titles and text. Search results always
+  show their date; previews are deliberately compact.
+- Keeps the AI writing guide editable from the local web page, without a sign-in flow.
+- Lets the local human delete entries for one day or through a date (inclusive).
+  Every destructive action asks for confirmation.
+- Provides a read-only AI skill and history-search API, plus a separate append-only
+  AI entry endpoint.
+- Shows the latest test count and measured application line coverage in the footer
+  as a quiet button that runs the suite and then polls until it finishes, follows
+  the operating system's light/dark preference, and links to this repository.
+- Includes a small **Memory spark** button that resurfaces a random older entry.
+
+## Local setup
+
+Diary needs Python 3.10 or newer and SQLite (included with Python). It has no
+third-party runtime dependencies. The optional MCP client in `mcp/` is the one
+exception: it needs Python 3.12 and FastMCP.
+
+```bash
+git clone https://github.com/suadin/diary.git
+cd diary
+python3 -m diary setup
+python3 -m diary test
+python3 -m diary serve
+```
+
+Open <http://127.0.0.1:8125/>. `setup` creates a private data directory and
+`~/.config/diary/credentials.env` with separate random credentials for AI history
+reads and AI entry writes. The file and data are outside the repository and have
+owner-only permissions. Keep the credentials file private and give the AI credentials
+only to the corresponding local assistant integration. The browser does not require
+a human password; Diary is intended for local use only.
+
+The default database is `~/.local/share/diary/diary.sqlite3`; the editable skill is
+`~/.local/share/diary/AI-SKILL.md`. Set `DIARY_DATA_DIR` and `DIARY_CONFIG_DIR` to
+move them. `DIARY_HOST` may only be a loopback address. `DIARY_PORT` defaults to
+`8125`.
+
+## Manual NAS deployment
+
+The optional Docker Compose deployment adds an HTTPS reverse proxy, has no
+CI/CD pipeline, and leaves the Diary HTTP server bound to loopback on the NAS.
+It listens on HTTPS port `8444`. Copy the source tree to the NAS without `.git`,
+local data, or credentials, then configure `deploy/.env` there:
+
+```dotenv
+DIARY_PUBLIC_ORIGIN=https://<NAS-IP>:8444
+DIARY_DATA_DIR_ON_HOST=/path/on/nas/diary/data
+DIARY_CONFIG_DIR_ON_HOST=/path/on/nas/diary/config
+DIARY_TLS_FULLCHAIN_ON_HOST=/path/to/trusted/fullchain.crt
+DIARY_TLS_KEY_ON_HOST=/path/to/trusted/tls.key
+```
+
+Use the NAS IP or local DNS name covered by the certificate, and keep the TLS
+private key and `.env` outside Git. Then start the stack from `deploy/`:
+
+```bash
+docker compose up -d --build
+docker compose ps
+```
+
+Open `https://<NAS-IP>:8444/`. The first start creates the AI credentials in the
+configured private config directory. The NAS deployment uses host networking so
+the application listens only on `127.0.0.1:8125`, while nginx terminates HTTPS
+and forwards the exact origin to Diary. Port `8444` must be available. Do not
+expose the port beyond a trusted LAN or publish the service through a tunnel.
+
+To import existing dated Markdown logs without changing or deleting the originals:
+
+```bash
+python3 -m diary import ~/dev/logs
+```
+
+The importer turns each level-two section into an entry and uses a stable fingerprint
+so repeating the import does not duplicate entries. Source files remain untouched.
+
+## AI API
+
+Send an `Authorization: Bearer <token>` header with AI requests. The token values are
+in the private credentials file; do not put them in this repository.
+
+```http
+GET /ai/skill
+GET /ai/search?q=boot
+POST /ai/entries
+```
+
+`GET /ai/skill` and `GET /ai/search` require the read credential. `POST /ai/entries`
+requires the separate write credential and accepts only `date`, `title`, and `content`
+as JSON. That credential can only append entries; there is no AI endpoint for editing
+or deleting. Search matches titles and content, not tags. The server binds only to
+loopback and does not enable CORS.
+
+## Web endpoints
+
+The page uses a same-origin API; browser mutations additionally require the
+same-origin check described below.
+
+```http
+GET /api/days                          # every day with its entry count
+GET /api/days/page?offset=0&limit=7    # one window plus total days and entries
+GET /api/entries?date=2026-10-22
+GET /api/search?q=boot
+GET /api/skill
+GET /api/metrics                       # test count, coverage, and whether a run is active
+POST /api/tests                        # start the suite; refuses a second start
+PUT /api/skill
+DELETE /api/entries
+```
+
+## AI client (MCP)
+
+`mcp/` holds an optional Model Context Protocol server that exposes the AI API as
+four tools (`append`, `search`, `list days`, `read skill`) over stdio. It is generic
+tooling and is configured only through `DIARY_API_URL`, `DIARY_AI_READ_TOKEN` and
+`DIARY_AI_WRITE_TOKEN` — or the matching `*_TOKEN_FILE` variables. It carries no
+address, token, or path from a particular installation.
+
+```bash
+cd mcp
+uv venv
+uv pip install -e .
+DIARY_AI_READ_TOKEN_FILE=~/.config/diary/ai-read.token \
+DIARY_AI_WRITE_TOKEN_FILE=~/.config/diary/ai-write.token \
+.venv/bin/diary-mcp
+```
+
+**Recommended layout for a personal installation:** keep the MCP in this repository
+and let the assistant's own MCP directory hold only the virtualenv, a link to
+`mcp/main.py`, and the concrete URL and token paths in the assistant's
+configuration. A copied server would drift; a committed address or token would make
+the repository unfit to publish. Details are in [`mcp/README.md`](mcp/README.md).
+
+## Human controls
+
+The local web page does not have a sign-in flow. Browser mutations require a
+same-origin request to the loopback server; the same-origin check is not an
+authentication mechanism for a server exposed to a LAN or the internet. For the
+documented HTTPS proxy deployment, configure the exact HTTPS origin in
+`DIARY_PUBLIC_ORIGIN`; requests with a different origin or Host are rejected.
+
+Delete controls preview the matching entry count before confirmation. They support one
+calendar day or all entries dated on or before a selected day. The date cutoff is
+inclusive. The source Markdown files are never deleted by Diary.
+
+## Tests and coverage
+
+Run `python3 -m diary test` after a change, or use the quiet test button in the page
+footer. Both use Python's standard-library test runner and line tracing; the count
+and coverage percentage are saved in the private data directory and shown in the
+footer. The button polls every five seconds while a run is active and a second start
+is refused until that run has ended. The Docker image ships `tests/` so the button
+works in the NAS deployment. Coverage measures executable application
+lines in the server, store, importer, configuration, and test-runner modules; it is line coverage,
+not branch coverage. A missing report is shown as “not measured”, not as zero.
+
+## Project map
+
+| Path | Purpose |
+|---|---|
+| `diary/server.py` | Local HTTP API, same-origin human mutations, AI permissions, static files |
+| `diary/store.py` | SQLite schema, entries, text search, deletion |
+| `diary/importer.py` | Idempotent import of dated Markdown files |
+| `diary/config.py` | XDG paths, local credentials, setup |
+| `diary/coverage.py` | Test suite execution and standard-library line coverage |
+| `diary/testrunner.py` | Starts a test run from the page and blocks duplicate runs |
+| `web/` | Small, dependency-free browser interface |
+| `docs/AI-SKILL.md` | Seed for the human-editable AI writing guide |
+| `docs/REQUIREMENTS.md` | Short, testable product requirements |
+| `mcp/` | Optional MCP client for AI assistants, configured by environment |
+| `tests/` | Storage, import, and HTTP/API checks |
+
+## Data and trust boundaries
+
+Diary is intended for one user's local machine, not as a public or LAN server. The
+repository contains no logs, credentials, or database. SQLite and the editable skill
+live under the user's XDG data directory; generated credentials live under XDG config.
+AI read and write tokens are distinct, and the AI writer cannot update or delete
+through its API credentials. Same-origin checks stop cross-origin browser requests;
+they do not authenticate a local process or another user with access to this machine.
+The loopback server should only be reachable through the documented HTTPS reverse
+proxy on a trusted LAN; do not expose it directly or publish it through an external
+tunnel.

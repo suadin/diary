@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f0e5" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#201f25" media="(prefers-color-scheme: dark)">
+    <meta name="description" content="A local memory journal written by AI for future AI sessions.">
+    <link rel="icon" href="/diary.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/style.css">
+    <title>Diary — a memory for tomorrow</title>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Diary home"><img src="/diary.svg" alt=""><span>Diary</span></a>
+      <p class="tagline">A little memory for the next session.</p>
+      <div class="top-actions">
+        <button id="spark-button" class="button button-spark" type="button">✦ Memory spark</button>
+        <button id="guide-button" class="button button-plain" type="button">Writing guide</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="sidebar" aria-label="Journal dates">
+        <div class="sidebar-title"><h1>Days</h1><span id="day-count" class="count">0</span></div>
+        <label class="search-label" for="search-input">Search the memory</label>
+        <div class="search-row">
+          <input id="search-input" type="search" placeholder="A topic, decision, detail…" autocomplete="off">
+          <button id="clear-search" class="icon-button" type="button" aria-label="Clear search">×</button>
+        </div>
+        <nav id="day-list" class="day-list"></nav>
+        <div class="day-pager">
+          <button id="days-newer" class="pager-button" type="button" aria-label="Newer seven days" title="Newer seven days">↑</button>
+          <span id="day-range" class="day-range"></span>
+          <button id="days-older" class="pager-button" type="button" aria-label="Older seven days" title="Older seven days">↓</button>
+        </div>
+        <p class="sidebar-note">The past, sorted newest first, seven days at a time. Pick a day to find its threads.</p>
+      </aside>
+
+      <section class="main-panel">
+        <div id="welcome" class="welcome">
+          <p class="eyebrow">A human-and-AI memory</p>
+          <h2>Small notes.<br><span>Long memory.</span></h2>
+          <p>Diary keeps the decisions, discoveries, and open questions that help a future AI session pick up where this one left off.</p>
+          <p class="welcome-hint">Choose a day, search a topic, or let a memory find you.</p>
+        </div>
+        <div id="selection" class="selection" hidden>
+          <div class="selection-heading"><div><p class="eyebrow">The day</p><h2 id="selected-date"></h2></div></div>
+          <div id="entry-list" class="entry-list"></div>
+        </div>
+        <div id="search-results" class="search-results" hidden>
+          <p class="eyebrow">Looking back</p><h2 id="search-title">Search results</h2>
+          <div id="result-list" class="result-list"></div>
+        </div>
+        <article id="entry-view" class="entry-view" hidden></article>
+        <section id="editor" class="editor" hidden>
+          <div class="selection-heading"><div><p class="eyebrow">Human settings</p><h2>AI writing guide</h2></div><button id="back-to-journal" class="button button-plain" type="button">Back to journal</button></div>
+          <p class="editor-hint">This guide shapes what future sessions remember. Diary is local, so no sign-in is needed.</p>
+          <textarea id="skill-editor" rows="18" spellcheck="true" aria-label="AI writing guide"></textarea>
+          <div class="editor-actions"><button id="save-skill" class="button button-dark" type="button">Save the guide</button><span id="save-status" role="status"></span></div>
+          <div class="delete-box">
+            <h3>Clear a little space</h3><p>Choose one careful cut. The date cutoff includes that day.</p>
+            <div class="delete-controls">
+              <label>One day<input id="delete-day" type="date"></label>
+              <button id="delete-day-button" class="button button-danger" type="button">Delete day</button>
+              <label>Through date<input id="delete-before" type="date"></label>
+              <button id="delete-before-button" class="button button-danger" type="button">Delete through date</button>
+            </div>
+            <span id="delete-status" role="status"></span>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>Made for the future reader. <span aria-hidden="true">✿</span> The notes are the map, not the territory.</p>
+      <p class="footer-meta"><button id="run-tests" class="test-button" type="button" title="Run the test suite">Tests not measured yet — run them</button><span class="footer-credit">source: <a href="https://github.com/suadin/diary" target="_blank" rel="noopener noreferrer">suadin/diary</a></span></p>
+    </footer>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,64 @@
+services:
+  diary:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: diary
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      DIARY_HOST: 127.0.0.1
+      DIARY_PORT: 8125
+      DIARY_CONFIG_DIR: /etc/diary
+      DIARY_DATA_DIR: /var/lib/diary
+      DIARY_PUBLIC_ORIGIN: ${DIARY_PUBLIC_ORIGIN:?set the HTTPS origin in .env}
+    volumes:
+      - ${DIARY_DATA_DIR_ON_HOST:?set the NAS data path in .env}:/var/lib/diary
+      - ${DIARY_CONFIG_DIR_ON_HOST:?set the NAS config path in .env}:/etc/diary
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test:
+        - CMD
+        - python3
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8125/api/days', timeout=3)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  diary-https:
+    image: nginx:1.27-alpine
+    container_name: diary-https
+    restart: unless-stopped
+    network_mode: host
+    depends_on:
+      diary:
+        condition: service_healthy
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ${DIARY_TLS_FULLCHAIN_ON_HOST:?set the certificate path in .env}:/etc/nginx/ssl/fullchain.crt:ro
+      - ${DIARY_TLS_KEY_ON_HOST:?set the private key path in .env}:/etc/nginx/ssl/tls.key:ro
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
+    user: root
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - -q
+        - -O
+        - "-"
+        - --no-check-certificate
+        - https://127.0.0.1:8444/api/days
+      interval: 30s
+      timeout: 5s
+      retries: 3
