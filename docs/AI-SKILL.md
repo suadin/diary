@@ -21,9 +21,14 @@ a transcript or repeat stable instructions that belong in project documentation.
 Send a `POST /ai/entries` JSON object with:
 
 - `date`: the local calendar date, `YYYY-MM-DD`.
-- `title`: a short, specific title.
+- `title`: topic and action, joined by an em dash: `Topic — Action`, for example
+  `Diary — README reader added` or `Hub — Import tested`. The topic is a stable word
+  so later tagging can group related entries; the action says what was done.
 - `content`: concise Markdown describing what happened, what was verified, and what
   remains open.
+- `author`: who wrote the entry. AI work names the model, for example
+  `opencode/deepseek-v4.1-flash-free`. Imported history uses `AI`. A human writing
+  through the API may use their own name. The field defaults to `AI`.
 
 Several entries may share a day. Use one entry per coherent topic; keep numbers,
 commit IDs, paths, and test outcomes when they are useful to future work. Do not
@@ -34,8 +39,9 @@ Example request body:
 ```json
 {
   "date": "2026-10-21",
-  "title": "Diary API permissions",
-  "content": "Verified that the AI writer can append but cannot edit or delete."
+  "title": "Diary — API permissions verified",
+  "content": "Verified that the AI writer can append but cannot edit or delete.",
+  "author": "opencode/deepseek-v4.1-flash-free"
 }
 ```
 

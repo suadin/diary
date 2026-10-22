@@ -64,12 +64,14 @@ class DiaryAPI:
                 f"Diary API not reachable at {url}: {error.reason}"
             ) from error
 
-    def append_entry(self, day: str, title: str, content: str) -> dict[str, object]:
+    def append_entry(
+        self, day: str, title: str, content: str, author: str = "AI"
+    ) -> dict[str, object]:
         return self._request(  # type: ignore[return-value]
             "POST",
             "/ai/entries",
             self.config.write_token,
-            {"date": day, "title": title, "content": content},
+            {"date": day, "title": title, "content": content, "author": author},
         )
 
     def search(self, query: str = "") -> list[dict[str, object]]:

@@ -12,7 +12,7 @@
   </head>
   <body>
     <header class="topbar">
-      <a class="brand" href="/" aria-label="Diary home"><img src="/diary.svg" alt=""><span>Diary</span></a>
+      <a class="brand" href="#/" aria-label="Diary home"><img src="/diary.svg" alt=""><span>Diary</span></a>
       <p class="tagline">A little memory for the next session.</p>
       <div class="top-actions">
         <button id="spark-button" class="button button-spark has-tip" type="button" data-tip="Travel to a random older entry">✦ Memory spark</button>
@@ -21,20 +21,20 @@
     </header>
 
     <main class="layout">
-      <aside class="sidebar" aria-label="Journal dates">
-        <div class="sidebar-title"><h1>Days</h1><span id="day-count" class="count has-tip">0</span></div>
-        <label class="search-label" for="search-input">Search the memory</label>
+      <aside class="sidebar" aria-label="Entries by date">
+        <div class="sidebar-title"><h1>Entries</h1><span id="day-count" class="count has-tip" data-tip="Loading">0</span></div>
+        <label class="search-label" for="search-input">Search entries</label>
         <div class="search-row">
           <input id="search-input" type="search" placeholder="A topic, decision, detail…" autocomplete="off">
           <button id="clear-search" class="icon-button" type="button" aria-label="Clear search">×</button>
         </div>
         <nav id="day-list" class="day-list"></nav>
         <div class="day-pager">
-          <button id="days-newer" class="pager-button up has-tip" type="button" data-tip="Newer seven days" aria-label="Newer seven days">↑</button>
+          <button id="days-newer" class="pager-button up has-tip" type="button" data-tip="Newer seven dates" aria-label="Newer seven dates">↑</button>
           <span id="day-range" class="day-range"></span>
-          <button id="days-older" class="pager-button down has-tip" type="button" data-tip="Older seven days" aria-label="Older seven days">↓</button>
+          <button id="days-older" class="pager-button down has-tip" type="button" data-tip="Older seven dates" aria-label="Older seven dates">↓</button>
         </div>
-        <p class="sidebar-note">The past, sorted newest first, seven days at a time. Pick a day to find its threads.</p>
+        <p class="sidebar-note">The past, newest first, seven dates at a time. Pick a date to find its entries.</p>
       </aside>
 
       <section class="main-panel">
@@ -42,15 +42,15 @@
           <p class="eyebrow">A human-and-AI memory</p>
           <h2>Small notes.<br><span>Long memory.</span></h2>
           <p>Diary keeps the decisions, discoveries, and open questions that help a future AI session pick up where this one left off.</p>
-          <p class="welcome-hint">Choose a day, search a topic, or let a memory find you.</p>
+          <p class="welcome-hint">Choose a date, search a topic, or let a memory find you.</p>
         </div>
 
         <div id="selection" class="selection" hidden>
           <div class="selection-heading">
-            <div><p class="eyebrow">The day</p><h2 id="selected-date"></h2></div>
+            <div><p class="eyebrow">The date</p><h2 id="selected-date"></h2></div>
             <div class="day-nav">
-              <button id="day-newer" class="pager-button up has-tip" type="button" data-tip="Newer day" aria-label="Newer day">↑</button>
-              <button id="day-older" class="pager-button down has-tip" type="button" data-tip="Older day" aria-label="Older day">↓</button>
+              <button id="day-newer" class="pager-button up has-tip" type="button" data-tip="Newer date" aria-label="Newer date">↑</button>
+              <button id="day-older" class="pager-button down has-tip" type="button" data-tip="Older date" aria-label="Older date">↓</button>
             </div>
           </div>
           <div id="entry-list" class="entry-list"></div>
@@ -69,19 +69,20 @@
         <article id="entry-view" class="entry-view" hidden></article>
 
         <section id="editor" class="editor" hidden>
-          <div class="selection-heading"><div><p class="eyebrow">Human settings</p><h2>AI writing guide</h2></div><button id="back-to-journal" class="button button-plain" type="button">Back to journal</button></div>
+          <div class="selection-heading"><div><p class="eyebrow">Human settings</p><h2>Writing guide</h2></div><button id="back-to-journal" class="button button-plain" type="button">Back to journal</button></div>
           <p class="editor-hint">This guide shapes what future sessions remember. Diary is local, so no sign-in is needed.</p>
-          <textarea id="skill-editor" rows="5" spellcheck="true" aria-label="AI writing guide"></textarea>
+          <textarea id="skill-editor" rows="5" spellcheck="true" aria-label="Writing guide"></textarea>
           <div class="editor-actions">
             <button id="save-skill" class="button button-dark" type="button">Save the guide</button>
             <button id="guide-toggle" class="button button-plain" type="button" aria-expanded="false" aria-controls="skill-editor">Show all</button>
+            <button id="guide-reset" class="button button-plain has-tip" type="button" data-tip="Restore the built-in default">Reset</button>
             <span id="save-status" role="status"></span>
           </div>
           <div class="delete-box">
-            <h3>Clear a little space</h3><p>Choose one careful cut. The date cutoff includes that day. Dates are <code>yyyy-mm-dd</code>.</p>
+            <h3>Clear a little space</h3><p>Choose one careful cut. The date cutoff includes that date. Dates are <code>yyyy-mm-dd</code>.</p>
             <div class="delete-controls">
-              <label>One day<input id="delete-day" type="text" inputmode="numeric" maxlength="10" placeholder="2026-10-22" autocomplete="off" spellcheck="false"></label>
-              <button id="delete-day-button" class="button button-danger" type="button">Delete day</button>
+              <label>One date<input id="delete-day" type="text" inputmode="numeric" maxlength="10" placeholder="2026-10-22" autocomplete="off" spellcheck="false"></label>
+              <button id="delete-day-button" class="button button-danger" type="button">Delete date</button>
               <label>Through date<input id="delete-before" type="text" inputmode="numeric" maxlength="10" placeholder="2026-10-22" autocomplete="off" spellcheck="false"></label>
               <button id="delete-before-button" class="button button-danger" type="button">Delete through date</button>
             </div>
@@ -89,26 +90,32 @@
           </div>
         </section>
 
-        <section id="readme-view" class="readme-view" hidden>
+        <section id="docs-view" class="docs-view" hidden>
           <div class="selection-heading">
-            <div><p class="eyebrow">Project handbook</p><h2 id="readme-title">README</h2></div>
-            <button id="readme-back" class="button button-plain" type="button">Back</button>
+            <div><p class="eyebrow">Documentation</p><h2 id="docs-title">README</h2></div>
+            <button id="docs-back" class="button button-plain" type="button">Back</button>
           </div>
-          <div class="readme-pager">
-            <button id="readme-prev" class="pager-button up has-tip" type="button" data-tip="Previous section" aria-label="Previous section">↑</button>
-            <span id="readme-range" class="day-range"></span>
-            <button id="readme-next" class="pager-button down has-tip" type="button" data-tip="Next section" aria-label="Next section">↓</button>
-          </div>
-          <article id="readme-body" class="readme-body"></article>
+          <div id="doc-tabs" class="doc-tabs" role="tablist" aria-label="Documents"></div>
+          <nav id="doc-sections" class="doc-sections" aria-label="Sections"></nav>
+          <h3 id="doc-section-title" class="doc-section-title"></h3>
+          <article id="doc-body" class="doc-body"></article>
         </section>
       </section>
     </main>
 
     <footer class="footer">
-      <p class="footer-left"><button id="readme-button" class="readme-button has-tip" type="button" data-tip="Read the README, one section per page" aria-label="Open the README"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H19v20H7.5A2.5 2.5 0 0 1 5 19.5v-15Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 7.5h6M9 11.5h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>README</span></button></p>
-      <p class="footer-meta"><button id="run-tests" class="test-button has-tip" type="button" data-tip="Run the test suite once">Tests not measured yet — run them</button><span class="footer-credit">source: <a href="https://github.com/suadin/diary" target="_blank" rel="noopener noreferrer">suadin/diary</a></span></p>
+      <div class="footer-items">
+        <button id="readme-button" class="footer-item has-tip" type="button" data-tip="Read the documentation"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H19v20H7.5A2.5 2.5 0 0 1 5 19.5v-15Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 7.5h6M9 11.5h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>README</span></button>
+        <span class="footer-sep" aria-hidden="true">|</span>
+        <span class="footer-item">source: <a href="https://github.com/suadin/diary" target="_blank" rel="noopener noreferrer">suadin/diary</a></span>
+        <span class="footer-sep" aria-hidden="true">|</span>
+        <button id="run-tests" class="footer-item test-button has-tip" type="button" data-tip="Run the test suite once">unit not measured — run</button>
+        <span class="footer-sep" aria-hidden="true">|</span>
+        <span id="e2e-metrics" class="footer-item e2e-metrics has-tip" data-tip="Playwright end-to-end results are not installed here">e2e not measured</span>
+      </div>
     </footer>
 
+    <div id="tooltip" class="tooltip" role="tooltip" hidden></div>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <script type="module" src="/app.js"></script>
   </body>

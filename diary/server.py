@@ -8,12 +8,13 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 from diary.config import Settings, ensure_local_paths
-from diary.readme import readme_pages
+from diary.readme import documents
 from diary.store import (
     add_entry,
     day_page,
     delete_entries,
     entry_page,
+    get_entry,
     initialize,
     list_days,
     list_entries,
@@ -84,8 +85,10 @@ class DiaryHandler(BaseHTTPRequestHandler):
                     self._integer(query, "offset", 0, minimum=0),
                     self._integer(query, "limit", 5, minimum=1, maximum=50),
                 ))
-            elif route.path == "/api/readme":
-                self._readme()
+            elif route.path == "/api/docs":
+                self._json(200, {"documents": documents(Path(__file__).resolve().parent.parent)})
+            elif route.path == "/api/entry":
+                self._entry(query)
             elif route.path == "/api/search":
                 self._json(200, search_entries(
                     self.server.settings.database_path,
@@ -116,7 +119,13 @@ class DiaryHandler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         route = urlsplit(self.path)
         try:
-            if route.path == "/api/tests":
+            if route.path == "/api/skill/reset":
+                self._require_same_origin()
+                seed = Path(__file__).resolve().parent.parent / "docs" / "AI-SKILL.md"
+                content = seed.read_text(encoding="utf-8")
+                self._write_skill(content)
+                self._json(200, {"content": content.rstrip() + "\n"})
+            elif route.path == "/api/tests":
                 self._require_same_origin()
                 if self.server.settings.metrics_path.exists():
                     self._json(409, {
@@ -128,16 +137,19 @@ class DiaryHandler(BaseHTTPRequestHandler):
             elif route.path == "/ai/entries":
                 self._require_bearer(self.server.settings.ai_write_token)
                 body = self._read_json()
-                unexpected = body.keys() - {"date", "title", "content"}
+                unexpected = body.keys() - {"date", "title", "content", "author"}
                 if unexpected:
                     raise ValueError(f"unsupported entry fields: {', '.join(sorted(unexpected))}")
                 if any(not isinstance(body.get(field), str) for field in ("date", "title", "content")):
                     raise ValueError("date, title, and content must be text")
+                if "author" in body and not isinstance(body["author"], str):
+                    raise ValueError("author must be text")
                 entry_id = add_entry(
                     self.server.settings.database_path,
                     body["date"],
                     body["title"],
                     body["content"],
+                    author=body.get("author", "AI"),
                 )
                 self._json(201, {"id": entry_id})
             else:
@@ -159,13 +171,7 @@ class DiaryHandler(BaseHTTPRequestHandler):
             content = body.get("content")
             if not isinstance(content, str) or not content.strip():
                 raise ValueError("skill content cannot be empty")
-            if len(content.encode("utf-8")) > MAX_BODY_BYTES:
-                raise ValueError("skill is too large")
-            self.server.settings.skill_path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-            temporary = self.server.settings.skill_path.with_suffix(".tmp")
-            temporary.write_text(content.rstrip() + "\n", encoding="utf-8")
-            temporary.chmod(0o600)
-            temporary.replace(self.server.settings.skill_path)
+            self._write_skill(content)
             self._json(200, {"ok": True})
         except PermissionError as error:
             self._json(401, {"error": str(error)})
@@ -192,6 +198,15 @@ class DiaryHandler(BaseHTTPRequestHandler):
         except OSError as error:
             self._json(500, {"error": f"storage error: {error}"})
 
+    def _write_skill(self, content: str) -> None:
+        if len(content.encode("utf-8")) > MAX_BODY_BYTES:
+            raise ValueError("skill is too large")
+        self.server.settings.skill_path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        temporary = self.server.settings.skill_path.with_suffix(".tmp")
+        temporary.write_text(content.rstrip() + "\n", encoding="utf-8")
+        temporary.chmod(0o600)
+        temporary.replace(self.server.settings.skill_path)
+
     def _read_skill(self) -> str:
         path = self.server.settings.skill_path
         if not path.exists():
@@ -201,26 +216,47 @@ class DiaryHandler(BaseHTTPRequestHandler):
         path.chmod(0o600)
         return path.read_text(encoding="utf-8")
 
-    def _readme(self) -> None:
-        path = Path(__file__).resolve().parent.parent / "README.md"
-        if not path.is_file():
-            self._json(404, {"error": "README is not available"})
+    def _entry(self, query: dict[str, list[str]]) -> None:
+        raw = self._query_value(query, "id")
+        if raw is None:
+            raise ValueError("id is required")
+        try:
+            entry_id = int(raw)
+        except ValueError as error:
+            raise ValueError("id must be an integer") from error
+        if entry_id < 1:
+            raise ValueError("id must be at least 1")
+        entry = get_entry(self.server.settings.database_path, entry_id)
+        if entry is None:
+            self._json(404, {"error": "entry not found"})
             return
-        self._json(200, readme_pages(path))
+        self._json(200, entry)
 
     def _metrics(self) -> None:
         path = self.server.settings.metrics_path
         running = self.server.test_runner.running()
+        metrics: dict[str, object]
         if not path.exists():
-            self._json(200, {"tests": 0, "coverage": None, "measuredAt": None, "running": running})
-            return
-        try:
-            metrics = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError) as error:
-            self._json(500, {"error": f"cannot read test metrics: {error}"})
-            return
+            metrics = {"tests": 0, "coverage": None, "measuredAt": None}
+        else:
+            try:
+                metrics = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as error:
+                self._json(500, {"error": f"cannot read test metrics: {error}"})
+                return
         metrics["running"] = running
+        metrics["e2e"] = self._e2e_metrics()
         self._json(200, metrics)
+
+    def _e2e_metrics(self) -> dict[str, object] | None:
+        path = self.server.settings.e2e_metrics_path
+        if not path.exists():
+            return None
+        try:
+            value = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return None
+        return value if isinstance(value, dict) else None
 
     def _static(self, filename: str) -> None:
         path = Path(__file__).resolve().parent.parent / "web" / filename

@@ -12,12 +12,13 @@ from urllib.request import Request, urlopen
 
 from diary.config import ROOT, Settings, ensure_local_paths, setup, settings
 from diary.importer import import_directory, split_log
-from diary.readme import readme_pages
+from diary.readme import documents, readme_pages
 from diary.server import DiaryServer
 from diary.store import (
     add_entry,
     delete_entries,
     entry_page,
+    get_entry,
     initialize,
     list_days,
     list_entries,
@@ -103,6 +104,41 @@ class StoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             delete_entries(self.database, before="tomorrow")
 
+    def test_author_defaults_normalizes_and_has_a_limit(self):
+        default_id = add_entry(self.database, "2026-10-21", "Default author", "body")
+        self.assertEqual(get_entry(self.database, default_id)["author"], "AI")
+        named_id = add_entry(self.database, "2026-10-21", "Named author", "body",
+                             author="  opencode/model  ")
+        self.assertEqual(get_entry(self.database, named_id)["author"], "opencode/model")
+        empty_id = add_entry(self.database, "2026-10-21", "Empty author", "body", author="   ")
+        self.assertEqual(get_entry(self.database, empty_id)["author"], "AI")
+        with self.assertRaises(ValueError):
+            add_entry(self.database, "2026-10-21", "Long author", "body", author="x" * 81)
+
+    def test_get_entry_returns_one_entry_or_none(self):
+        entry_id = add_entry(self.database, "2026-10-21", "Find me", "body")
+        entry = get_entry(self.database, entry_id)
+        self.assertEqual(entry["title"], "Find me")
+        self.assertEqual(entry["date"], "2026-10-21")
+        self.assertIsNone(get_entry(self.database, entry_id + 100))
+
+    def test_migration_adds_author_to_legacy_entries(self):
+        with sqlite3.connect(self.database) as database:
+            database.execute("DROP TABLE entries")
+            database.execute(
+                "CREATE TABLE entries (id INTEGER PRIMARY KEY, day TEXT NOT NULL, "
+                "title TEXT NOT NULL, content TEXT NOT NULL, created_at TEXT NOT NULL, "
+                "source_key TEXT UNIQUE)"
+            )
+            database.execute(
+                "INSERT INTO entries(day, title, content, created_at) VALUES (?, ?, ?, ?)",
+                ("2026-10-20", "Old entry", "body", "2026-10-20T10:00:00+00:00"),
+            )
+        initialize(self.database)
+        entry = get_entry(self.database, 1)
+        self.assertEqual(entry["author"], "AI")
+        self.assertEqual(entry["title"], "Old entry")
+
     def test_migration_drops_legacy_tag_tables_and_preserves_entries(self):
         with sqlite3.connect(self.database) as database:
             database.executescript(
@@ -156,6 +192,28 @@ class ReadmeTests(unittest.TestCase):
             self.assertEqual([page["title"] for page in document["pages"]],
                              ["Overview", "One", "Two"])
             self.assertEqual(document["pages"][0]["markdown"], "Intro text.")
+            self.assertEqual([page["slug"] for page in document["pages"]],
+                             ["overview", "one", "two"])
+
+    def test_duplicate_headings_get_distinct_slugs(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "README.md"
+            path.write_text("# Same\n\n## Setup\nA\n\n## Setup\nB\n", encoding="utf-8")
+            document = readme_pages(path)
+            self.assertEqual([page["slug"] for page in document["pages"]],
+                             ["setup", "setup-2"])
+
+    def test_documents_collect_the_readme_and_docs_without_the_ai_skill(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / "docs").mkdir()
+            (root / "README.md").write_text("# Diary\n\n## One\nBody.\n", encoding="utf-8")
+            (root / "docs" / "guide.md").write_text("# Guide\n\n## Part\nText.\n", encoding="utf-8")
+            (root / "docs" / "AI-SKILL.md").write_text("# Hidden\n", encoding="utf-8")
+            result = documents(root)
+            self.assertEqual([item["slug"] for item in result], ["readme", "guide"])
+            self.assertEqual([item["title"] for item in result], ["README", "Guide"])
+            self.assertEqual(result[0]["pages"][0]["slug"], "one")
 
 
 class ConfigTests(unittest.TestCase):
@@ -369,6 +427,19 @@ class HttpTests(ServerTestCase):
         metrics = json.loads(text)
         self.assertIsNone(metrics["coverage"])
         self.assertFalse(metrics["running"])
+        self.assertIsNone(metrics["e2e"])
+
+    def test_metrics_endpoint_includes_end_to_end_results(self):
+        self.settings.e2e_metrics_path.write_text(
+            json.dumps({"tests": 12, "failures": 0, "coverage": 61.5,
+                        "measuredAt": "2026-10-22T14:00:00+00:00"}),
+            encoding="utf-8",
+        )
+        metrics = json.loads(self.request("/api/metrics")[1])
+        self.assertEqual(metrics["e2e"]["tests"], 12)
+        self.assertEqual(metrics["e2e"]["coverage"], 61.5)
+        self.settings.e2e_metrics_path.write_text("not json", encoding="utf-8")
+        self.assertIsNone(json.loads(self.request("/api/metrics")[1])["e2e"])
 
     def test_day_page_returns_seven_day_windows_with_totals(self):
         days = [f"2026-10-{day:02d}" for day in range(10, 19)]
@@ -422,15 +493,56 @@ class HttpTests(ServerTestCase):
         ):
             self.assertEqual(self.request(path)[0], 400, path)
 
-    def test_readme_endpoint_returns_one_page_per_heading(self):
-        status, text, _ = self.request("/api/readme")
+    def test_docs_endpoint_returns_documents_with_slugged_pages(self):
+        status, text, _ = self.request("/api/docs")
         self.assertEqual(status, 200)
-        document = json.loads(text)
-        self.assertEqual(document["title"], "Diary")
-        titles = [page["title"] for page in document["pages"]]
+        result = json.loads(text)
+        self.assertEqual([item["slug"] for item in result["documents"]], ["readme", "requirements"])
+        readme = result["documents"][0]
+        titles = [page["title"] for page in readme["pages"]]
         self.assertIn("What it does", titles)
         self.assertIn("Local setup", titles)
         self.assertEqual(titles[0], "Overview")
+        self.assertTrue(all(page["slug"] for page in readme["pages"]))
+        self.assertEqual(len({page["slug"] for page in readme["pages"]}), len(readme["pages"]))
+
+    def test_entry_endpoint_reads_one_entry_and_validates_the_id(self):
+        status, text, _ = self.request("/ai/entries", "POST", {
+            "date": "2026-10-21", "title": "Deep link", "content": "Body",
+            "author": "opencode/model",
+        }, token="write-secret")
+        self.assertEqual(status, 201)
+        entry_id = json.loads(text)["id"]
+        status, text, _ = self.request(f"/api/entry?id={entry_id}")
+        self.assertEqual(status, 200)
+        entry = json.loads(text)
+        self.assertEqual(entry["title"], "Deep link")
+        self.assertEqual(entry["author"], "opencode/model")
+        self.assertEqual(self.request("/api/entry")[0], 400)
+        self.assertEqual(self.request("/api/entry?id=abc")[0], 400)
+        self.assertEqual(self.request("/api/entry?id=0")[0], 400)
+        self.assertEqual(self.request("/api/entry?id=99999")[0], 404)
+
+    def test_author_must_be_text_and_defaults_to_ai(self):
+        status, _, _ = self.request("/ai/entries", "POST", {
+            "date": "2026-10-21", "title": "Bad author", "content": "Body", "author": 7,
+        }, token="write-secret")
+        self.assertEqual(status, 400)
+        status, text, _ = self.request("/ai/entries", "POST", {
+            "date": "2026-10-21", "title": "Default author", "content": "Body",
+        }, token="write-secret")
+        self.assertEqual(status, 201)
+        entry_id = json.loads(text)["id"]
+        self.assertEqual(json.loads(self.request(f"/api/entry?id={entry_id}")[1])["author"], "AI")
+
+    def test_skill_reset_restores_the_seed_and_needs_same_origin(self):
+        self.request("/api/skill", "PUT", {"content": "# Changed\n"}, origin=self.base)
+        status, _, _ = self.request("/api/skill/reset", "POST")
+        self.assertEqual(status, 401)
+        status, text, _ = self.request("/api/skill/reset", "POST", origin=self.base)
+        self.assertEqual(status, 200)
+        self.assertIn("AI diary writing guide", json.loads(text)["content"])
+        self.assertIn("AI diary writing guide", self.request("/ai/skill", token="read-secret")[1])
 
     def test_web_routes_and_static_page(self):
         self.request("/ai/entries", "POST", {
@@ -452,6 +564,8 @@ class HttpTests(ServerTestCase):
         self.assertIn('id="days-newer"', page)
         self.assertIn('id="entries-newer"', page)
         self.assertIn('id="readme-button"', page)
+        self.assertIn('id="doc-sections"', page)
+        self.assertIn('id="e2e-metrics"', page)
         self.assertIn('id="guide-toggle"', page)
         self.assertIn('id="run-tests"', page)
         self.assertIn('href="https://github.com/suadin/diary"', page)

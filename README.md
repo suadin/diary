@@ -7,29 +7,43 @@ or erase history.
 
 ## What it does
 
-- Lists days newest-first, seven per page, in `YYYY-MM-DD` form. Arrows load the
-  previous or next window on demand; a day opens with its entries, five at a time,
-  and the entry list pages lazily as well. A coarse `hh.mm` sits under each date;
-  entries without a same-day timestamp show `12.00`. Arrow buttons walk to the
-  neighbouring day with a short slide.
+- Lists dates newest-first, seven per page, in `YYYY-MM-DD` form. Arrows load the
+  previous or next window on demand; a date opens with its entries, five at a time,
+  and the entry list pages lazily as well. A coarse `hh24:mi` sits beside each date;
+  entries without a same-day timestamp show `12:00`. Arrow buttons walk to the
+  neighbouring date with a short slide, even across a page boundary.
 - A round badge counts all entries. It stays neutral while the journal is small,
   turns amber from 2,000 entries, and red from 5,000 — the range where whole-journal
   requests (search and Memory spark) start to hurt.
 - Opens entries on the main page and searches titles and text. Search results always
-  show their date; previews are deliberately compact.
+  show their date; previews are deliberately compact. An entry view shows date, time,
+  and author, and can copy its own link.
+- Links are stable and shareable: `#/day/2026-10-22`, `#/entry/42`,
+  `#/docs/readme/ai-api`, `#/guide`, and `#/search/boot`. Opening one restores the
+  same view, including the surrounding sidebar window.
+- Keeps the writing guide and the documentation apart: the guide is editable, the
+  README and `docs/*.md` are read-only. Documentation opens in the main panel with
+  one tab per document and one icon per heading; the icon tooltip names the section,
+  and clicking it opens that page with its heading.
 - Keeps the AI writing guide editable from the local web page, without a sign-in flow.
   The editor shows five lines and can be expanded, so the delete controls stay visible.
+  **Reset** restores the built-in default from `docs/AI-SKILL.md`.
 - Lets the local human delete entries for one day or through a date (inclusive), both
   entered as `yyyy-mm-dd`. Every destructive action asks for confirmation.
 - Provides a read-only AI skill and history-search API, plus a separate append-only
   AI entry endpoint.
-- Shows the latest test count and measured application line coverage in the footer
-  as a quiet button that starts the suite once and then polls until it finishes. Once
-  results exist, the button shows them and refuses to run again.
+- Shows the latest unit-test count and coverage, plus the Playwright end-to-end
+  numbers, in a compact centred footer separated by `|`. The unit button starts the
+  suite once and then polls until it finishes; once results exist it shows them and
+  refuses to run again. End-to-end results are display-only in the container.
 - Includes a small purple **Memory spark** button that resurfaces a random older entry.
-- Serves this README: a book icon in the footer opens it in the main panel, one page
-  per heading, browsable with arrows.
+- Serves this README and the documents under `docs/`: a book icon in the footer opens
+  the reader, one page per heading, with a row of section icons instead of arrows.
 - Follows the operating system's light/dark preference and links to this repository.
+
+The interface follows the workspace contract: README, source, and test numbers in one
+centred footer; deep links; paging and lazy loading; `yyyy-mm-dd` and `hh24:mi`;
+quiet colours with a playful edge; one name for one thing.
 
 ## Local setup
 
@@ -107,10 +121,15 @@ POST /ai/entries
 ```
 
 `GET /ai/skill` and `GET /ai/search` require the read credential. `POST /ai/entries`
-requires the separate write credential and accepts only `date`, `title`, and `content`
-as JSON. That credential can only append entries; there is no AI endpoint for editing
-or deleting. Search matches titles and content, not tags. The server binds only to
-loopback and does not enable CORS.
+requires the separate write credential and accepts only `date`, `title`, `content`,
+and an optional `author` as JSON. For AI work the author is the model name, for
+example `opencode/deepseek-v4.1-flash-free`; imported history uses `AI`; a human
+writing through the API may use their own name. The field defaults to `AI` and is
+limited to 80 characters. That credential can only append entries; there is no AI
+endpoint for editing or deleting. Titles name topic and action, joined by an em dash,
+for example `Diary — README reader added`, so later tagging can group entries by
+topic. Search matches titles and content, not tags. The server binds only to loopback
+and does not enable CORS.
 
 ## Web endpoints
 
@@ -122,11 +141,13 @@ GET /api/days                          # every day with its entry count
 GET /api/days/page?offset=0&limit=7    # one window plus total days and entries
 GET /api/entries?date=2026-10-22
 GET /api/entries/page?date=2026-10-22&offset=0&limit=5  # one window plus the day's total
+GET /api/entry?id=42                   # one entry for a deep link
 GET /api/search?q=boot
 GET /api/skill
-GET /api/readme                        # the README split into pages
-GET /api/metrics                       # test count, coverage, and whether a run is active
-POST /api/tests                        # start the suite once; 409 when results exist
+GET /api/docs                          # README and docs/*.md, each split into pages
+GET /api/metrics                       # unit and end-to-end numbers, and whether a run is active
+POST /api/tests                        # start the unit suite once; 409 when results exist
+POST /api/skill/reset                  # restore the seed guide
 PUT /api/skill
 DELETE /api/entries
 ```
@@ -134,7 +155,8 @@ DELETE /api/entries
 ## AI client (MCP)
 
 `mcp/` holds an optional Model Context Protocol server that exposes the AI API as
-four tools (`append`, `search`, `list days`, `read skill`) over stdio. It is generic
+four tools (`append`, `search`, `list days`, `read skill`) over stdio. `append` takes
+the optional `author` field described above. It is generic
 tooling and is configured only through `DIARY_API_URL`, `DIARY_AI_READ_TOKEN` and
 `DIARY_AI_WRITE_TOKEN` — or the matching `*_TOKEN_FILE` variables. It carries no
 address, token, or path from a particular installation.
@@ -175,10 +197,27 @@ and coverage percentage are saved in the private data directory and shown in the
 footer. The button polls every five seconds while a run is active. It is a one-shot
 control: as soon as `test-metrics.json` exists the button shows the result and the
 server refuses another start with `409`. Remove that file from the private data
-directory to measure a new state. The Docker image ships `tests/` and the README so
-the button and the README reader work in the NAS deployment. Coverage measures executable application
-lines in the server, store, importer, configuration, and test-runner modules; it is line coverage,
-not branch coverage. A missing report is shown as “not measured”, not as zero.
+directory to measure a new state. The Docker image ships `tests/`, the README, and
+`docs/` so the button and the documentation reader work in the NAS deployment.
+Coverage measures executable application lines in the server, store, importer,
+configuration, and test-runner modules; it is line coverage, not branch coverage.
+A missing report is shown as “not measured”, not as zero.
+
+The unit suite has 42 tests and currently covers 75.5 % of those lines. The
+Playwright suite in `e2e/` has 6 journeys and touches 613 of 843 `web/app.js` lines
+(72.7 %). It needs Node, pnpm, and a Chromium build:
+
+```bash
+cd e2e
+pnpm install
+pnpm exec playwright install chromium
+pnpm test
+```
+
+The run starts its own Diary on `127.0.0.1:8126` with a throwaway journal under
+`/tmp/diary-e2e`, writes `e2e/test-metrics.e2e.json`, and leaves that file out of
+Git. Copy the file into the private data directory as `test-metrics.e2e.json` to show
+the numbers in the footer; the container never runs Playwright itself.
 
 ## Project map
 
@@ -187,11 +226,12 @@ not branch coverage. A missing report is shown as “not measured”, not as zer
 | `diary/server.py` | Local HTTP API, same-origin human mutations, AI permissions, static files |
 | `diary/store.py` | SQLite schema, entries, text search, deletion |
 | `diary/importer.py` | Idempotent import of dated Markdown files |
-| `diary/readme.py` | Splits the README into pages for the in-page reader |
+| `diary/readme.py` | Splits the README and `docs/*.md` into pages for the reader |
 | `diary/config.py` | XDG paths, local credentials, setup |
 | `diary/coverage.py` | Test suite execution and standard-library line coverage |
 | `diary/testrunner.py` | Starts a test run from the page and blocks duplicate runs |
-| `web/` | Small, dependency-free browser interface (paging, README reader, quiet test button) |
+| `web/` | Small, dependency-free browser interface (deep links, paging, documents, quiet test button) |
+| `e2e/` | Playwright journeys and the end-to-end metrics reporter |
 | `docs/AI-SKILL.md` | Seed for the human-editable AI writing guide |
 | `docs/REQUIREMENTS.md` | Short, testable product requirements |
 | `mcp/` | Optional MCP client for AI assistants, configured by environment |

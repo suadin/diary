@@ -9,8 +9,8 @@ def _api() -> DiaryAPI:
     return DiaryAPI()
 
 
-def append_entry_tool(day: str, title: str, content: str) -> str:
-    result = _api().append_entry(day, title, content)
+def append_entry_tool(day: str, title: str, content: str, author: str = "AI") -> str:
+    result = _api().append_entry(day, title, content, author)
     return json.dumps(
         {"ok": True, "id": result.get("id"), "date": day, "title": title},
         ensure_ascii=False,

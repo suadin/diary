@@ -6,3 +6,11 @@ dist/
 .pytest_cache/
 data/
 deploy/.env
+
+# End-to-end tooling
+node_modules/
+e2e/node_modules/
+e2e/test-results/
+e2e/playwright-report/
+e2e/.coverage.json
+e2e/test-metrics.e2e.json

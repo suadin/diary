@@ -10,7 +10,7 @@ mcp = FastMCP("Diary MCP Server")
 
 
 @mcp.tool()
-def diary_append_entry(day: str, title: str, content: str) -> str:
+def diary_append_entry(day: str, title: str, content: str, author: str = "AI") -> str:
     """
     Append one entry to the Diary on the NAS.
 
@@ -22,16 +22,22 @@ def diary_append_entry(day: str, title: str, content: str) -> str:
     numbers, commit IDs, paths and test outcomes when they help future work.
     Never invent outcomes, measurements, decisions or user preferences.
 
+    The title names topic and action, for example "Diary — README reader
+    added". The content says what happened and what remains open.
+
     Args:
         day: Local calendar date in YYYY-MM-DD format.
-        title: Short, specific title (at most 200 characters).
+        title: Topic and action (at most 200 characters).
         content: Concise Markdown describing what happened, what was verified
             and what remains open (at most 50 KB).
+        author: Who wrote it. Use the model name for AI work, for example
+            "opencode/deepseek-v4.1-flash-free"; use "AI" for historical
+            entries without a model.
 
     Returns:
         JSON string with ok, id, date and title of the new entry.
     """
-    return append_entry_tool(day=day, title=title, content=content)
+    return append_entry_tool(day=day, title=title, content=content, author=author)
 
 
 @mcp.tool()

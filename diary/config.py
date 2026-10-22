@@ -32,6 +32,10 @@ class Settings:
     def metrics_path(self) -> Path:
         return self.data_dir / "test-metrics.json"
 
+    @property
+    def e2e_metrics_path(self) -> Path:
+        return self.data_dir / "test-metrics.e2e.json"
+
 
 def _read_credentials(path: Path) -> dict[str, str]:
     values: dict[str, str] = {}

@@ -47,13 +47,17 @@ def initialize(database_path: Path) -> None:
                 title TEXT NOT NULL,
                 content TEXT NOT NULL,
                 created_at TEXT NOT NULL,
-                source_key TEXT UNIQUE
+                source_key TEXT UNIQUE,
+                author TEXT NOT NULL DEFAULT 'AI'
             );
             CREATE INDEX IF NOT EXISTS entries_by_day ON entries(day DESC, id DESC);
             DROP TABLE IF EXISTS entry_tags;
             DROP TABLE IF EXISTS tags;
             """
         )
+        columns = {row["name"] for row in database.execute("PRAGMA table_info(entries)")}
+        if "author" not in columns:
+            database.execute("ALTER TABLE entries ADD COLUMN author TEXT NOT NULL DEFAULT 'AI'")
 
 
 def _entry(database: sqlite3.Connection, row: sqlite3.Row) -> dict[str, object]:
@@ -63,6 +67,7 @@ def _entry(database: sqlite3.Connection, row: sqlite3.Row) -> dict[str, object]:
         "title": row["title"],
         "content": row["content"],
         "createdAt": row["created_at"],
+        "author": row["author"],
     }
 
 
@@ -72,21 +77,25 @@ def add_entry(
     title: str,
     content: str,
     source_key: str | None = None,
+    author: str = "AI",
 ) -> int | None:
     if not valid_day(day):
         raise ValueError("date must be a real calendar date in YYYY-MM-DD format")
     title = title.strip()
     content = content.strip()
+    author = " ".join(author.split()) or "AI"
     if not title or not content:
         raise ValueError("title and content are required")
     if len(title) > 200 or len(content.encode("utf-8")) > 50_000:
         raise ValueError("title or content exceeds Diary's size limit")
+    if len(author) > 80:
+        raise ValueError("author exceeds Diary's size limit")
     created_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
     with connection(database_path) as database:
         try:
             cursor = database.execute(
-                "INSERT INTO entries(day, title, content, created_at, source_key) VALUES (?, ?, ?, ?, ?)",
-                (day, title, content, created_at, source_key),
+                "INSERT INTO entries(day, title, content, created_at, source_key, author) VALUES (?, ?, ?, ?, ?, ?)",
+                (day, title, content, created_at, source_key, author),
             )
         except sqlite3.IntegrityError:
             if source_key:
@@ -126,6 +135,11 @@ def day_page(database_path: Path, offset: int, limit: int) -> dict[str, object]:
             "totalDays": totals["days"],
             "totalEntries": totals["entries"],
         }
+
+
+def get_entry(database_path: Path, entry_id: int) -> dict[str, object] | None:
+    rows = _entries(database_path, "SELECT entries.* FROM entries WHERE entries.id = ?", (entry_id,))
+    return rows[0] if rows else None
 
 
 def entry_page(database_path: Path, day: str, offset: int, limit: int) -> dict[str, object]:

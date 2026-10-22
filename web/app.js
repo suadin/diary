@@ -21,12 +21,14 @@ const elements = {
   resultList: document.getElementById("result-list"),
   entryView: document.getElementById("entry-view"),
   runTests: document.getElementById("run-tests"),
+  e2eMetrics: document.getElementById("e2e-metrics"),
   sparkButton: document.getElementById("spark-button"),
   guideButton: document.getElementById("guide-button"),
   editor: document.getElementById("editor"),
   backToJournal: document.getElementById("back-to-journal"),
   skillEditor: document.getElementById("skill-editor"),
   guideToggle: document.getElementById("guide-toggle"),
+  guideReset: document.getElementById("guide-reset"),
   saveSkill: document.getElementById("save-skill"),
   saveStatus: document.getElementById("save-status"),
   deleteDay: document.getElementById("delete-day"),
@@ -35,13 +37,14 @@ const elements = {
   deleteBeforeButton: document.getElementById("delete-before-button"),
   deleteStatus: document.getElementById("delete-status"),
   readmeButton: document.getElementById("readme-button"),
-  readmeView: document.getElementById("readme-view"),
-  readmeTitle: document.getElementById("readme-title"),
-  readmeBody: document.getElementById("readme-body"),
-  readmeRange: document.getElementById("readme-range"),
-  readmePrev: document.getElementById("readme-prev"),
-  readmeNext: document.getElementById("readme-next"),
-  readmeBack: document.getElementById("readme-back"),
+  docsView: document.getElementById("docs-view"),
+  docsTitle: document.getElementById("docs-title"),
+  docsBack: document.getElementById("docs-back"),
+  docTabs: document.getElementById("doc-tabs"),
+  docSections: document.getElementById("doc-sections"),
+  docSectionTitle: document.getElementById("doc-section-title"),
+  docBody: document.getElementById("doc-body"),
+  tooltip: document.getElementById("tooltip"),
   toast: document.getElementById("toast"),
 };
 
@@ -51,6 +54,30 @@ const TEST_POLL_MS = 5000;
 const ENTRY_WARN = 2000;
 const ENTRY_CRITICAL = 5000;
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+const ROUTE = {
+  welcome: "#/",
+  day: (date) => `#/day/${date}`,
+  entry: (id) => `#/entry/${id}`,
+  docs: (doc, section) => (section ? `#/docs/${doc}/${section}` : `#/docs/${doc}`),
+  guide: "#/guide",
+  search: (query) => `#/search/${encodeURIComponent(query)}`,
+};
+
+const ICONS = {
+  overview: '<path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1v-9.5Z"/>',
+  what: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/>',
+  install: '<rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="m7.5 10 2.5 2-2.5 2M12.5 14h4"/>',
+  deploy: '<rect x="3.5" y="4" width="17" height="6" rx="1.5"/><rect x="3.5" y="14" width="17" height="6" rx="1.5"/><path d="M7 7h.01M7 17h.01"/>',
+  api: '<path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0V8ZM12 17v4"/>',
+  web: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.6 2.5 14.4 0 17M12 3.5c-2.5 2.6-2.5 14.4 0 17"/>',
+  client: '<rect x="6.5" y="6.5" width="11" height="11" rx="2"/><path d="M9.5 3v3.5M14.5 3v3.5M9.5 17.5V21M14.5 17.5V21M3 9.5h3.5M3 14.5h3.5M17.5 9.5H21M17.5 14.5H21"/>',
+  controls: '<path d="M8 11V5.5a1.5 1.5 0 0 1 3 0V10M11 10V4.5a1.5 1.5 0 0 1 3 0V10M14 10V6a1.5 1.5 0 0 1 3 0v7.5a6 6 0 0 1-6 6h-.5A6.5 6.5 0 0 1 5 13l-.4-1.6a1.5 1.5 0 0 1 2.6-1.3L8 11"/>',
+  test: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  map: '<path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-10Z"/>',
+  data: '<path d="M12 3.5 19 6v6c0 4.2-2.8 7.3-7 8.5C7.8 19.3 5 16.2 5 12V6l7-2.5Z"/>',
+  doc: '<path d="M6 3.5h7l5 5v12H6v-17Z"/><path d="M13 3.5v5h5"/>',
+};
 
 const state = {
   days: [],
@@ -66,8 +93,8 @@ const state = {
   entryPages: new Map(),
   searchTimer: null,
   testTimer: null,
-  readme: null,
-  readmeIndex: 0,
+  docs: null,
+  routeTicket: 0,
 };
 
 async function request(path, options = {}) {
@@ -90,9 +117,30 @@ function showToast(message) {
 }
 
 function showOnly(section) {
-  for (const item of [elements.welcome, elements.selection, elements.searchResults, elements.entryView, elements.editor, elements.readmeView]) {
+  for (const item of [elements.welcome, elements.selection, elements.searchResults, elements.entryView, elements.editor, elements.docsView]) {
     item.hidden = item !== section;
   }
+}
+
+function svgIcon(name) {
+  const paths = ICONS[name] || ICONS.doc;
+  return `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+}
+
+function iconFor(title) {
+  const text = title.toLowerCase();
+  if (text.includes("overview")) return "overview";
+  if (text.includes("what")) return "what";
+  if (text.includes("install") || text.includes("setup")) return "install";
+  if (text.includes("deploy") || text.includes("nas")) return "deploy";
+  if (text.includes("api")) return "api";
+  if (text.includes("web") || text.includes("endpoint")) return "web";
+  if (text.includes("client") || text.includes("mcp")) return "client";
+  if (text.includes("control")) return "controls";
+  if (text.includes("test")) return "test";
+  if (text.includes("map") || text.includes("repository")) return "map";
+  if (text.includes("data") || text.includes("trust")) return "data";
+  return "doc";
 }
 
 function renderDays() {
@@ -105,7 +153,7 @@ function renderDays() {
     : total >= ENTRY_WARN
       ? "growing; search and spark load the whole journal"
       : "comfortable";
-  elements.dayCount.dataset.tip = `${total} ${total === 1 ? "entry" : "entries"} in ${state.totalDays} ${state.totalDays === 1 ? "day" : "days"} — ${health}`;
+  elements.dayCount.dataset.tip = `${total} ${total === 1 ? "entry" : "entries"} in ${state.totalDays} ${state.totalDays === 1 ? "date" : "dates"} — ${health}`;
   elements.dayList.replaceChildren();
   for (const day of state.days) {
     const button = document.createElement("button");
@@ -114,9 +162,9 @@ function renderDays() {
     const date = document.createElement("span");
     date.textContent = day.date;
     const count = document.createElement("span");
-    count.textContent = `${day.count} ${day.count === 1 ? "note" : "notes"}`;
+    count.textContent = `${day.count} ${day.count === 1 ? "entry" : "entries"}`;
     button.append(date, count);
-    button.addEventListener("click", () => selectDay(day.date).catch((error) => showToast(error.message)));
+    button.addEventListener("click", () => navigate(ROUTE.day(day.date)).catch((error) => showToast(error.message)));
     elements.dayList.append(button);
   }
   const first = state.totalDays ? state.pageOffset + 1 : 0;
@@ -128,14 +176,14 @@ function renderDays() {
 
 function entryTime(entry) {
   const created = entry.createdAt ? new Date(entry.createdAt) : null;
-  if (!created || Number.isNaN(created.getTime())) return "12.00";
+  if (!created || Number.isNaN(created.getTime())) return "12:00";
   const localDay = [
     created.getFullYear(),
     String(created.getMonth() + 1).padStart(2, "0"),
     String(created.getDate()).padStart(2, "0"),
   ].join("-");
-  if (localDay !== entry.date) return "12.00";
-  return `${String(created.getHours()).padStart(2, "0")}.${String(created.getMinutes()).padStart(2, "0")}`;
+  if (localDay !== entry.date) return "12:00";
+  return `${String(created.getHours()).padStart(2, "0")}:${String(created.getMinutes()).padStart(2, "0")}`;
 }
 
 function dateLabel(entry) {
@@ -151,7 +199,7 @@ function dateLabel(entry) {
   return label;
 }
 
-function renderEntryCards(entries, container, returnTo = elements.selection) {
+function renderEntryCards(entries, container) {
   container.replaceChildren();
   if (!entries.length) {
     const empty = document.createElement("p");
@@ -169,7 +217,7 @@ function renderEntryCards(entries, container, returnTo = elements.selection) {
     const preview = document.createElement("p");
     preview.textContent = entry.content.replace(/^#+\s*/gm, "").replace(/\s+/g, " ").slice(0, 84);
     button.append(dateLabel(entry), title, preview);
-    button.addEventListener("click", () => openEntry(entry, returnTo));
+    button.addEventListener("click", () => navigate(ROUTE.entry(entry.id)).catch((error) => showToast(error.message)));
     container.append(button);
   }
 }
@@ -225,43 +273,87 @@ async function loadEntryPage(offset) {
   renderEntryPager();
 }
 
-async function goToAdjacentDay(direction) {
+async function ensureDayWindow(date) {
+  if (state.days.some((day) => day.date === date)) return true;
+  await loadDayPage(0);
+  if (state.days.some((day) => day.date === date)) return true;
+  const days = await request("/api/days");
+  const index = days.findIndex((day) => day.date === date);
+  if (index === -1) return false;
+  const offset = Math.floor(index / state.pageSize) * state.pageSize;
+  await loadDayPage(offset);
+  return state.days.some((day) => day.date === date);
+}
+
+async function adjacentDay(direction) {
   const index = state.days.findIndex((day) => day.date === state.selectedDate);
-  if (index === -1) return;
+  if (index === -1) return false;
   let target = state.days[index + direction];
   if (!target) {
     if (direction > 0) {
       const next = state.pageOffset + state.pageSize;
       if (next >= state.totalDays) {
-        showToast("This is the oldest day.");
-        return;
+        showToast("This is the oldest date.");
+        return false;
       }
       await loadDayPage(next);
       target = state.days[0];
     } else {
       const previous = state.pageOffset - state.pageSize;
       if (previous < 0) {
-        showToast("This is the newest day.");
-        return;
+        showToast("This is the newest date.");
+        return false;
       }
       await loadDayPage(previous);
       target = state.days[state.days.length - 1];
     }
   }
-  if (target && target.date !== state.selectedDate) await selectDay(target.date, direction);
+  if (!target) return false;
+  await navigate(ROUTE.day(target.date));
+  return true;
 }
 
-function openEntry(entry, from = elements.selection) {
+async function copyLink() {
+  try {
+    await navigator.clipboard.writeText(window.location.href);
+    showToast("Link copied.");
+  } catch (error) {
+    showToast("Copying needs a secure connection.");
+  }
+}
+
+function openEntry(entry) {
   showOnly(elements.entryView);
   elements.entryView.replaceChildren();
   const meta = document.createElement("div");
   meta.className = "entry-meta";
+  const left = document.createElement("div");
+  left.className = "entry-meta-left";
+  const when = document.createElement("span");
+  when.className = "entry-when";
+  const day = document.createElement("span");
+  day.className = "date-day";
+  day.textContent = entry.date;
+  const time = document.createElement("span");
+  time.className = "date-time";
+  time.textContent = entryTime(entry);
+  when.append(day, time);
+  const author = document.createElement("span");
+  author.className = "entry-author";
+  author.textContent = `by ${entry.author || "AI"}`;
+  left.append(when, author);
+  const copy = document.createElement("button");
+  copy.type = "button";
+  copy.className = "link-button has-tip";
+  copy.textContent = "Copy link";
+  copy.dataset.tip = "Copy a deep link to this entry";
+  copy.addEventListener("click", copyLink);
   const back = document.createElement("button");
   back.type = "button";
   back.className = "back-button";
   back.textContent = "← Back";
-  back.addEventListener("click", () => showOnly(from));
-  meta.append(dateLabel(entry), back);
+  back.addEventListener("click", () => navigate(ROUTE.day(entry.date)).catch((error) => showToast(error.message)));
+  meta.append(left, copy, back);
   const title = document.createElement("h2");
   title.textContent = entry.title;
   const content = document.createElement("pre");
@@ -270,17 +362,20 @@ function openEntry(entry, from = elements.selection) {
   elements.entryView.append(meta, title, content);
 }
 
-async function search() {
+async function search({ keepRoute = false } = {}) {
   const query = elements.searchInput.value.trim();
   if (!query) {
-    renderDays();
+    if (!keepRoute) {
+      history.replaceState({}, "", state.selectedDate ? ROUTE.day(state.selectedDate) : ROUTE.welcome);
+    }
     showOnly(state.selectedDate ? elements.selection : elements.welcome);
     return;
   }
   const results = await request(`/api/search?q=${encodeURIComponent(query)}`);
-  elements.searchTitle.textContent = `${results.length} ${results.length === 1 ? "thread" : "threads"} found`;
-  renderEntryCards(results, elements.resultList, elements.searchResults);
+  elements.searchTitle.textContent = `${results.length} ${results.length === 1 ? "entry" : "entries"} found`;
+  renderEntryCards(results, elements.resultList);
   showOnly(elements.searchResults);
+  if (!keepRoute) history.replaceState({}, "", ROUTE.search(query));
 }
 
 function stopTestPolling() {
@@ -298,24 +393,35 @@ function startTestPolling() {
 
 function renderMetrics(metrics) {
   if (metrics.running) {
-    elements.runTests.disabled = true;
+    elements.runTests.setAttribute("aria-disabled", "true");
     elements.runTests.classList.add("running");
-    elements.runTests.textContent = "Running the tests…";
+    elements.runTests.textContent = "unit running…";
     elements.runTests.dataset.tip = "The suite is running";
     startTestPolling();
+  } else {
+    stopTestPolling();
+    elements.runTests.classList.remove("running");
+    if (metrics.measuredAt) {
+      elements.runTests.setAttribute("aria-disabled", "true");
+      elements.runTests.textContent = `unit ${metrics.tests} · ${metrics.failures} fail · ${metrics.coverage} %`;
+      elements.runTests.dataset.tip = `Measured ${metrics.measuredAt}. Results are final. Delete test-metrics.json to run the suite again.`;
+    } else {
+      elements.runTests.setAttribute("aria-disabled", "false");
+      elements.runTests.textContent = "unit not measured — run";
+      elements.runTests.dataset.tip = "Run the test suite once";
+    }
+  }
+  renderE2E(metrics.e2e);
+}
+
+function renderE2E(e2e) {
+  if (!e2e) {
+    elements.e2eMetrics.textContent = "e2e not measured";
+    elements.e2eMetrics.dataset.tip = "Playwright end-to-end results are not installed here.";
     return;
   }
-  stopTestPolling();
-  elements.runTests.classList.remove("running");
-  if (metrics.measuredAt) {
-    elements.runTests.disabled = true;
-    elements.runTests.textContent = `${metrics.tests} tests · ${metrics.failures} failures · ${metrics.coverage}% application line coverage`;
-    elements.runTests.dataset.tip = `Measured ${metrics.measuredAt}. Results are final.`;
-    return;
-  }
-  elements.runTests.disabled = false;
-  elements.runTests.textContent = "Tests not measured yet — run them";
-  elements.runTests.dataset.tip = "Run the test suite once";
+  elements.e2eMetrics.textContent = `e2e ${e2e.tests} · ${e2e.failures} fail · ${e2e.coverage} %`;
+  elements.e2eMetrics.dataset.tip = `Playwright end-to-end: ${e2e.tests} tests, ${e2e.failures} failures, ${e2e.coverage}% of app.js lines, measured ${e2e.measuredAt}.`;
 }
 
 async function loadMetrics() {
@@ -333,12 +439,6 @@ async function loadDayPage(offset) {
   state.days = page.days;
   if (page.offset === 0) state.latestDate = page.days[0]?.date || null;
   renderDays();
-}
-
-async function loadDays() {
-  await loadDayPage(0);
-  if (state.days.length) await selectDay(state.days[0].date);
-  await loadMetrics();
 }
 
 function setGuideExpanded(expanded) {
@@ -385,8 +485,13 @@ async function deleteBy(filter, label) {
     state.entryPages.clear();
     state.selectedDate = null;
     await loadDayPage(0);
-    if (state.days.length) await selectDay(state.days[0].date);
-    else showOnly(elements.welcome);
+    if (state.days.length) {
+      await selectDay(state.days[0].date);
+      history.replaceState({}, "", ROUTE.day(state.days[0].date));
+    } else {
+      history.replaceState({}, "", ROUTE.welcome);
+      showOnly(elements.welcome);
+    }
   } catch (error) {
     elements.deleteStatus.textContent = error.message;
   }
@@ -516,46 +621,196 @@ function renderMarkdown(markdown) {
   return html.join("");
 }
 
-function renderReadmePage() {
-  const pages = state.readme?.pages || [];
-  if (!pages.length) {
-    elements.readmeTitle.textContent = "README";
-    elements.readmeBody.textContent = "The README is not available in this installation.";
-    elements.readmeRange.textContent = "";
-    elements.readmePrev.disabled = true;
-    elements.readmeNext.disabled = true;
-    return;
-  }
-  const page = pages[state.readmeIndex];
-  elements.readmeTitle.textContent = page.title;
-  elements.readmeBody.innerHTML = renderMarkdown(page.markdown);
-  elements.readmeRange.textContent = `${state.readmeIndex + 1} / ${pages.length}`;
-  elements.readmePrev.disabled = state.readmeIndex <= 0;
-  elements.readmeNext.disabled = state.readmeIndex >= pages.length - 1;
+async function loadDocs() {
+  if (state.docs) return state.docs;
+  const result = await request("/api/docs");
+  state.docs = Array.isArray(result.documents) ? result : { documents: [] };
+  return state.docs;
 }
 
-async function openReadme() {
-  if (!state.readme) state.readme = await request("/api/readme");
-  renderReadmePage();
-  showOnly(elements.readmeView);
+function renderDocs(doc, page) {
+  elements.docsTitle.textContent = doc.title;
+  elements.docTabs.replaceChildren();
+  for (const item of state.docs.documents) {
+    const tab = document.createElement("button");
+    tab.type = "button";
+    tab.className = `doc-tab${item.slug === doc.slug ? " active" : ""}`;
+    tab.textContent = item.title;
+    tab.setAttribute("role", "tab");
+    tab.setAttribute("aria-selected", String(item.slug === doc.slug));
+    tab.addEventListener("click", () => navigate(ROUTE.docs(item.slug)).catch((error) => showToast(error.message)));
+    elements.docTabs.append(tab);
+  }
+  elements.docSections.replaceChildren();
+  for (const item of doc.pages) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `doc-section${item.slug === page.slug ? " active" : ""}`;
+    button.innerHTML = svgIcon(iconFor(item.title));
+    button.setAttribute("aria-label", item.title);
+    button.dataset.tip = item.title;
+    button.addEventListener("click", () => navigate(ROUTE.docs(doc.slug, item.slug)).catch((error) => showToast(error.message)));
+    elements.docSections.append(button);
+  }
+  elements.docSectionTitle.textContent = page.title;
+  elements.docBody.innerHTML = renderMarkdown(page.markdown);
+  elements.docBody.classList.toggle("dense", page.markdown.length > 6000);
+  elements.docBody.classList.toggle("dense-strong", page.markdown.length > 12000);
+  elements.docBody.scrollTop = 0;
+  showOnly(elements.docsView);
 }
+
+async function showDayRoute(date) {
+  if (!ISO_DAY.test(date) || !(await ensureDayWindow(date))) {
+    showToast(`${date} has no entries.`);
+    showOnly(elements.welcome);
+    history.replaceState({}, "", ROUTE.welcome);
+    return;
+  }
+  await selectDay(date);
+  if (window.location.hash !== ROUTE.day(date)) history.replaceState({}, "", ROUTE.day(date));
+}
+
+async function showEntryRoute(id) {
+  let entry;
+  try {
+    entry = await request(`/api/entry?id=${encodeURIComponent(id)}`);
+  } catch (error) {
+    showToast("That entry is not here anymore.");
+    showOnly(elements.welcome);
+    history.replaceState({}, "", ROUTE.welcome);
+    return;
+  }
+  await ensureDayWindow(entry.date);
+  await selectDay(entry.date);
+  openEntry(entry);
+}
+
+async function showDocsRoute(docSlug, sectionSlug) {
+  await loadDocs();
+  if (!state.docs.documents.length) {
+    showToast("No documentation is installed.");
+    return;
+  }
+  const doc = state.docs.documents.find((item) => item.slug === docSlug) || state.docs.documents[0];
+  const page = doc.pages.find((item) => item.slug === sectionSlug) || doc.pages[0];
+  renderDocs(doc, page);
+  const canonical = ROUTE.docs(doc.slug, page.slug);
+  if (window.location.hash !== canonical) history.replaceState({}, "", canonical);
+}
+
+async function applyRoute() {
+  const ticket = ++state.routeTicket;
+  const raw = window.location.hash.replace(/^#\/?/, "");
+  const parts = raw.split("/").filter(Boolean).map((part) => decodeURIComponent(part));
+  const [kind, first, second] = parts;
+  if (kind === "day" && first) {
+    await showDayRoute(first);
+    return;
+  }
+  if (kind === "entry" && first) {
+    await showEntryRoute(first);
+    return;
+  }
+  if (kind === "docs") {
+    await showDocsRoute(first || "readme", second || null);
+    return;
+  }
+  if (kind === "guide") {
+    await openEditor();
+    return;
+  }
+  if (kind === "search" && first) {
+    elements.searchInput.value = first;
+    await search({ keepRoute: true });
+    return;
+  }
+  if (ticket !== state.routeTicket) return;
+  showOnly(elements.welcome);
+}
+
+async function navigate(hash, { replace = false } = {}) {
+  if (window.location.hash === hash) {
+    await applyRoute();
+    return;
+  }
+  if (replace) history.replaceState({}, "", hash);
+  else history.pushState({}, "", hash);
+  await applyRoute();
+}
+
+let tooltipTarget = null;
+
+function showTooltip(target) {
+  const text = target.dataset.tip;
+  if (!text) return;
+  tooltipTarget = target;
+  elements.tooltip.textContent = text;
+  elements.tooltip.hidden = false;
+  const rect = target.getBoundingClientRect();
+  const tip = elements.tooltip.getBoundingClientRect();
+  const margin = 8;
+  let left = rect.left + rect.width / 2 - tip.width / 2;
+  left = Math.max(margin, Math.min(left, window.innerWidth - tip.width - margin));
+  let top = rect.top - tip.height - 10;
+  let placement = "top";
+  if (top < margin) {
+    top = rect.bottom + 10;
+    placement = "bottom";
+  }
+  elements.tooltip.style.left = `${Math.round(left)}px`;
+  elements.tooltip.style.top = `${Math.round(top)}px`;
+  elements.tooltip.dataset.placement = placement;
+}
+
+function hideTooltip() {
+  tooltipTarget = null;
+  elements.tooltip.hidden = true;
+}
+
+document.addEventListener("pointerover", (event) => {
+  const target = event.target.closest?.("[data-tip]");
+  if (!target) return;
+  if (event.relatedTarget && target.contains(event.relatedTarget)) return;
+  showTooltip(target);
+});
+document.addEventListener("pointerout", (event) => {
+  const target = event.target.closest?.("[data-tip]");
+  if (!target) return;
+  if (event.relatedTarget && target.contains(event.relatedTarget)) return;
+  hideTooltip();
+});
+document.addEventListener("focusin", (event) => {
+  const target = event.target.closest?.("[data-tip]");
+  if (target) showTooltip(target);
+});
+document.addEventListener("focusout", hideTooltip);
+function repositionTooltip() {
+  if (tooltipTarget && !elements.tooltip.hidden) showTooltip(tooltipTarget);
+}
+window.addEventListener("scroll", repositionTooltip, true);
+window.addEventListener("resize", repositionTooltip);
 
 elements.daysNewer.addEventListener("click", () => loadDayPage(state.pageOffset - state.pageSize).catch((error) => showToast(error.message)));
 elements.daysOlder.addEventListener("click", () => loadDayPage(state.pageOffset + state.pageSize).catch((error) => showToast(error.message)));
-elements.dayNewer.addEventListener("click", () => goToAdjacentDay(-1).catch((error) => showToast(error.message)));
-elements.dayOlder.addEventListener("click", () => goToAdjacentDay(1).catch((error) => showToast(error.message)));
+elements.dayNewer.addEventListener("click", () => adjacentDay(-1).then((moved) => {
+  if (moved) animateSelection(-1);
+}).catch((error) => showToast(error.message)));
+elements.dayOlder.addEventListener("click", () => adjacentDay(1).then((moved) => {
+  if (moved) animateSelection(1);
+}).catch((error) => showToast(error.message)));
 elements.entriesNewer.addEventListener("click", () => loadEntryPage(state.entryOffset - ENTRY_PAGE_SIZE).catch((error) => showToast(error.message)));
 elements.entriesOlder.addEventListener("click", () => loadEntryPage(state.entryOffset + ENTRY_PAGE_SIZE).catch((error) => showToast(error.message)));
 elements.runTests.addEventListener("click", async () => {
-  if (elements.runTests.disabled) return;
-  elements.runTests.disabled = true;
+  if (elements.runTests.getAttribute("aria-disabled") === "true") return;
+  elements.runTests.setAttribute("aria-disabled", "true");
   try {
     await request("/api/tests", { method: "POST" });
     elements.runTests.classList.add("running");
-    elements.runTests.textContent = "Running the tests…";
+    elements.runTests.textContent = "unit running…";
     startTestPolling();
   } catch (error) {
-    elements.runTests.disabled = false;
+    elements.runTests.setAttribute("aria-disabled", "false");
     showToast(error.message);
     loadMetrics().catch(() => {});
   }
@@ -568,10 +823,22 @@ elements.clearSearch.addEventListener("click", () => {
   elements.searchInput.value = "";
   search().catch((error) => showToast(error.message));
 });
-elements.guideButton.addEventListener("click", () => openEditor().catch((error) => showToast(error.message)));
-elements.backToJournal.addEventListener("click", () => showOnly(state.selectedDate ? elements.selection : elements.welcome));
+elements.guideButton.addEventListener("click", () => navigate(ROUTE.guide).catch((error) => showToast(error.message)));
+elements.backToJournal.addEventListener("click", () => navigate(state.selectedDate ? ROUTE.day(state.selectedDate) : ROUTE.welcome).catch((error) => showToast(error.message)));
 elements.guideToggle.addEventListener("click", () => {
   setGuideExpanded(elements.guideToggle.getAttribute("aria-expanded") !== "true");
+});
+elements.guideReset.addEventListener("click", async () => {
+  if (!window.confirm("Reset the writing guide to the built-in default?")) return;
+  elements.saveStatus.textContent = "";
+  try {
+    const result = await request("/api/skill/reset", { method: "POST" });
+    elements.skillEditor.value = result.content;
+    setGuideExpanded(false);
+    elements.saveStatus.textContent = "Guide reset to the default.";
+  } catch (error) {
+    elements.saveStatus.textContent = error.message;
+  }
 });
 elements.saveSkill.addEventListener("click", async () => {
   elements.saveStatus.textContent = "";
@@ -589,29 +856,40 @@ elements.deleteBeforeButton.addEventListener("click", () => {
   if (day) deleteBy({ before: day }, `all entries through ${day}`);
 });
 elements.sparkButton.addEventListener("click", async () => {
-  const entries = await request("/api/search?q=");
-  const older = entries.filter((entry) => entry.date !== state.latestDate);
-  if (!older.length) { showToast("A spark needs a little more history to travel through."); return; }
-  const memory = older[Math.floor(Math.random() * older.length)];
-  openEntry(memory, elements.selection);
-  elements.entryView.classList.remove("spark");
-  void elements.entryView.offsetWidth;
-  elements.entryView.classList.add("spark");
-  showToast(`A little echo from ${memory.date}`);
-});
-elements.readmeButton.addEventListener("click", () => openReadme().catch((error) => showToast(error.message)));
-elements.readmeBack.addEventListener("click", () => showOnly(state.selectedDate ? elements.selection : elements.welcome));
-elements.readmePrev.addEventListener("click", () => {
-  if (state.readmeIndex > 0) {
-    state.readmeIndex -= 1;
-    renderReadmePage();
+  try {
+    const entries = await request("/api/search?q=");
+    const older = entries.filter((entry) => entry.date !== state.latestDate);
+    if (!older.length) { showToast("A spark needs a little more history to travel through."); return; }
+    const memory = older[Math.floor(Math.random() * older.length)];
+    await navigate(ROUTE.entry(memory.id));
+    elements.entryView.classList.remove("spark");
+    void elements.entryView.offsetWidth;
+    elements.entryView.classList.add("spark");
+    showToast(`A little echo from ${memory.date}`);
+  } catch (error) {
+    showToast(error.message);
   }
 });
-elements.readmeNext.addEventListener("click", () => {
-  if (state.readme && state.readmeIndex < state.readme.pages.length - 1) {
-    state.readmeIndex += 1;
-    renderReadmePage();
-  }
-});
+elements.readmeButton.addEventListener("click", () => navigate(ROUTE.docs("readme")).catch((error) => showToast(error.message)));
+elements.docsBack.addEventListener("click", () => navigate(state.selectedDate ? ROUTE.day(state.selectedDate) : ROUTE.welcome).catch((error) => showToast(error.message)));
 
-loadDays().catch((error) => showToast(error.message));
+window.addEventListener("popstate", () => { applyRoute().catch((error) => showToast(error.message)); });
+window.addEventListener("hashchange", () => { applyRoute().catch((error) => showToast(error.message)); });
+
+async function init() {
+  await loadDayPage(0);
+  loadMetrics().catch(() => {});
+  const hash = window.location.hash;
+  if (hash && hash !== "#/" && hash !== "#") {
+    await applyRoute();
+    return;
+  }
+  if (state.days.length) {
+    await selectDay(state.days[0].date);
+    history.replaceState({}, "", ROUTE.day(state.days[0].date));
+  } else {
+    showOnly(elements.welcome);
+  }
+}
+
+init().catch((error) => showToast(error.message));
