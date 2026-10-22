@@ -13,6 +13,9 @@ What an entry is, and who may write one.
 
 - Entries have a calendar date, title, Markdown content, and an author. Multiple
   entries may belong to a date; search matches titles and content only.
+- The entry view renders that Markdown with the same typography as the document
+  reader. Wrapped lines join into paragraphs; `-` starts a list, `###` a heading,
+  backticks code, and links stay clickable. Stored text is not altered.
 - A title names topic and action, joined by an em dash: `Topic — Action`, for example
   `Diary — README reader added`. The topic is a stable word so later tagging can group
   entries; the action says what was done.
@@ -36,9 +39,9 @@ How a reader reaches a date, an entry, or a section.
 - Search matches titles and content with dates in the results. Entry previews are
   compact.
 
-## Documentation
+## Documentation reader
 
-What the footer opens and how it is navigated.
+How the README and `docs/*.md` are read in the page.
 
 - The footer serves the documentation: a book icon opens the README in the main panel.
   The reader also lists the Markdown files under `docs/`, one tab per document and one
@@ -46,18 +49,34 @@ What the footer opens and how it is navigated.
 - Sections are navigated by a row of icons, not arrows. Each icon symbolises its
   section, its tooltip gives the section title, and a click opens that page with its
   heading. Long documents reduce the font size instead of widening the page.
-- The AI writing guide is separate: editable in the page, five lines tall by default,
-  expandable, with a reset to the built-in default.
+- Relative Markdown links between documents open in the reader. The same links keep
+  working on GitHub, and each section has a stable anchor.
 
-## Footer and tests
+## Writing guide
+
+What the editable AI guide does.
+
+- The AI writing guide is separate from the read-only documents: it is editable in the
+  page, five lines tall by default, expandable, with a reset to the built-in default.
+- The guide describes the entry shape and the writing rules. It is the single place
+  those rules live; the page does not repeat them.
+
+## Footer
+
+What the page points to.
+
+- One compact, centred footer carries README, source, unit tests, and end-to-end
+  tests, separated by `|`. It must keep those items on one line at desktop width.
+- The items name what they open: the documentation reader, the source repository, the
+  unit report, and the browser report.
+
+## Tests
 
 What the page claims about its own state.
 
 Run commands and measured numbers are in
 [README › Tests and coverage](../README.md#tests-and-coverage).
 
-- One compact, centred footer carries README, source, unit tests, and end-to-end
-  tests, separated by `|`. It must keep those items on one line at desktop width.
 - The unit button shows the latest count and application line coverage and starts the
   suite once. Results are one-shot: once they exist the button shows them and refuses
   another start. It polls every five seconds while a run is active.
@@ -66,6 +85,8 @@ Run commands and measured numbers are in
   file shows “not measured”, never zero.
 - Coverage is line coverage, not branch coverage. A missing unit report is shown as
   “not measured”, not as zero.
+- Tests cover the API, storage, search, deletion, AI/human mutation boundaries, deep
+  links, and legacy Markdown import.
 
 ## Human controls
 
@@ -81,29 +102,37 @@ What the local human may change without a sign-in.
   turns amber at 2,000, and red at 5,000, the range where whole-journal requests
   (search, Memory spark) become a risk.
 
-## AI API and MCP
+## AI API
 
-What the AI credential may and may not do.
+What the AI credential may do.
 
 - AI reads the writing guide and searches history over read-only `GET /ai/skill` and
   `GET /ai/search` endpoints. It can append a new entry through a separate
   `POST /ai/entries` credential with an optional `author`; it cannot edit the guide,
   edit history, or delete.
+
+## AI client (MCP)
+
+How an assistant reaches that API.
+
 - An optional MCP client in `mcp/` exposes search and append to AI assistants over
   stdio. It is configured only through environment variables (API URL, token values
   or token-file paths) and contains no installation-specific address or credential.
 
-## Data and deployment
+## Data
 
-Where data lives and how the page is exposed.
+Where entries live.
 
-- Diary uses private data storage outside the repository and has an appropriate
-  journal icon. A manual NAS deployment may expose it on a trusted LAN HTTPS origin;
-  the application server itself remains loopback-bound. No CI/CD pipeline is part of
-  the deployment.
-- Tests cover the API, storage, search, deletion, AI/human mutation boundaries, deep
-  links, and legacy Markdown import. README documents local setup, the test commands,
-  and operation.
+- Diary uses private data storage outside the repository. Entries and the writing
+  guide are not committed; only generated sample data may be public.
+
+## Deployment
+
+How the page is exposed.
+
+- A manual NAS deployment may expose Diary on a trusted LAN HTTPS origin; the
+  application server itself remains loopback-bound. No CI/CD pipeline is part of the
+  deployment.
 
 ## Style and vocabulary
 
@@ -112,6 +141,6 @@ How the interface should feel and speak.
 - The visual style is simple and playful: thicker outlines, short hover motion, and
   tooltips as speech bubbles that stay inside the viewport. Purple marks the Memory
   spark as something special; yellow stays emphasis, red warns, green marks good.
-  Include one small, relevant surprise.
+  Include one small, relevant surprise. The page uses a journal icon.
 - Use one name for one thing. The page says “entries” and “dates”, not “notes”,
   “threads”, or “days” where an entry or a calendar date is meant. Sentences are short.

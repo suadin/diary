@@ -96,7 +96,17 @@ button { color: inherit; cursor: pointer; }
 
 .entry-view { border: 3px solid var(--ink); border-radius: 16px; background: var(--card); padding: clamp(1.2rem, 4vw, 2rem); box-shadow: 6px 6px 0 var(--ink); }
 .entry-view h2 { margin: .35rem 0 1rem; font-size: clamp(1.7rem, 4vw, 2.6rem); }
-.entry-content { overflow-wrap: anywhere; white-space: pre-wrap; font-family: inherit; line-height: 1.75; }
+.entry-content { overflow-wrap: anywhere; line-height: 1.7; }
+.entry-content p { margin: 0 0 .8rem; }
+.entry-content h4 { margin: 1.2rem 0 .35rem; font-size: 1.1em; }
+.entry-content ul, .entry-content ol { margin: .3rem 0 .9rem; padding-left: 1.4rem; }
+.entry-content li { margin-bottom: .25rem; }
+.entry-content code { background: var(--hover); border-radius: 5px; padding: .08rem .3rem; font-size: .88em; }
+.entry-content pre { overflow: auto; border: 2px solid var(--ink); border-radius: 10px; background: var(--paper); padding: .8rem; }
+.entry-content pre code { background: none; padding: 0; }
+.entry-content a { color: var(--green); font-weight: 900; }
+.entry-content table { width: 100%; margin: .8rem 0; border-collapse: collapse; font-size: .92em; }
+.entry-content th, .entry-content td { border: 1px solid var(--muted); padding: .35rem .5rem; text-align: left; vertical-align: top; }
 .entry-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem 1rem; margin-bottom: 1rem; }
 .entry-meta-left { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .9rem; }
 .entry-when { display: flex; align-items: baseline; gap: .5rem; color: var(--green); font-size: .82rem; font-weight: 900; }

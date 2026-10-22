@@ -68,7 +68,12 @@ const ICONS = {
   overview: '<path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1v-9.5Z"/>',
   what: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/>',
   install: '<rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="m7.5 10 2.5 2-2.5 2M12.5 14h4"/>',
-  deploy: '<rect x="3.5" y="4" width="17" height="6" rx="1.5"/><rect x="3.5" y="14" width="17" height="6" rx="1.5"/><path d="M7 7h.01M7 17h.01"/>',
+  package: '<path d="M12 3 20 7.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="M4 7.5 12 12l8-4.5M12 12v9"/>',
+  pencil: '<path d="M6 3.5h8l4 4V14"/><path d="M14 3.5v4h4"/><path d="M6 3.5v17h5"/><path d="M8.5 20.5h3l8-8a2 2 0 0 0-3-3l-8 8v3Z"/><path d="M15.5 10.5l3 3"/>',
+  link: '<path d="M10 13.5a3.5 3.5 0 0 0 5 0l2.5-2.5a3.5 3.5 0 0 0-5-5L11.5 7"/><path d="M14 10.5a3.5 3.5 0 0 0-5 0L6.5 13a3.5 3.5 0 0 0 5 5l1-1"/>',
+  foot: '<path d="M8.5 13.5c2.4-.9 5.8-.5 7.7.9 1.2.9 1.8 2.2 1.6 3.4-.2 1.2-1.1 1.9-2.5 1.9-2.4 0-4.2-.8-5.8-1.7-1.4-.8-2.4-1.1-3.3-1.4-.9-.3-1-1.2-.3-1.9.8-.8 1.6-1 2.6-1.2Z"/><circle cx="8.4" cy="7.6" r="1.6"/><circle cx="11.8" cy="5.8" r="1.3"/><circle cx="14.6" cy="8" r="1.2"/><circle cx="15.4" cy="11.2" r="1.1"/>',
+  guide: '<path d="M12 6.5C10 4.8 7.2 4.5 4 5v13c3.2-.5 6-.2 8 1.5 2-1.7 4.8-2 8-1.5V5c-3.2-.5-6-.2-8 1.5Z"/><path d="M12 6.5v13"/>',
+  comic: '<circle cx="12" cy="12" r="8.5"/><path d="M9 10h.01M15 10h.01M8.5 14c1.2 1.6 5.8 1.6 7 0"/>',
   api: '<path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0V8ZM12 17v4"/>',
   web: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.6 2.5 14.4 0 17M12 3.5c-2.5 2.6-2.5 14.4 0 17"/>',
   client: '<rect x="6.5" y="6.5" width="11" height="11" rx="2"/><path d="M9.5 3v3.5M14.5 3v3.5M9.5 17.5V21M14.5 17.5V21M3 9.5h3.5M3 14.5h3.5M17.5 9.5H21M17.5 14.5H21"/>',
@@ -131,15 +136,20 @@ function iconFor(title) {
   const text = title.toLowerCase();
   if (text.includes("overview")) return "overview";
   if (text.includes("what")) return "what";
+  if (text.includes("navigation") || text.includes("deep link")) return "link";
+  if (text.includes("footer")) return "foot";
+  if (text.includes("guide")) return "guide";
+  if (text.includes("writing") || text.includes("entry")) return "pencil";
   if (text.includes("install") || text.includes("setup")) return "install";
-  if (text.includes("deploy") || text.includes("nas")) return "deploy";
+  if (text.includes("deploy") || text.includes("nas")) return "package";
   if (text.includes("api")) return "api";
-  if (text.includes("web") || text.includes("endpoint")) return "web";
   if (text.includes("client") || text.includes("mcp")) return "client";
+  if (text.includes("web") || text.includes("endpoint")) return "web";
   if (text.includes("control")) return "controls";
   if (text.includes("test")) return "test";
   if (text.includes("map") || text.includes("repository")) return "map";
   if (text.includes("data") || text.includes("trust")) return "data";
+  if (text.includes("style") || text.includes("vocabulary")) return "comic";
   return "doc";
 }
 
@@ -199,6 +209,18 @@ function dateLabel(entry) {
   return label;
 }
 
+function plainText(markdown) {
+  return markdown
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/^\s*[-*]\s+/gm, "")
+    .replace(/^\s*\d+\.\s+/gm, "")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/\*\*|__|`/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function renderEntryCards(entries, container) {
   container.replaceChildren();
   if (!entries.length) {
@@ -215,7 +237,7 @@ function renderEntryCards(entries, container) {
     const title = document.createElement("h3");
     title.textContent = entry.title;
     const preview = document.createElement("p");
-    preview.textContent = entry.content.replace(/^#+\s*/gm, "").replace(/\s+/g, " ").slice(0, 84);
+    preview.textContent = plainText(entry.content).slice(0, 84);
     button.append(dateLabel(entry), title, preview);
     button.addEventListener("click", () => navigate(ROUTE.entry(entry.id)).catch((error) => showToast(error.message)));
     container.append(button);
@@ -356,9 +378,9 @@ function openEntry(entry) {
   meta.append(left, copy, back);
   const title = document.createElement("h2");
   title.textContent = entry.title;
-  const content = document.createElement("pre");
+  const content = document.createElement("div");
   content.className = "entry-content";
-  content.textContent = entry.content;
+  content.innerHTML = renderMarkdown(entry.content);
   elements.entryView.append(meta, title, content);
 }
 
@@ -605,7 +627,7 @@ function renderMarkdown(markdown) {
       );
       continue;
     }
-    const heading = /^#{3,6}\s+(.*)$/.exec(line);
+    const heading = /^#{1,6}\s+(.*)$/.exec(line);
     if (heading) {
       closeBlocks();
       html.push(`<h4>${inlineMarkdown(heading[1])}</h4>`);
@@ -909,13 +931,16 @@ elements.sparkButton.addEventListener("click", async () => {
 elements.readmeButton.addEventListener("click", () => navigate(ROUTE.docs("readme")).catch((error) => showToast(error.message)));
 elements.docsBack.addEventListener("click", () => navigate(state.selectedDate ? ROUTE.day(state.selectedDate) : ROUTE.welcome).catch((error) => showToast(error.message)));
 
-elements.docBody.addEventListener("click", (event) => {
+function followDocLink(event) {
   const link = event.target.closest?.("a[data-doc-link]");
   if (!link) return;
   event.preventDefault();
   const [slug, section] = link.dataset.docLink.split("#");
   navigate(ROUTE.docs(slug, section || "overview")).catch((error) => showToast(error.message));
-});
+}
+
+elements.docBody.addEventListener("click", followDocLink);
+elements.entryView.addEventListener("click", followDocLink);
 
 let fitTimer = null;
 window.addEventListener("resize", () => {

@@ -63,6 +63,18 @@ test("a journey through days, entries, documents, and the guide", async ({ page 
   }
 });
 
+test("entry content renders as Markdown", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("#search-input").fill("Deep links");
+  await expect(page.locator(".result-card p")).not.toContainText("**");
+  await page.locator(".result-card").click();
+  await expect(page.locator("#entry-view strong").first()).toHaveText("icons");
+  await expect(page.locator("#entry-view ul li")).toHaveCount(2);
+  await expect(page.locator("#entry-view h4")).toHaveText("Detail");
+  await expect(page.locator("#entry-view code")).toContainText("ROUTE.docs");
+  await expect(page.locator("#entry-view")).not.toContainText("**");
+});
+
 test("documentation wraps bullets, follows links, and fits the page", async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto("/#/docs/readme/what-it-does");
@@ -73,13 +85,22 @@ test("documentation wraps bullets, follows links, and fits the page", async ({ p
   expect(fits).toBe(true);
 
   await page.goto("/#/docs/readme/tests-and-coverage");
-  await page.locator('a[data-doc-link="requirements#footer-and-tests"]').click();
-  await expect(page).toHaveURL(/#\/docs\/requirements\/footer-and-tests$/);
-  await expect(page.locator("#doc-section-title")).toHaveText("Footer and tests");
+  await page.locator('a[data-doc-link="requirements#tests"]').click();
+  await expect(page).toHaveURL(/#\/docs\/requirements\/tests$/);
+  await expect(page.locator("#doc-section-title")).toHaveText("Tests");
 
   await page.goto("/#/docs/requirements/overview");
   await page.locator('a[data-doc-link="readme#overview"]').first().click();
   await expect(page).toHaveURL(/#\/docs\/readme\/overview$/);
+});
+
+test("requirements sections use distinct icons", async ({ page }) => {
+  await page.goto("/#/docs/requirements");
+  const icons = await page.locator(".doc-section svg").evaluateAll(
+    (nodes) => nodes.map((node) => node.innerHTML),
+  );
+  expect(icons).toHaveLength(13);
+  expect(new Set(icons).size).toBe(13);
 });
 
 test("tooltip-only text uses the help cursor and the sidebar stays fixed", async ({ page }) => {

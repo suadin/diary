@@ -9,7 +9,7 @@ This README explains what Diary is, how to run it, and how to operate it. The te
 rules it must satisfy live in [Requirements](docs/REQUIREMENTS.md).
 
 > 🗂️ Dated entries · 🔗 deep links to every view · 🤖 append-only AI access ·
-> 🧪 42 unit tests and 8 browser journeys
+> 🧪 42 unit tests and 10 browser journeys
 
 ## What it does
 
@@ -23,7 +23,8 @@ rules it must satisfy live in [Requirements](docs/REQUIREMENTS.md).
   requests (search and Memory spark) start to hurt.
 - Opens entries on the main page and searches titles and text. Search results always
   show their date; previews are deliberately compact. An entry view shows date, time,
-  and author, and can copy its own link.
+  and author, and can copy its own link. Stored Markdown renders with the document
+  reader's typography — paragraphs, lists, headings, code, tables, and links.
 - Links are stable and shareable: `#/day/2026-10-22`, `#/entry/42`,
   `#/docs/readme/ai-api`, `#/guide`, and `#/search/boot`. Opening one restores the
   same view, including the surrounding sidebar window.
@@ -198,7 +199,7 @@ deleted by Diary.
 ## Tests and coverage
 
 The rules this section proves are in
-[Requirements › Footer and tests](docs/REQUIREMENTS.md#footer-and-tests).
+[Requirements › Tests](docs/REQUIREMENTS.md#tests).
 
 Run `python3 -m diary test` after a change, or use the quiet test button in the page
 footer. Both use Python's standard-library test runner and line tracing; the count
@@ -213,8 +214,8 @@ configuration, and test-runner modules; it is line coverage, not branch coverage
 A missing report is shown as “not measured”, not as zero.
 
 The unit suite has 42 tests and currently covers 75.5 % of those lines. The
-Playwright suite in `e2e/` has 8 journeys and touches 643 of 890 `web/app.js` lines
-(72.2 %). It needs Node, pnpm, and a Chromium build:
+Playwright suite in `e2e/` has 10 journeys and touches 683 of 913 `web/app.js` lines
+(74.8 %). It needs Node, pnpm, and a Chromium build:
 
 ```bash
 cd e2e

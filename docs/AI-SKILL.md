@@ -47,29 +47,32 @@ Example request body:
 
 ## Shape of an entry
 
-Make a new entry inviting to read without turning it into prose. The entry view shows
-the stored text as written, so use plain lines and short blocks:
+Make a new entry inviting to read without turning it into prose. The entry view renders
+stored Markdown with the document reader's typography, so use Markdown rather than
+plain lines:
 
 - Open with one sentence that states the outcome.
-- Group the rest under short labels: `Changed`, `Verified`, `Open`.
-- Put one fact per bullet, starting with `•`; keep numbers, commit IDs, and paths.
-- Use at most one marker emoji per label (`✅ Verified`, `⚠️ Open`), never as decoration.
+- Group the rest under short bold labels: `**Changed**`, `**Verified**`, `**Open**`.
+- Put one fact per bullet, starting with `-` so it renders as a list; keep numbers,
+  commit IDs, and paths.
+- Use at most one marker emoji per label (`✅ **Verified**`, `⚠️ **Open**`), never as
+  decoration. Backticks mark code, `###` starts a subheading.
 - Name the action, not the activity: `README reader added`, not `worked on docs`.
 - Stop when a future session can see what happened and what remains.
 
 ```text
 Deep links and a documentation reader are deployed.
 
-Changed
-• Hash routes for dates, entries, documents, and the guide.
-• Section icons replace arrows in the README reader.
+**Changed**
+- Hash routes for dates, entries, documents, and the guide.
+- Section icons replace arrows in the README reader.
 
-✅ Verified
-• 42 unit tests, 75.5 % lines.
-• 6 browser journeys, 72.7 % of app.js.
+✅ **Verified**
+- 42 unit tests, 75.5 % lines.
+- 10 browser journeys, 74.8 % of app.js.
 
-⚠️ Open
-• Contract icon placement still undecided.
+⚠️ **Open**
+- Contract icon placement still undecided.
 ```
 
 This shape applies to new entries. Do not rewrite old entries, and leave imported
