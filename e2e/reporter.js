@@ -9,6 +9,7 @@ class MetricsReporter {
     this.coverageFile = process.env.DIARY_E2E_COVERAGE
       || path.join(__dirname, ".coverage.json");
     this.statuses = [];
+    this.requirements = {};
   }
 
   onBegin() {
@@ -21,6 +22,11 @@ class MetricsReporter {
 
   onTestEnd(test, result) {
     this.statuses.push(result.status);
+    for (const tag of test.tags || []) {
+      const slug = tag.replace(/^@/, "");
+      const names = this.requirements[slug] || (this.requirements[slug] = []);
+      if (!names.includes(test.title)) names.push(test.title);
+    }
   }
 
   onEnd(result) {
@@ -40,6 +46,11 @@ class MetricsReporter {
       totalLines: coverage ? coverage.totalLines : 0,
       coverage: coverage ? coverage.percent : 0,
       measuredAt: new Date().toISOString(),
+      requirements: Object.fromEntries(
+        Object.entries(this.requirements)
+          .sort(([left], [right]) => left.localeCompare(right))
+          .map(([slug, names]) => [slug, names.sort()]),
+      ),
     };
     fs.mkdirSync(path.dirname(this.output), { recursive: true });
     fs.writeFileSync(this.output, `${JSON.stringify(payload, null, 2)}\n`);

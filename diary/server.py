@@ -245,8 +245,23 @@ class DiaryHandler(BaseHTTPRequestHandler):
                 self._json(500, {"error": f"cannot read test metrics: {error}"})
                 return
         metrics["running"] = running
-        metrics["e2e"] = self._e2e_metrics()
+        e2e = self._e2e_metrics()
+        metrics["e2e"] = e2e
+        metrics["requirements"] = self._requirements(
+            metrics.get("requirements"), (e2e or {}).get("requirements")
+        )
         self._json(200, metrics)
+
+    def _requirements(self, unit, e2e) -> dict[str, dict[str, list[str]]]:
+        unit = unit if isinstance(unit, dict) else {}
+        e2e = e2e if isinstance(e2e, dict) else {}
+        merged = {}
+        for slug in sorted(set(unit) | set(e2e)):
+            merged[slug] = {
+                "unit": list(unit.get(slug) or []),
+                "e2e": list(e2e.get(slug) or []),
+            }
+        return merged
 
     def _e2e_metrics(self) -> dict[str, object] | None:
         path = self.server.settings.e2e_metrics_path

@@ -9,7 +9,7 @@ This README explains what Diary is, how to run it, and how to operate it. The te
 rules it must satisfy live in [Requirements](docs/REQUIREMENTS.md).
 
 > 🗂️ Dated entries · 🔗 deep links to every view · 🤖 append-only AI access ·
-> 🧪 42 unit tests and 10 browser journeys
+> 🧪 44 unit tests and 11 browser journeys
 
 ## What it does
 
@@ -213,9 +213,14 @@ Coverage measures executable application lines in the server, store, importer,
 configuration, and test-runner modules; it is line coverage, not branch coverage.
 A missing report is shown as “not measured”, not as zero.
 
-The unit suite has 42 tests and currently covers 75.5 % of those lines. The
-Playwright suite in `e2e/` has 10 journeys and touches 683 of 913 `web/app.js` lines
-(74.8 %). It needs Node, pnpm, and a Chromium build:
+Tests trace back to the rules they protect: a unit test declares its requirement with
+a `covers` tag, a browser journey with a Playwright tag. The server merges both runs,
+and every Requirements page lists the concrete test names under “Automated tests”, so
+a rule without a test is visible instead of implied.
+
+The unit suite has 44 tests and currently covers 441 of 584 lines (75.5 %). The
+Playwright suite in `e2e/` has 11 journeys and touches 715 of 966 `web/app.js` lines
+(74 %). It needs Node, pnpm, and a Chromium build:
 
 ```bash
 cd e2e

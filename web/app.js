@@ -99,6 +99,7 @@ const state = {
   searchTimer: null,
   testTimer: null,
   docs: null,
+  metrics: null,
   routeTicket: 0,
 };
 
@@ -447,7 +448,10 @@ function renderE2E(e2e) {
 }
 
 async function loadMetrics() {
-  renderMetrics(await request("/api/metrics"));
+  const metrics = await request("/api/metrics");
+  state.metrics = metrics;
+  renderMetrics(metrics);
+  return metrics;
 }
 
 async function loadDayPage(offset) {
@@ -672,7 +676,7 @@ async function loadDocs() {
   return state.docs;
 }
 
-function renderDocs(doc, page) {
+async function renderDocs(doc, page) {
   elements.docsTitle.textContent = doc.title;
   elements.docTabs.replaceChildren();
   for (const item of state.docs.documents) {
@@ -698,9 +702,59 @@ function renderDocs(doc, page) {
   }
   elements.docSectionTitle.textContent = page.title;
   elements.docBody.innerHTML = renderMarkdown(page.markdown);
+  if (doc.slug === "requirements") {
+    const metrics = state.metrics || await loadMetrics();
+    renderRequirementTests(page.slug, metrics);
+  }
   showOnly(elements.docsView);
   window.scrollTo(0, 0);
   fitDocBody();
+}
+
+function renderRequirementTests(slug, metrics) {
+  const groups = (metrics.requirements || {})[slug] || {};
+  const unit = groups.unit || [];
+  const e2e = groups.e2e || [];
+  const box = document.createElement("section");
+  box.className = "doc-tests";
+  const heading = document.createElement("h4");
+  heading.textContent = "Automated tests";
+  box.append(heading);
+  const note = document.createElement("p");
+  note.className = "doc-tests-note";
+  const parts = [];
+  if (metrics.measuredAt && metrics.tests) {
+    parts.push(`${metrics.tests} unit tests, ${metrics.failures || 0} failures`);
+  }
+  if (metrics.e2e) {
+    parts.push(`${metrics.e2e.tests} browser journeys, ${metrics.e2e.failures || 0} failures`);
+  }
+  note.textContent = parts.length
+    ? `Last run: ${parts.join(" · ")}.`
+    : "No test run recorded yet.";
+  box.append(note);
+  if (!unit.length && !e2e.length) {
+    const empty = document.createElement("p");
+    empty.textContent = "No automated test names this requirement yet.";
+    box.append(empty);
+  }
+  for (const [label, names] of [["Unit", unit], ["Browser", e2e]]) {
+    if (!names.length) continue;
+    const group = document.createElement("div");
+    group.className = "doc-test-group";
+    const kind = document.createElement("span");
+    kind.className = "doc-test-kind";
+    kind.textContent = `${label} · ${names.length}`;
+    const list = document.createElement("ul");
+    for (const name of names) {
+      const item = document.createElement("li");
+      item.textContent = name;
+      list.append(item);
+    }
+    group.append(kind, list);
+    box.append(group);
+  }
+  elements.docBody.append(box);
 }
 
 function fitDocBody() {
@@ -752,7 +806,7 @@ async function showDocsRoute(docSlug, sectionSlug) {
   }
   const doc = state.docs.documents.find((item) => item.slug === docSlug) || state.docs.documents[0];
   const page = doc.pages.find((item) => item.slug === sectionSlug) || doc.pages[0];
-  renderDocs(doc, page);
+  await renderDocs(doc, page);
   const canonical = ROUTE.docs(doc.slug, page.slug);
   if (window.location.hash !== canonical) history.replaceState({}, "", canonical);
 }

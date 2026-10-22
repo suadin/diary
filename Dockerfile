@@ -9,6 +9,8 @@ COPY docs/ ./docs/
 COPY README.md ./README.md
 COPY web/ ./web/
 COPY tests/ ./tests/
+COPY mcp/src/diary_mcp/config.py ./mcp/src/diary_mcp/config.py
+COPY e2e/specs/diary.spec.js ./e2e/specs/diary.spec.js
 
 EXPOSE 8125
 CMD ["sh", "-c", "python3 -m diary setup && exec python3 -m diary serve"]

@@ -37,8 +37,29 @@ def executable_lines(path: Path) -> set[int]:
     return lines
 
 
+def _requirement_map(suite: unittest.TestSuite) -> dict[str, list[str]]:
+    mapping: dict[str, list[str]] = {}
+
+    def walk(items) -> None:
+        for item in items:
+            if isinstance(item, unittest.TestSuite):
+                walk(item)
+                continue
+            if item is None or getattr(item, "_testMethodName", None) is None:
+                continue
+            method = getattr(item, item._testMethodName, None)
+            for slug in getattr(method, "covers", ()):
+                mapping.setdefault(slug, []).append(
+                    f"{type(item).__name__}.{item._testMethodName}"
+                )
+
+    walk(suite)
+    return {slug: sorted(names) for slug, names in sorted(mapping.items())}
+
+
 def run() -> int:
     suite = unittest.defaultTestLoader.discover(str(ROOT / "tests"))
+    requirements = _requirement_map(suite)
     runner = unittest.TextTestRunner(verbosity=2)
     tracer = trace.Trace(count=True, trace=False, ignoredirs=[sys.prefix, sys.exec_prefix, str(ROOT / "tests")])
     trace.threading.settrace(tracer.globaltrace)
@@ -65,6 +86,7 @@ def run() -> int:
         "totalLines": total,
         "coverage": coverage_percent,
         "measuredAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "requirements": requirements,
     }
     temporary = current.metrics_path.with_suffix(".tmp")
     temporary.write_text(json.dumps(metrics, indent=2) + "\n", encoding="utf-8")

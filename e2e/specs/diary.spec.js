@@ -1,7 +1,7 @@
 const { test, expect } = require("@playwright/test");
 const { startCoverage, stopCoverage } = require("./coverage");
 
-test("a journey through days, entries, documents, and the guide", async ({ page }) => {
+test("a journey through days, entries, documents, and the guide", { tag: ["@entries-and-writing", "@navigation-and-deep-links", "@documentation-reader", "@writing-guide"] }, async ({ page }) => {
   const measured = await startCoverage(page);
   try {
     await page.goto("/");
@@ -63,7 +63,7 @@ test("a journey through days, entries, documents, and the guide", async ({ page 
   }
 });
 
-test("entry content renders as Markdown", async ({ page }) => {
+test("entry content renders as Markdown", { tag: ["@entries-and-writing"] }, async ({ page }) => {
   await page.goto("/");
   await page.locator("#search-input").fill("Deep links");
   await expect(page.locator(".result-card p")).not.toContainText("**");
@@ -75,7 +75,7 @@ test("entry content renders as Markdown", async ({ page }) => {
   await expect(page.locator("#entry-view")).not.toContainText("**");
 });
 
-test("documentation wraps bullets, follows links, and fits the page", async ({ page }) => {
+test("documentation wraps bullets, follows links, and fits the page", { tag: ["@documentation-reader"] }, async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto("/#/docs/readme/what-it-does");
   await expect(page.locator("#doc-body li").first()).toContainText("previous or next window");
@@ -94,7 +94,7 @@ test("documentation wraps bullets, follows links, and fits the page", async ({ p
   await expect(page).toHaveURL(/#\/docs\/readme\/overview$/);
 });
 
-test("requirements sections use distinct icons", async ({ page }) => {
+test("requirements sections use distinct icons", { tag: ["@documentation-reader", "@style-and-vocabulary"] }, async ({ page }) => {
   await page.goto("/#/docs/requirements");
   const icons = await page.locator(".doc-section svg").evaluateAll(
     (nodes) => nodes.map((node) => node.innerHTML),
@@ -103,7 +103,7 @@ test("requirements sections use distinct icons", async ({ page }) => {
   expect(new Set(icons).size).toBe(13);
 });
 
-test("tooltip-only text uses the help cursor and the sidebar stays fixed", async ({ page }) => {
+test("tooltip-only text uses the help cursor and the sidebar stays fixed", { tag: ["@style-and-vocabulary"] }, async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("#e2e-metrics")).toHaveCSS("cursor", "help");
   await expect(page.locator("#readme-button")).toHaveCSS("cursor", "pointer");
@@ -112,7 +112,7 @@ test("tooltip-only text uses the help cursor and the sidebar stays fixed", async
   await expect(page.locator("#day-list")).toHaveCSS("overflow-x", "hidden");
 });
 
-test("an unknown deep link returns to the start", async ({ page }) => {
+test("an unknown deep link returns to the start", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
   await page.goto("/#/day/2020-01-01");
   await expect(page.locator("#welcome")).toBeVisible();
   await expect(page).toHaveURL(/#\/$/);
@@ -125,7 +125,7 @@ test("an unknown deep link returns to the start", async ({ page }) => {
   await expect(page.locator("#doc-section-title")).toHaveText("Tests and coverage");
 });
 
-test("day arrows cross the seven-day window", async ({ page }) => {
+test("day arrows cross the seven-day window", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
   await page.goto("/#/day/2026-10-15");
   await expect(page.locator("#selected-date")).toHaveText("2026-10-15");
   await expect(page.locator("#day-range")).toHaveText("1–7 / 12");
@@ -135,7 +135,7 @@ test("day arrows cross the seven-day window", async ({ page }) => {
   await expect(page).toHaveURL(/#\/day\/2026-10-14$/);
 });
 
-test("tooltips stay inside the viewport", async ({ page }) => {
+test("tooltips stay inside the viewport", { tag: ["@style-and-vocabulary"] }, async ({ page }) => {
   await page.setViewportSize({ width: 900, height: 620 });
   await page.goto("/");
   const tooltip = page.locator("#tooltip");
@@ -154,7 +154,7 @@ test("tooltips stay inside the viewport", async ({ page }) => {
   expect(box.y).toBeGreaterThanOrEqual(0);
 });
 
-test("the footer is centred with separators and renders end-to-end numbers", async ({ page }) => {
+test("the footer is centred with separators and renders end-to-end numbers", { tag: ["@footer", "@tests"] }, async ({ page }) => {
   await page.route("**/api/metrics", (route) => route.fulfill({
     json: {
       tests: 42,
@@ -176,7 +176,31 @@ test("the footer is centred with separators and renders end-to-end numbers", asy
   expect(Math.max(...boxes) - Math.min(...boxes)).toBeLessThan(3);
 });
 
-test("the unit button runs the suite once", async ({ page }) => {
+test("requirements list the tests that verify them", { tag: ["@tests", "@documentation-reader"] }, async ({ page }) => {
+  await page.route("**/api/metrics", (route) => route.fulfill({
+    json: {
+      tests: 44,
+      failures: 0,
+      coverage: 75.5,
+      measuredAt: "2026-10-22T15:00:00+00:00",
+      running: false,
+      e2e: { tests: 11, failures: 0, coverage: 75, measuredAt: "2026-10-22T15:00:00+00:00" },
+      requirements: {
+        "entries-and-writing": {
+          unit: ["StoreTests.test_author_defaults_normalizes_and_has_a_limit"],
+          e2e: ["entry content renders as Markdown"],
+        },
+      },
+    },
+  }));
+  await page.goto("/#/docs/requirements/entries-and-writing");
+  await expect(page.locator(".doc-tests")).toContainText("Automated tests");
+  await expect(page.locator(".doc-tests li")).toHaveCount(2);
+  await expect(page.locator(".doc-tests")).toContainText("StoreTests.test_author_defaults_normalizes_and_has_a_limit");
+  await expect(page.locator(".doc-tests")).toContainText("entry content renders as Markdown");
+});
+
+test("the unit button runs the suite once", { tag: ["@tests"] }, async ({ page }) => {
   test.setTimeout(150_000);
   await page.goto("/");
   await expect(page.locator("#run-tests")).toHaveText("unit not measured — run");

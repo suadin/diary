@@ -68,8 +68,8 @@ Deep links and a documentation reader are deployed.
 - Section icons replace arrows in the README reader.
 
 ✅ **Verified**
-- 42 unit tests, 75.5 % lines.
-- 10 browser journeys, 74.8 % of app.js.
+- 44 unit tests, 75.5 % lines.
+- 11 browser journeys, 74 % of app.js.
 
 ⚠️ **Open**
 - Contract icon placement still undecided.

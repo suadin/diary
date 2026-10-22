@@ -87,6 +87,9 @@ Run commands and measured numbers are in
   “not measured”, not as zero.
 - Tests cover the API, storage, search, deletion, AI/human mutation boundaries, deep
   links, and legacy Markdown import.
+- Every automated test names the requirement it protects: unit tests carry a `covers`
+  tag, browser journeys a Playwright tag. Each requirement page lists the concrete test
+  names under “Automated tests”; a section without names is a gap, not a pass.
 
 ## Human controls
 

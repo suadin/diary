@@ -145,6 +145,13 @@ button { color: inherit; cursor: pointer; }
 .doc-body pre { overflow: auto; border: 2px solid var(--ink); border-radius: 10px; background: var(--paper); padding: .8rem; }
 .doc-body pre code { background: none; padding: 0; }
 .doc-body a { color: var(--green); font-weight: 900; }
+.doc-tests { margin-top: 1.4rem; border-top: 2px dashed var(--muted); padding-top: .9rem; }
+.doc-tests h4 { margin: 0 0 .3rem; }
+.doc-tests-note { margin: 0 0 .55rem; color: var(--muted); font-size: .82em; }
+.doc-test-group { display: grid; grid-template-columns: 5.6rem minmax(0, 1fr); gap: .6rem; margin-top: .3rem; }
+.doc-test-kind { color: var(--green); font-size: .74em; font-weight: 900; }
+.doc-test-group ul { margin: 0; padding-left: 1rem; font-size: .78em; line-height: 1.5; }
+.doc-test-group li { margin: 0; overflow-wrap: anywhere; }
 .doc-body table { width: 100%; margin: .8rem 0; border-collapse: collapse; font-size: .88em; }
 .doc-body th, .doc-body td { border: 1px solid var(--muted); padding: .35rem .5rem; text-align: left; vertical-align: top; }
 

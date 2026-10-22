@@ -1,5 +1,7 @@
+import importlib.util
 import json
 from pathlib import Path
+import re
 import sqlite3
 import sys
 import tempfile
@@ -26,6 +28,14 @@ from diary.store import (
 )
 
 
+def covers(*slugs):
+    def decorate(method):
+        method.covers = slugs
+        return method
+
+    return decorate
+
+
 class StoreTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -38,6 +48,7 @@ class StoreTests(unittest.TestCase):
     def add(self, day, title, content, source_key=None):
         return add_entry(self.database, day, title, content, source_key)
 
+    @covers("entries-and-writing", "navigation-and-deep-links")
     def test_entries_and_days_sort_newest_first(self):
         self.add("2026-10-20", "Older note", "first")
         self.add("2026-10-21", "New note", "second")
@@ -48,6 +59,7 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(list_entries(self.database, "2026-10-20")[0]["title"], "Older note")
         self.assertNotIn("tags", list_entries(self.database)[0])
 
+    @covers("entries-and-writing", "navigation-and-deep-links")
     def test_search_matches_title_and_content_only(self):
         self.add("2026-10-20", "Boot notes", "A tested route")
         self.assertEqual(len(search_entries(self.database, "tested")), 1)
@@ -55,11 +67,13 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(search_entries(self.database, "hub"), [])
         self.assertEqual(search_entries(self.database, "absent"), [])
 
+    @covers("entries-and-writing")
     def test_search_escapes_like_wildcards(self):
         self.add("2026-10-20", "Percent % marker", "underscore _ marker")
         self.assertEqual(len(search_entries(self.database, "%")), 1)
         self.assertEqual(len(search_entries(self.database, "_")), 1)
 
+    @covers("human-controls")
     def test_delete_by_exact_day_and_inclusive_cutoff(self):
         self.add("2026-10-19", "Old", "old")
         self.add("2026-10-20", "Middle", "middle")
@@ -68,6 +82,7 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(delete_entries(self.database, day="2026-10-21"), 1)
         self.assertEqual(list_entries(self.database), [])
 
+    @covers("entries-and-writing")
     def test_entry_validation_and_idempotent_source_key(self):
         with self.assertRaises(ValueError):
             self.add("2026-02-30", "Invalid date", "content")
@@ -80,6 +95,7 @@ class StoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.add("2026-10-21", "Long title" * 30, "content")
 
+    @covers("navigation-and-deep-links")
     def test_entry_page_windows_a_day_and_reports_its_total(self):
         for index in range(7):
             self.add("2026-10-21", f"Note {index}", "body")
@@ -96,6 +112,7 @@ class StoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             entry_page(self.database, "2026-02-30", 0, 5)
 
+    @covers("human-controls")
     def test_delete_requires_exactly_one_valid_filter(self):
         with self.assertRaises(ValueError):
             delete_entries(self.database)
@@ -104,6 +121,7 @@ class StoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             delete_entries(self.database, before="tomorrow")
 
+    @covers("entries-and-writing")
     def test_author_defaults_normalizes_and_has_a_limit(self):
         default_id = add_entry(self.database, "2026-10-21", "Default author", "body")
         self.assertEqual(get_entry(self.database, default_id)["author"], "AI")
@@ -115,6 +133,7 @@ class StoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             add_entry(self.database, "2026-10-21", "Long author", "body", author="x" * 81)
 
+    @covers("entries-and-writing", "navigation-and-deep-links")
     def test_get_entry_returns_one_entry_or_none(self):
         entry_id = add_entry(self.database, "2026-10-21", "Find me", "body")
         entry = get_entry(self.database, entry_id)
@@ -122,6 +141,7 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(entry["date"], "2026-10-21")
         self.assertIsNone(get_entry(self.database, entry_id + 100))
 
+    @covers("entries-and-writing", "data")
     def test_migration_adds_author_to_legacy_entries(self):
         with sqlite3.connect(self.database) as database:
             database.execute("DROP TABLE entries")
@@ -139,6 +159,7 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(entry["author"], "AI")
         self.assertEqual(entry["title"], "Old entry")
 
+    @covers("data")
     def test_migration_drops_legacy_tag_tables_and_preserves_entries(self):
         with sqlite3.connect(self.database) as database:
             database.executescript(
@@ -159,11 +180,13 @@ class StoreTests(unittest.TestCase):
 
 
 class ImporterTests(unittest.TestCase):
+    @covers("entries-and-writing", "data")
     def test_splits_level_two_sections_and_intro_as_distinct_entries(self):
         entries = split_log("# 2026-10-21\nA short introduction.\n\n## 1. Hub — Boot and tests\nDetails.\n\n## Open\nLater.")
         self.assertEqual([entry[0] for entry in entries], ["Daily summary", "Hub — Boot and tests", "Open"])
         self.assertEqual(entries[1][1], "Details.")
 
+    @covers("data")
     def test_import_is_repeatable_and_ignores_non_date_files(self):
         with tempfile.TemporaryDirectory() as folder:
             source = Path(folder)
@@ -180,6 +203,7 @@ class ImporterTests(unittest.TestCase):
 
 
 class ReadmeTests(unittest.TestCase):
+    @covers("documentation-reader")
     def test_pages_are_split_at_level_two_headings_with_an_overview(self):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / "README.md"
@@ -195,6 +219,7 @@ class ReadmeTests(unittest.TestCase):
             self.assertEqual([page["slug"] for page in document["pages"]],
                              ["overview", "one", "two"])
 
+    @covers("documentation-reader")
     def test_duplicate_headings_get_distinct_slugs(self):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / "README.md"
@@ -203,6 +228,7 @@ class ReadmeTests(unittest.TestCase):
             self.assertEqual([page["slug"] for page in document["pages"]],
                              ["setup", "setup-2"])
 
+    @covers("documentation-reader")
     def test_documents_collect_the_readme_and_docs_without_the_ai_skill(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
@@ -217,6 +243,7 @@ class ReadmeTests(unittest.TestCase):
 
 
 class ConfigTests(unittest.TestCase):
+    @covers("data", "deployment")
     def test_setup_creates_private_credentials_and_data_directories(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
@@ -230,6 +257,7 @@ class ConfigTests(unittest.TestCase):
             self.assertIn("DIARY_AI_READ_TOKEN=", credentials.read_text(encoding="utf-8"))
             self.assertTrue(settings().data_dir)
 
+    @covers("data", "deployment")
     def test_settings_read_custom_paths_and_environment_credentials(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
@@ -249,6 +277,7 @@ class ConfigTests(unittest.TestCase):
             with patch.dict("os.environ", {**env, "DIARY_PUBLIC_ORIGIN": "https://192.168.178.50:8444"}, clear=True):
                 self.assertEqual(settings().public_origin, "https://192.168.178.50:8444")
 
+    @covers("deployment")
     def test_settings_load_credentials_file_and_reject_non_loopback(self):
         with tempfile.TemporaryDirectory() as folder:
             config = Path(folder) / "config"
@@ -275,10 +304,40 @@ class ConfigTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "HTTPS origin"):
                 ensure_local_paths(unsafe_origin)
 
+    @covers("data")
     def test_local_data_and_credentials_cannot_be_inside_repository(self):
         unsafe = Settings(ROOT / "data", ROOT / "config", "127.0.0.1", 8125, "r", "w")
         with self.assertRaisesRegex(ValueError, "outside the repository"):
             ensure_local_paths(unsafe)
+
+
+class McpConfigTests(unittest.TestCase):
+    @covers("ai-client-mcp")
+    def test_mcp_client_takes_its_connection_from_the_environment(self):
+        path = ROOT / "mcp" / "src" / "diary_mcp" / "config.py"
+        spec = importlib.util.spec_from_file_location("diary_mcp_config_under_test", path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        with patch.dict(
+            "os.environ",
+            {"DIARY_AI_READ_TOKEN": "read", "DIARY_AI_WRITE_TOKEN": "write"},
+            clear=True,
+        ):
+            config = module.Config()
+            self.assertEqual(config.api_url, "http://127.0.0.1:8125")
+            self.assertEqual(config.read_token, "read")
+            self.assertEqual(config.write_token, "write")
+        with patch.dict(
+            "os.environ",
+            {
+                "DIARY_AI_READ_TOKEN": "read",
+                "DIARY_AI_WRITE_TOKEN": "write",
+                "DIARY_API_URL": "https://journal.example/",
+            },
+            clear=True,
+        ):
+            self.assertEqual(module.Config().api_url, "https://journal.example")
+        self.assertNotIn("192.168.", path.read_text(encoding="utf-8"))
 
 
 class ServerTestCase(unittest.TestCase):
@@ -329,6 +388,7 @@ class ServerTestCase(unittest.TestCase):
 
 
 class HttpTests(ServerTestCase):
+    @covers("ai-api", "writing-guide")
     def test_ai_skill_and_search_are_read_only_and_require_read_token(self):
         status, _, _ = self.request("/ai/skill")
         self.assertEqual(status, 401)
@@ -340,6 +400,7 @@ class HttpTests(ServerTestCase):
         status, _, _ = self.request("/ai/entries", "POST", {}, token="read-secret")
         self.assertEqual(status, 401)
 
+    @covers("ai-api")
     def test_ai_writer_can_append_but_cannot_edit_or_delete(self):
         payload = {"date": "2026-10-21", "title": "A note", "content": "Body"}
         status, _, _ = self.request("/ai/entries", "POST", payload, token="write-secret")
@@ -350,6 +411,7 @@ class HttpTests(ServerTestCase):
         self.assertEqual(status, 200)
         self.assertIn("2026-10-21", text)
 
+    @covers("human-controls")
     def test_local_human_mutations_need_same_origin_but_no_sign_in(self):
         status, _, _ = self.request("/api/skill", "PUT", {"content": "# Updated\n"}, origin=self.base)
         self.assertEqual(status, 200)
@@ -363,12 +425,14 @@ class HttpTests(ServerTestCase):
         self.assertEqual(status, 200)
         self.assertEqual(json.loads(text)["deleted"], 1)
 
+    @covers("human-controls")
     def test_human_mutations_reject_missing_or_foreign_origin(self):
         status, _, _ = self.request("/api/skill", "PUT", {"content": "# No"}, origin="https://elsewhere.invalid")
         self.assertEqual(status, 401)
         status, _, _ = self.request("/api/entries", "DELETE", {"date": "2026-10-21"})
         self.assertEqual(status, 401)
 
+    @covers("human-controls", "deployment")
     def test_configured_https_origin_allows_human_mutations_only_for_exact_host(self):
         public_origin = "https://192.168.178.50:8444"
         self.server.settings = Settings(
@@ -405,6 +469,7 @@ class HttpTests(ServerTestCase):
         )
         self.assertEqual(status, 401)
 
+    @covers("ai-api")
     def test_api_rejects_invalid_payloads_and_unknown_routes(self):
         status, _, _ = self.request("/ai/entries", "POST", {"date": "bad"}, token="write-secret")
         self.assertEqual(status, 400)
@@ -421,6 +486,7 @@ class HttpTests(ServerTestCase):
         status, _, _ = self.request("/api/entries?date=bad")
         self.assertEqual(status, 400)
 
+    @covers("tests", "footer")
     def test_metrics_endpoint_reports_not_measured_before_first_test(self):
         status, text, _ = self.request("/api/metrics")
         self.assertEqual(status, 200)
@@ -429,6 +495,7 @@ class HttpTests(ServerTestCase):
         self.assertFalse(metrics["running"])
         self.assertIsNone(metrics["e2e"])
 
+    @covers("tests", "footer")
     def test_metrics_endpoint_includes_end_to_end_results(self):
         self.settings.e2e_metrics_path.write_text(
             json.dumps({"tests": 12, "failures": 0, "coverage": 61.5,
@@ -441,6 +508,7 @@ class HttpTests(ServerTestCase):
         self.settings.e2e_metrics_path.write_text("not json", encoding="utf-8")
         self.assertIsNone(json.loads(self.request("/api/metrics")[1])["e2e"])
 
+    @covers("navigation-and-deep-links")
     def test_day_page_returns_seven_day_windows_with_totals(self):
         days = [f"2026-10-{day:02d}" for day in range(10, 19)]
         for day in days:
@@ -469,6 +537,7 @@ class HttpTests(ServerTestCase):
         ):
             self.assertEqual(self.request(path)[0], 400, path)
 
+    @covers("navigation-and-deep-links")
     def test_entry_page_endpoint_windows_and_validates(self):
         for index in range(7):
             self.request("/ai/entries", "POST", {
@@ -493,6 +562,7 @@ class HttpTests(ServerTestCase):
         ):
             self.assertEqual(self.request(path)[0], 400, path)
 
+    @covers("documentation-reader")
     def test_docs_endpoint_returns_documents_with_slugged_pages(self):
         status, text, _ = self.request("/api/docs")
         self.assertEqual(status, 200)
@@ -506,6 +576,7 @@ class HttpTests(ServerTestCase):
         self.assertTrue(all(page["slug"] for page in readme["pages"]))
         self.assertEqual(len({page["slug"] for page in readme["pages"]}), len(readme["pages"]))
 
+    @covers("navigation-and-deep-links", "entries-and-writing")
     def test_entry_endpoint_reads_one_entry_and_validates_the_id(self):
         status, text, _ = self.request("/ai/entries", "POST", {
             "date": "2026-10-21", "title": "Deep link", "content": "Body",
@@ -523,6 +594,7 @@ class HttpTests(ServerTestCase):
         self.assertEqual(self.request("/api/entry?id=0")[0], 400)
         self.assertEqual(self.request("/api/entry?id=99999")[0], 404)
 
+    @covers("entries-and-writing", "ai-api")
     def test_author_must_be_text_and_defaults_to_ai(self):
         status, _, _ = self.request("/ai/entries", "POST", {
             "date": "2026-10-21", "title": "Bad author", "content": "Body", "author": 7,
@@ -535,6 +607,7 @@ class HttpTests(ServerTestCase):
         entry_id = json.loads(text)["id"]
         self.assertEqual(json.loads(self.request(f"/api/entry?id={entry_id}")[1])["author"], "AI")
 
+    @covers("writing-guide", "human-controls")
     def test_skill_reset_restores_the_seed_and_needs_same_origin(self):
         self.request("/api/skill", "PUT", {"content": "# Changed\n"}, origin=self.base)
         status, _, _ = self.request("/api/skill/reset", "POST")
@@ -544,6 +617,7 @@ class HttpTests(ServerTestCase):
         self.assertIn("AI diary writing guide", json.loads(text)["content"])
         self.assertIn("AI diary writing guide", self.request("/ai/skill", token="read-secret")[1])
 
+    @covers("deployment")
     def test_web_routes_and_static_page(self):
         self.request("/ai/entries", "POST", {
             "date": "2026-10-21", "title": "A test note", "content": "Searchable body",
@@ -575,6 +649,7 @@ class HttpTests(ServerTestCase):
         for asset in ("/app.js", "/style.css", "/diary.svg"):
             self.assertEqual(self.request(asset)[0], 200)
 
+    @covers("writing-guide", "tests")
     def test_seed_skill_empty_skill_metrics_and_request_validation(self):
         self.settings.skill_path.unlink()
         status, skill, _ = self.request("/api/skill")
@@ -593,6 +668,7 @@ class HttpTests(ServerTestCase):
         self.assertEqual(status, 200)
         self.assertEqual(json.loads(metrics)["tests"], 15)
 
+    @covers("ai-api")
     def test_bad_json_and_non_object_request_bodies_are_rejected(self):
         for payload in (b"{", b"[]"):
             request = Request(
@@ -605,6 +681,7 @@ class HttpTests(ServerTestCase):
                 urlopen(request)
             self.assertEqual(invalid.exception.code, 400)
 
+    @covers("human-controls")
     def test_delete_by_day_and_inclusive_cutoff(self):
         for day in ("2026-10-19", "2026-10-20", "2026-10-21"):
             self.request("/ai/entries", "POST", {
@@ -618,6 +695,7 @@ class HttpTests(ServerTestCase):
         self.assertEqual(json.loads(body)["deleted"], 1)
         self.assertEqual(len(json.loads(self.request("/api/entries")[1])), 1)
 
+    @covers("human-controls")
     def test_invalid_delete_filters_are_rejected(self):
         status, _, _ = self.request("/api/entries", "DELETE", {"date": "2026-10-21", "before": "2026-10-20"}, origin=self.base)
         self.assertEqual(status, 400)
@@ -626,6 +704,7 @@ class HttpTests(ServerTestCase):
 class TestRunnerTests(ServerTestCase):
     test_command = [sys.executable, "-c", "import time; time.sleep(0.6)"]
 
+    @covers("tests")
     def test_a_second_start_is_refused_while_a_run_is_active(self):
         status, body, _ = self.request("/api/tests", "POST", origin=self.base)
         self.assertEqual(status, 202)
@@ -637,10 +716,12 @@ class TestRunnerTests(ServerTestCase):
         time.sleep(1.0)
         self.assertFalse(json.loads(self.request("/api/metrics")[1])["running"])
 
+    @covers("tests", "human-controls")
     def test_start_requires_same_origin(self):
         status, _, _ = self.request("/api/tests", "POST")
         self.assertEqual(status, 401)
 
+    @covers("tests")
     def test_start_is_refused_once_results_exist(self):
         self.settings.metrics_path.write_text(
             '{"tests":28,"failures":0,"coverage":72.9,"measuredAt":"2026-10-22T09:51:50+00:00"}',
@@ -650,6 +731,35 @@ class TestRunnerTests(ServerTestCase):
         self.assertEqual(status, 409)
         self.assertIn("already exist", json.loads(text)["error"])
         self.assertFalse(json.loads(self.request("/api/metrics")[1])["running"])
+
+
+if __name__ == "__main__":
+    unittest.main()
+
+
+class TraceabilityTests(unittest.TestCase):
+    @covers("tests")
+    def test_every_requirement_section_is_named_by_a_test(self):
+        sections = {
+            page["slug"]
+            for page in readme_pages(ROOT / "docs" / "REQUIREMENTS.md")["pages"]
+        } - {"overview"}
+        covered = set()
+        suite = unittest.defaultTestLoader.discover(str(ROOT / "tests"))
+
+        def walk(items):
+            for item in items:
+                if isinstance(item, unittest.TestSuite):
+                    walk(item)
+                    continue
+                method = getattr(item, item._testMethodName, None)
+                covered.update(getattr(method, "covers", ()))
+
+        walk(suite)
+        spec = (ROOT / "e2e" / "specs" / "diary.spec.js").read_text(encoding="utf-8")
+        covered.update(re.findall(r'"@([a-z0-9-]+)"', spec))
+        self.assertEqual(sections - covered, set())
+        self.assertEqual(covered - sections, set())
 
 
 if __name__ == "__main__":
