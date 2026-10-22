@@ -8,10 +8,12 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 from diary.config import Settings, ensure_local_paths
+from diary.readme import readme_pages
 from diary.store import (
     add_entry,
     day_page,
     delete_entries,
+    entry_page,
     initialize,
     list_days,
     list_entries,
@@ -72,6 +74,18 @@ class DiaryHandler(BaseHTTPRequestHandler):
                 if day and not valid_day(day):
                     raise ValueError("date must be a real calendar date in YYYY-MM-DD format")
                 self._json(200, list_entries(self.server.settings.database_path, day))
+            elif route.path == "/api/entries/page":
+                day = self._query_value(query, "date")
+                if not day or not valid_day(day):
+                    raise ValueError("date must be a real calendar date in YYYY-MM-DD format")
+                self._json(200, entry_page(
+                    self.server.settings.database_path,
+                    day,
+                    self._integer(query, "offset", 0, minimum=0),
+                    self._integer(query, "limit", 5, minimum=1, maximum=50),
+                ))
+            elif route.path == "/api/readme":
+                self._readme()
             elif route.path == "/api/search":
                 self._json(200, search_entries(
                     self.server.settings.database_path,
@@ -104,6 +118,11 @@ class DiaryHandler(BaseHTTPRequestHandler):
         try:
             if route.path == "/api/tests":
                 self._require_same_origin()
+                if self.server.settings.metrics_path.exists():
+                    self._json(409, {
+                        "error": "test results already exist; remove test-metrics.json to run the suite again",
+                    })
+                    return
                 started = self.server.test_runner.start()
                 self._json(202, {"running": True, "started": started})
             elif route.path == "/ai/entries":
@@ -181,6 +200,13 @@ class DiaryHandler(BaseHTTPRequestHandler):
             path.write_text(seed.read_text(encoding="utf-8"), encoding="utf-8")
         path.chmod(0o600)
         return path.read_text(encoding="utf-8")
+
+    def _readme(self) -> None:
+        path = Path(__file__).resolve().parent.parent / "README.md"
+        if not path.is_file():
+            self._json(404, {"error": "README is not available"})
+            return
+        self._json(200, readme_pages(path))
 
     def _metrics(self) -> None:
         path = self.server.settings.metrics_path

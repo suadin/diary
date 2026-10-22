@@ -12,8 +12,17 @@ from urllib.request import Request, urlopen
 
 from diary.config import ROOT, Settings, ensure_local_paths, setup, settings
 from diary.importer import import_directory, split_log
+from diary.readme import readme_pages
 from diary.server import DiaryServer
-from diary.store import add_entry, delete_entries, initialize, list_days, list_entries, search_entries
+from diary.store import (
+    add_entry,
+    delete_entries,
+    entry_page,
+    initialize,
+    list_days,
+    list_entries,
+    search_entries,
+)
 
 
 class StoreTests(unittest.TestCase):
@@ -70,6 +79,22 @@ class StoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.add("2026-10-21", "Long title" * 30, "content")
 
+    def test_entry_page_windows_a_day_and_reports_its_total(self):
+        for index in range(7):
+            self.add("2026-10-21", f"Note {index}", "body")
+        first = entry_page(self.database, "2026-10-21", 0, 5)
+        self.assertEqual(first["total"], 7)
+        self.assertEqual(first["offset"], 0)
+        self.assertEqual([entry["title"] for entry in first["entries"]],
+                         [f"Note {index}" for index in range(6, 1, -1)])
+        second = entry_page(self.database, "2026-10-21", 5, 5)
+        self.assertEqual(second["offset"], 5)
+        self.assertEqual([entry["title"] for entry in second["entries"]],
+                         ["Note 1", "Note 0"])
+        self.assertEqual(entry_page(self.database, "2026-10-20", 0, 5)["total"], 0)
+        with self.assertRaises(ValueError):
+            entry_page(self.database, "2026-02-30", 0, 5)
+
     def test_delete_requires_exactly_one_valid_filter(self):
         with self.assertRaises(ValueError):
             delete_entries(self.database)
@@ -116,6 +141,21 @@ class ImporterTests(unittest.TestCase):
             self.assertEqual(second["imported"], 0)
             self.assertEqual(second["skipped"], 2)
             self.assertEqual(list_days(database)[0]["count"], 2)
+
+
+class ReadmeTests(unittest.TestCase):
+    def test_pages_are_split_at_level_two_headings_with_an_overview(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "README.md"
+            path.write_text(
+                "# Diary\n\nIntro text.\n\n## One\nFirst body.\n\n## Two\nSecond body.\n",
+                encoding="utf-8",
+            )
+            document = readme_pages(path)
+            self.assertEqual(document["title"], "Diary")
+            self.assertEqual([page["title"] for page in document["pages"]],
+                             ["Overview", "One", "Two"])
+            self.assertEqual(document["pages"][0]["markdown"], "Intro text.")
 
 
 class ConfigTests(unittest.TestCase):
@@ -358,6 +398,40 @@ class HttpTests(ServerTestCase):
         ):
             self.assertEqual(self.request(path)[0], 400, path)
 
+    def test_entry_page_endpoint_windows_and_validates(self):
+        for index in range(7):
+            self.request("/ai/entries", "POST", {
+                "date": "2026-10-21", "title": f"Note {index}", "content": "Body",
+            }, token="write-secret")
+        status, text, _ = self.request("/api/entries/page?date=2026-10-21")
+        self.assertEqual(status, 200)
+        page = json.loads(text)
+        self.assertEqual(page["total"], 7)
+        self.assertEqual(page["offset"], 0)
+        self.assertEqual(page["limit"], 5)
+        self.assertEqual(len(page["entries"]), 5)
+        status, text, _ = self.request("/api/entries/page?date=2026-10-21&offset=5&limit=5")
+        self.assertEqual(status, 200)
+        self.assertEqual(len(json.loads(text)["entries"]), 2)
+        for path in (
+            "/api/entries/page",
+            "/api/entries/page?date=bad",
+            "/api/entries/page?date=2026-10-21&offset=-1",
+            "/api/entries/page?date=2026-10-21&limit=0",
+            "/api/entries/page?date=2026-10-21&limit=51",
+        ):
+            self.assertEqual(self.request(path)[0], 400, path)
+
+    def test_readme_endpoint_returns_one_page_per_heading(self):
+        status, text, _ = self.request("/api/readme")
+        self.assertEqual(status, 200)
+        document = json.loads(text)
+        self.assertEqual(document["title"], "Diary")
+        titles = [page["title"] for page in document["pages"]]
+        self.assertIn("What it does", titles)
+        self.assertIn("Local setup", titles)
+        self.assertEqual(titles[0], "Overview")
+
     def test_web_routes_and_static_page(self):
         self.request("/ai/entries", "POST", {
             "date": "2026-10-21", "title": "A test note", "content": "Searchable body",
@@ -376,6 +450,9 @@ class HttpTests(ServerTestCase):
         self.assertEqual(status, 200)
         self.assertIn("Diary", page)
         self.assertIn('id="days-newer"', page)
+        self.assertIn('id="entries-newer"', page)
+        self.assertIn('id="readme-button"', page)
+        self.assertIn('id="guide-toggle"', page)
         self.assertIn('id="run-tests"', page)
         self.assertIn('href="https://github.com/suadin/diary"', page)
         self.assertNotIn('id="login-button"', page)
@@ -449,6 +526,16 @@ class TestRunnerTests(ServerTestCase):
     def test_start_requires_same_origin(self):
         status, _, _ = self.request("/api/tests", "POST")
         self.assertEqual(status, 401)
+
+    def test_start_is_refused_once_results_exist(self):
+        self.settings.metrics_path.write_text(
+            '{"tests":28,"failures":0,"coverage":72.9,"measuredAt":"2026-10-22T09:51:50+00:00"}',
+            encoding="utf-8",
+        )
+        status, text, _ = self.request("/api/tests", "POST", origin=self.base)
+        self.assertEqual(status, 409)
+        self.assertIn("already exist", json.loads(text)["error"])
+        self.assertFalse(json.loads(self.request("/api/metrics")[1])["running"])
 
 
 if __name__ == "__main__":

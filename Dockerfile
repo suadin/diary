@@ -6,6 +6,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /opt/diary
 COPY diary/ ./diary/
 COPY docs/ ./docs/
+COPY README.md ./README.md
 COPY web/ ./web/
 COPY tests/ ./tests/
 

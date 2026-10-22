@@ -128,6 +128,28 @@ def day_page(database_path: Path, offset: int, limit: int) -> dict[str, object]:
         }
 
 
+def entry_page(database_path: Path, day: str, offset: int, limit: int) -> dict[str, object]:
+    """Return one window of a day's entries plus the day's total."""
+    if not valid_day(day):
+        raise ValueError("date must be a real calendar date in YYYY-MM-DD format")
+    with connection(database_path) as database:
+        rows = database.execute(
+            "SELECT entries.* FROM entries WHERE entries.day = ? ORDER BY entries.id DESC LIMIT ? OFFSET ?",
+            (day, limit, offset),
+        ).fetchall()
+        total = database.execute(
+            "SELECT COUNT(*) AS total FROM entries WHERE entries.day = ?",
+            (day,),
+        ).fetchone()["total"]
+        return {
+            "date": day,
+            "entries": [_entry(database, row) for row in rows],
+            "offset": offset,
+            "limit": limit,
+            "total": total,
+        }
+
+
 def list_entries(database_path: Path, day: str | None = None) -> list[dict[str, object]]:
     clauses: list[str] = []
     parameters: list[object] = []

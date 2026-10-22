@@ -8,19 +8,28 @@ or erase history.
 ## What it does
 
 - Lists days newest-first, seven per page, in `YYYY-MM-DD` form. Arrows load the
-  previous or next window on demand, a badge shows the total entry count, and
-  choosing a day reveals its entries.
+  previous or next window on demand; a day opens with its entries, five at a time,
+  and the entry list pages lazily as well. A coarse `hh.mm` sits under each date;
+  entries without a same-day timestamp show `12.00`. Arrow buttons walk to the
+  neighbouring day with a short slide.
+- A round badge counts all entries. It stays neutral while the journal is small,
+  turns amber from 2,000 entries, and red from 5,000 — the range where whole-journal
+  requests (search and Memory spark) start to hurt.
 - Opens entries on the main page and searches titles and text. Search results always
   show their date; previews are deliberately compact.
 - Keeps the AI writing guide editable from the local web page, without a sign-in flow.
-- Lets the local human delete entries for one day or through a date (inclusive).
-  Every destructive action asks for confirmation.
+  The editor shows five lines and can be expanded, so the delete controls stay visible.
+- Lets the local human delete entries for one day or through a date (inclusive), both
+  entered as `yyyy-mm-dd`. Every destructive action asks for confirmation.
 - Provides a read-only AI skill and history-search API, plus a separate append-only
   AI entry endpoint.
 - Shows the latest test count and measured application line coverage in the footer
-  as a quiet button that runs the suite and then polls until it finishes, follows
-  the operating system's light/dark preference, and links to this repository.
-- Includes a small **Memory spark** button that resurfaces a random older entry.
+  as a quiet button that starts the suite once and then polls until it finishes. Once
+  results exist, the button shows them and refuses to run again.
+- Includes a small purple **Memory spark** button that resurfaces a random older entry.
+- Serves this README: a book icon in the footer opens it in the main panel, one page
+  per heading, browsable with arrows.
+- Follows the operating system's light/dark preference and links to this repository.
 
 ## Local setup
 
@@ -112,10 +121,12 @@ same-origin check described below.
 GET /api/days                          # every day with its entry count
 GET /api/days/page?offset=0&limit=7    # one window plus total days and entries
 GET /api/entries?date=2026-10-22
+GET /api/entries/page?date=2026-10-22&offset=0&limit=5  # one window plus the day's total
 GET /api/search?q=boot
 GET /api/skill
+GET /api/readme                        # the README split into pages
 GET /api/metrics                       # test count, coverage, and whether a run is active
-POST /api/tests                        # start the suite; refuses a second start
+POST /api/tests                        # start the suite once; 409 when results exist
 PUT /api/skill
 DELETE /api/entries
 ```
@@ -152,17 +163,20 @@ documented HTTPS proxy deployment, configure the exact HTTPS origin in
 `DIARY_PUBLIC_ORIGIN`; requests with a different origin or Host are rejected.
 
 Delete controls preview the matching entry count before confirmation. They support one
-calendar day or all entries dated on or before a selected day. The date cutoff is
-inclusive. The source Markdown files are never deleted by Diary.
+calendar day or all entries dated on or before a selected day, both entered as
+`yyyy-mm-dd` text. The date cutoff is inclusive. The source Markdown files are never
+deleted by Diary.
 
 ## Tests and coverage
 
 Run `python3 -m diary test` after a change, or use the quiet test button in the page
 footer. Both use Python's standard-library test runner and line tracing; the count
 and coverage percentage are saved in the private data directory and shown in the
-footer. The button polls every five seconds while a run is active and a second start
-is refused until that run has ended. The Docker image ships `tests/` so the button
-works in the NAS deployment. Coverage measures executable application
+footer. The button polls every five seconds while a run is active. It is a one-shot
+control: as soon as `test-metrics.json` exists the button shows the result and the
+server refuses another start with `409`. Remove that file from the private data
+directory to measure a new state. The Docker image ships `tests/` and the README so
+the button and the README reader work in the NAS deployment. Coverage measures executable application
 lines in the server, store, importer, configuration, and test-runner modules; it is line coverage,
 not branch coverage. A missing report is shown as “not measured”, not as zero.
 
@@ -173,10 +187,11 @@ not branch coverage. A missing report is shown as “not measured”, not as zer
 | `diary/server.py` | Local HTTP API, same-origin human mutations, AI permissions, static files |
 | `diary/store.py` | SQLite schema, entries, text search, deletion |
 | `diary/importer.py` | Idempotent import of dated Markdown files |
+| `diary/readme.py` | Splits the README into pages for the in-page reader |
 | `diary/config.py` | XDG paths, local credentials, setup |
 | `diary/coverage.py` | Test suite execution and standard-library line coverage |
 | `diary/testrunner.py` | Starts a test run from the page and blocks duplicate runs |
-| `web/` | Small, dependency-free browser interface |
+| `web/` | Small, dependency-free browser interface (paging, README reader, quiet test button) |
 | `docs/AI-SKILL.md` | Seed for the human-editable AI writing guide |
 | `docs/REQUIREMENTS.md` | Short, testable product requirements |
 | `mcp/` | Optional MCP client for AI assistants, configured by environment |
