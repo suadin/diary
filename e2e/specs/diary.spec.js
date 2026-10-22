@@ -63,6 +63,34 @@ test("a journey through days, entries, documents, and the guide", async ({ page 
   }
 });
 
+test("documentation wraps bullets, follows links, and fits the page", async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto("/#/docs/readme/what-it-does");
+  await expect(page.locator("#doc-body li").first()).toContainText("previous or next window");
+  const fits = await page.locator("#doc-body").evaluate(
+    (node) => node.getBoundingClientRect().bottom <= window.innerHeight,
+  );
+  expect(fits).toBe(true);
+
+  await page.goto("/#/docs/readme/tests-and-coverage");
+  await page.locator('a[data-doc-link="requirements#footer-and-tests"]').click();
+  await expect(page).toHaveURL(/#\/docs\/requirements\/footer-and-tests$/);
+  await expect(page.locator("#doc-section-title")).toHaveText("Footer and tests");
+
+  await page.goto("/#/docs/requirements/overview");
+  await page.locator('a[data-doc-link="readme#overview"]').first().click();
+  await expect(page).toHaveURL(/#\/docs\/readme\/overview$/);
+});
+
+test("tooltip-only text uses the help cursor and the sidebar stays fixed", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator("#e2e-metrics")).toHaveCSS("cursor", "help");
+  await expect(page.locator("#readme-button")).toHaveCSS("cursor", "pointer");
+  await expect(page.locator("#day-list")).toHaveCSS("overflow-x", "hidden");
+  await page.locator(".day-button").first().hover();
+  await expect(page.locator("#day-list")).toHaveCSS("overflow-x", "hidden");
+});
+
 test("an unknown deep link returns to the start", async ({ page }) => {
   await page.goto("/#/day/2020-01-01");
   await expect(page.locator("#welcome")).toBeVisible();

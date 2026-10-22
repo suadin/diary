@@ -512,6 +512,17 @@ function inlineMarkdown(text) {
     return `\u0000${codes.length - 1}\u0000`;
   });
   output = output.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  output = output.replace(
+    /\[([^\]]+)\]\(((?:\.\.\/)?(?:docs\/[A-Za-z0-9._-]+\.md|README\.md))(#[A-Za-z0-9-]+)?\)/g,
+    (_, label, path, anchor) => {
+      const file = path.split("/").pop();
+      const slug = file.toLowerCase() === "readme.md"
+        ? "readme"
+        : file.replace(/\.md$/i, "").toLowerCase();
+      const section = anchor ? anchor.slice(1) : "overview";
+      return `<a href="${path}${anchor || ""}" data-doc-link="${slug}#${section}">${label}</a>`;
+    },
+  );
   output = output.replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g,
     '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
   output = output.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
@@ -525,6 +536,7 @@ function renderMarkdown(markdown) {
   const html = [];
   let fence = null;
   let list = null;
+  let listItem = -1;
   let paragraph = [];
   let table = null;
 
@@ -536,6 +548,7 @@ function renderMarkdown(markdown) {
   const closeList = () => {
     if (list) html.push(`</${list}>`);
     list = null;
+    listItem = -1;
   };
   const closeTable = () => {
     if (!table) return;
@@ -585,6 +598,13 @@ function renderMarkdown(markdown) {
       continue;
     }
     closeTable();
+    if (list && /^\s{2,}\S/.test(line)) {
+      html[listItem] = html[listItem].replace(
+        /<\/li>$/,
+        ` ${inlineMarkdown(line.trim())}</li>`,
+      );
+      continue;
+    }
     const heading = /^#{3,6}\s+(.*)$/.exec(line);
     if (heading) {
       closeBlocks();
@@ -600,6 +620,7 @@ function renderMarkdown(markdown) {
         list = "ul";
       }
       html.push(`<li>${inlineMarkdown(bullet[1])}</li>`);
+      listItem = html.length - 1;
       continue;
     }
     const ordered = /^\s*\d+\.\s+(.*)$/.exec(line);
@@ -611,6 +632,7 @@ function renderMarkdown(markdown) {
         list = "ol";
       }
       html.push(`<li>${inlineMarkdown(ordered[1])}</li>`);
+      listItem = html.length - 1;
       continue;
     }
     closeList();
@@ -654,10 +676,24 @@ function renderDocs(doc, page) {
   }
   elements.docSectionTitle.textContent = page.title;
   elements.docBody.innerHTML = renderMarkdown(page.markdown);
-  elements.docBody.classList.toggle("dense", page.markdown.length > 6000);
-  elements.docBody.classList.toggle("dense-strong", page.markdown.length > 12000);
-  elements.docBody.scrollTop = 0;
   showOnly(elements.docsView);
+  window.scrollTo(0, 0);
+  fitDocBody();
+}
+
+function fitDocBody() {
+  if (elements.docsView.hidden) return;
+  const body = elements.docBody;
+  body.style.fontSize = "";
+  const footer = document.querySelector(".footer").getBoundingClientRect();
+  const top = body.getBoundingClientRect().top;
+  const available = window.innerHeight - top - footer.height - 24;
+  if (available < 160) return;
+  let size = 16;
+  while (size > 10 && body.scrollHeight > available) {
+    size -= 0.5;
+    body.style.fontSize = `${size}px`;
+  }
 }
 
 async function showDayRoute(date) {
@@ -872,6 +908,20 @@ elements.sparkButton.addEventListener("click", async () => {
 });
 elements.readmeButton.addEventListener("click", () => navigate(ROUTE.docs("readme")).catch((error) => showToast(error.message)));
 elements.docsBack.addEventListener("click", () => navigate(state.selectedDate ? ROUTE.day(state.selectedDate) : ROUTE.welcome).catch((error) => showToast(error.message)));
+
+elements.docBody.addEventListener("click", (event) => {
+  const link = event.target.closest?.("a[data-doc-link]");
+  if (!link) return;
+  event.preventDefault();
+  const [slug, section] = link.dataset.docLink.split("#");
+  navigate(ROUTE.docs(slug, section || "overview")).catch((error) => showToast(error.message));
+});
+
+let fitTimer = null;
+window.addEventListener("resize", () => {
+  window.clearTimeout(fitTimer);
+  fitTimer = window.setTimeout(fitDocBody, 120);
+});
 
 window.addEventListener("popstate", () => { applyRoute().catch((error) => showToast(error.message)); });
 window.addEventListener("hashchange", () => { applyRoute().catch((error) => showToast(error.message)); });

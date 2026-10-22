@@ -5,6 +5,12 @@ logs into dated, searchable entries. A human can read and curate the history; an
 can search it and append new entries without being able to rewrite the writing rules
 or erase history.
 
+This README explains what Diary is, how to run it, and how to operate it. The testable
+rules it must satisfy live in [Requirements](docs/REQUIREMENTS.md).
+
+> 🗂️ Dated entries · 🔗 deep links to every view · 🤖 append-only AI access ·
+> 🧪 42 unit tests and 8 browser journeys
+
 ## What it does
 
 - Lists dates newest-first, seven per page, in `YYYY-MM-DD` form. Arrows load the
@@ -191,6 +197,9 @@ deleted by Diary.
 
 ## Tests and coverage
 
+The rules this section proves are in
+[Requirements › Footer and tests](docs/REQUIREMENTS.md#footer-and-tests).
+
 Run `python3 -m diary test` after a change, or use the quiet test button in the page
 footer. Both use Python's standard-library test runner and line tracing; the count
 and coverage percentage are saved in the private data directory and shown in the
@@ -204,8 +213,8 @@ configuration, and test-runner modules; it is line coverage, not branch coverage
 A missing report is shown as “not measured”, not as zero.
 
 The unit suite has 42 tests and currently covers 75.5 % of those lines. The
-Playwright suite in `e2e/` has 6 journeys and touches 613 of 843 `web/app.js` lines
-(72.7 %). It needs Node, pnpm, and a Chromium build:
+Playwright suite in `e2e/` has 8 journeys and touches 643 of 890 `web/app.js` lines
+(72.2 %). It needs Node, pnpm, and a Chromium build:
 
 ```bash
 cd e2e

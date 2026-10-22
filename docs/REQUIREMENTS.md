@@ -4,7 +4,12 @@ Diary is a small, local web journal whose primary reader is a future AI session.
 The web app, API, documentation, and code are English-only; imported historical
 Markdown is preserved as written.
 
+This document lists the rules Diary must satisfy: what must be true, not how to run
+it. [README](../README.md) explains setup, operation, and deployment.
+
 ## Entries and writing
+
+What an entry is, and who may write one.
 
 - Entries have a calendar date, title, Markdown content, and an author. Multiple
   entries may belong to a date; search matches titles and content only.
@@ -20,6 +25,8 @@ Markdown is preserved as written.
 
 ## Navigation and deep links
 
+How a reader reaches a date, an entry, or a section.
+
 - The page lists dates newest-first in `yyyy-mm-dd` form, seven per page; arrows load
   older or newer windows on demand. A date shows its entries five per page with lazy
   loading, and arrows step to the neighbouring date, including across a page boundary.
@@ -31,6 +38,8 @@ Markdown is preserved as written.
 
 ## Documentation
 
+What the footer opens and how it is navigated.
+
 - The footer serves the documentation: a book icon opens the README in the main panel.
   The reader also lists the Markdown files under `docs/`, one tab per document and one
   page per level-two heading.
@@ -41,6 +50,11 @@ Markdown is preserved as written.
   expandable, with a reset to the built-in default.
 
 ## Footer and tests
+
+What the page claims about its own state.
+
+Run commands and measured numbers are in
+[README › Tests and coverage](../README.md#tests-and-coverage).
 
 - One compact, centred footer carries README, source, unit tests, and end-to-end
   tests, separated by `|`. It must keep those items on one line at desktop width.
@@ -55,6 +69,8 @@ Markdown is preserved as written.
 
 ## Human controls
 
+What the local human may change without a sign-in.
+
 - The local human can edit the AI writing guide and delete entries by date or through
   an inclusive date without signing in. Browser mutations require a same-origin
   loopback request, or the explicitly configured HTTPS origin behind a local reverse
@@ -67,6 +83,8 @@ Markdown is preserved as written.
 
 ## AI API and MCP
 
+What the AI credential may and may not do.
+
 - AI reads the writing guide and searches history over read-only `GET /ai/skill` and
   `GET /ai/search` endpoints. It can append a new entry through a separate
   `POST /ai/entries` credential with an optional `author`; it cannot edit the guide,
@@ -77,6 +95,8 @@ Markdown is preserved as written.
 
 ## Data and deployment
 
+Where data lives and how the page is exposed.
+
 - Diary uses private data storage outside the repository and has an appropriate
   journal icon. A manual NAS deployment may expose it on a trusted LAN HTTPS origin;
   the application server itself remains loopback-bound. No CI/CD pipeline is part of
@@ -86,6 +106,8 @@ Markdown is preserved as written.
   and operation.
 
 ## Style and vocabulary
+
+How the interface should feel and speak.
 
 - The visual style is simple and playful: thicker outlines, short hover motion, and
   tooltips as speech bubbles that stay inside the viewport. Purple marks the Memory

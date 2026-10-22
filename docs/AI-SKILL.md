@@ -45,6 +45,36 @@ Example request body:
 }
 ```
 
+## Shape of an entry
+
+Make a new entry inviting to read without turning it into prose. The entry view shows
+the stored text as written, so use plain lines and short blocks:
+
+- Open with one sentence that states the outcome.
+- Group the rest under short labels: `Changed`, `Verified`, `Open`.
+- Put one fact per bullet, starting with `•`; keep numbers, commit IDs, and paths.
+- Use at most one marker emoji per label (`✅ Verified`, `⚠️ Open`), never as decoration.
+- Name the action, not the activity: `README reader added`, not `worked on docs`.
+- Stop when a future session can see what happened and what remains.
+
+```text
+Deep links and a documentation reader are deployed.
+
+Changed
+• Hash routes for dates, entries, documents, and the guide.
+• Section icons replace arrows in the README reader.
+
+✅ Verified
+• 42 unit tests, 75.5 % lines.
+• 6 browser journeys, 72.7 % of app.js.
+
+⚠️ Open
+• Contract icon placement still undecided.
+```
+
+This shape applies to new entries. Do not rewrite old entries, and leave imported
+history as written.
+
 Search results match entry titles and content, include the entry date, and arrive
 newest first. Omit `q` to review all entries. Diary does not categorize entries with
 tags; use the search text itself to find related history.
