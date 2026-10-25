@@ -190,7 +190,7 @@ def entry_topic(title: str) -> str | None:
     return topic or None
 
 
-def top_tags(database_path: Path, limit: int = 10) -> list[dict[str, object]]:
+def top_tags(database_path: Path, limit: int = 8) -> list[dict[str, object]]:
     """Return the most frequent title topics.
 
     Ties go to the topic used most recently, then to the name. Rows arrive newest

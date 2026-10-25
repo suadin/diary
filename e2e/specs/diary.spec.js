@@ -89,7 +89,7 @@ test("tag chips filter entries by title topic", { tag: ["@navigation-and-deep-li
 
   await page.locator('.tag-chip[data-tag="Diary"]').click();
   await expect(page).toHaveURL(/#\/tag\/Diary$/);
-  await expect(page.locator("#search-title")).toContainText("tagged “Diary”");
+  await expect(page.locator("#search-title")).toHaveText("Diary");
   await expect(page.locator(".result-card")).toHaveCount(2);
   await expect(page.locator("#result-list")).toContainText("Deep links added");
   await expect(page.locator('.tag-chip[data-tag="Diary"]')).toHaveClass(/active/);
@@ -111,10 +111,12 @@ test("search narrows the selected tag", { tag: ["@navigation-and-deep-links"] },
   await page.locator("#search-input").fill("alpha");
   await expect(page.locator(".result-card")).toHaveCount(1);
   await expect(page.locator(".result-card h3")).toHaveText("Diary — Second note");
-  await expect(page.locator("#search-title")).toHaveText("1 entry tagged “Diary” matching “alpha”");
-  await expect(page).toHaveURL(/#\/tag\/Diary$/);
+  await expect(page.locator("#search-title")).toHaveText("Diary (filtered)");
+  await expect(page).toHaveURL(/#\/tag\/Diary\?q=alpha$/);
   await page.locator("#search-input").fill("");
   await expect(page.locator(".result-card")).toHaveCount(2);
+  await expect(page.locator("#search-title")).toHaveText("Diary");
+  await expect(page).toHaveURL(/#\/tag\/Diary$/);
 });
 
 test("search narrows the selected date and the sidebar note is gone", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
@@ -124,7 +126,8 @@ test("search narrows the selected date and the sidebar note is gone", { tag: ["@
   await page.locator("#search-input").fill("Today 3");
   await expect(page.locator(".result-card")).toHaveCount(1);
   await expect(page.locator(".result-card h3")).toHaveText("Today 3");
-  await expect(page.locator("#search-title")).toHaveText("1 entry on 2026-10-22 matching “Today 3”");
+  await expect(page.locator("#search-title")).toHaveText("2026-10-22 (filtered)");
+  await expect(page).toHaveURL(/#\/day\/2026-10-22\?q=Today%203$/);
   await page.locator("#search-input").fill("");
   await expect(page.locator("#selection")).toBeVisible();
 });
@@ -152,14 +155,93 @@ test("tag results page eight at a time", { tag: ["@navigation-and-deep-links"] }
   await expect(page.locator(".result-card")).toHaveCount(8);
 });
 
-test("documentation wraps bullets, follows links, and fits the page", { tag: ["@documentation-reader"] }, async ({ page }) => {
+test("deep links restore the search text and typing updates the link", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
+  await page.goto("/#/tag/Diary?q=alpha");
+  await expect(page.locator("#search-input")).toHaveValue("alpha");
+  await expect(page.locator(".result-card")).toHaveCount(1);
+  await expect(page.locator("#search-title")).toHaveText("Diary (filtered)");
+
+  await page.goto("/#/day/2026-10-22?q=Today%203");
+  await expect(page.locator("#search-input")).toHaveValue("Today 3");
+  await expect(page.locator(".result-card")).toHaveCount(1);
+
+  await page.goto("/#/all?q=alpha");
+  await expect(page.locator("#search-input")).toHaveValue("alpha");
+  await expect(page.locator(".result-card")).toHaveCount(2);
+
+  await page.goto("/#/day/2026-10-22");
+  await page.locator("#search-input").fill("Today 5");
+  await expect(page).toHaveURL(/#\/day\/2026-10-22\?q=Today%205$/);
+  await page.locator("#search-input").fill("");
+  await expect(page).toHaveURL(/#\/day\/2026-10-22$/);
+});
+
+test("the header, footer and sidebar stay in place, and the card is the scrolling part", { tag: ["@style-and-vocabulary"] }, async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto("/#/docs/readme/what-it-does");
+  await expect(page.locator("#doc-body")).toBeVisible();
+  await expect(page.locator(".eyebrow", { hasText: "Looking back" })).toHaveCount(0);
+  await expect(page.locator(".sidebar-note")).toHaveCount(0);
+  const bottom = await page.locator(".footer").boundingBox();
+  expect(bottom.y + bottom.height).toBeCloseTo(1080, 0);
+  await expect(page.locator(".topbar")).toBeInViewport();
+  await expect(page.locator(".sidebar")).toBeInViewport();
+});
+
+test("layout sizes follow the viewport, so 1080p, 1440p and 2160p look alike", { tag: ["@style-and-vocabulary"] }, async ({ page }) => {
+  const ratio = async (width, height) => {
+    await page.setViewportSize({ width, height });
+    await page.goto("/");
+    const side = await page.locator(".sidebar").boundingBox();
+    return Math.round((side.width / width) * 1000) / 1000;
+  };
+  const fullHd = await ratio(1920, 1080);
+  expect(await ratio(2560, 1440)).toBeCloseTo(fullHd, 2);
+  expect(await ratio(3840, 2160)).toBeCloseTo(fullHd, 2);
+});
+
+test("the show-all bubble wobbles on hover and the selected doc is yellow", { tag: ["@style-and-vocabulary", "@documentation-reader"] }, async ({ page }) => {
+  await page.goto("/");
+  await page.locator("#day-count").hover();
+  await expect(page.locator("#day-count")).toHaveCSS("animation-name", "wiggle");
+  await page.goto("/#/docs/readme/what-it-does");
+  await expect(page.locator(".doc-tab.active")).toHaveCSS("background-color", "rgb(255, 212, 92)");
+});
+
+test("entry cards browse the list they came from", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
+  await page.goto("/#/day/2026-10-22");
+  await page.locator(".entry-card").first().click();
+  await expect(page.locator("#entry-view h2")).toHaveText("Today 7");
+  await expect(page.locator(".link-button", { hasText: "‹ Newer" })).toBeDisabled();
+  await page.locator(".link-button", { hasText: "Older ›" }).click();
+  await expect(page.locator("#entry-view h2")).toHaveText("Today 6");
+  await page.locator(".link-button", { hasText: "‹ Newer" }).click();
+  await expect(page.locator("#entry-view h2")).toHaveText("Today 7");
+
+  await page.goto("/#/all?q=alpha");
+  await page.locator(".result-card").first().click();
+  await expect(page.locator("#entry-view h2")).toHaveText("Hub — Boot note");
+  await page.locator(".link-button", { hasText: "Older ›" }).click();
+  await expect(page.locator("#entry-view h2")).toHaveText("Diary — Second note");
+  await expect(page.locator(".link-button", { hasText: "Older ›" })).toBeDisabled();
+  await page.locator(".back-button").click();
+  await expect(page).toHaveURL(/#\/all\?q=alpha$/);
+  await expect(page.locator("#search-input")).toHaveValue("alpha");
+  await expect(page.locator(".result-card")).toHaveCount(2);
+});
+
+test("documentation wraps bullets, follows links, and the card scrolls", { tag: ["@documentation-reader"] }, async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto("/#/docs/readme/what-it-does");
   await expect(page.locator("#doc-body li").first()).toContainText("previous or next window");
-  const fits = await page.locator("#doc-body").evaluate(
-    (node) => node.getBoundingClientRect().bottom <= window.innerHeight,
-  );
-  expect(fits).toBe(true);
+  const pageFits = await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight);
+  expect(pageFits).toBe(true);
+  const card = await page.locator("#main-panel").evaluate((node) => ({ scrolls: node.scrollHeight > node.clientHeight, overflow: getComputedStyle(node).overflowY }));
+  expect(card).toEqual({ scrolls: true, overflow: "auto" });
+  for (const selector of [".topbar", "#day-list", ".footer"]) {
+    const box = await page.locator(selector).boundingBox();
+    expect(box.y + box.height).toBeLessThanOrEqual(1080);
+  }
 
   await page.goto("/#/docs/readme/tests-and-coverage");
   await page.locator('a[data-doc-link="specs#tests"]').click();

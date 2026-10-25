@@ -103,15 +103,15 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(search_entries(self.database, "", "missing"), [])
 
     @covers("navigation-and-deep-links")
-    def test_top_tags_show_ten_by_count_then_latest_use(self):
+    def test_top_tags_show_eight_by_count_then_latest_use(self):
         for index in range(12):
             self.add("2026-10-21", f"Topic {index:02} — Entry", "body")
         self.add("2026-10-21", "Diary — One", "body")
         self.add("2026-10-21", "Diary — Two", "body")
         tags = [item["tag"] for item in top_tags(self.database)]
-        self.assertEqual(len(tags), 10)
+        self.assertEqual(len(tags), 8)
         self.assertEqual(tags[0], "Diary")
-        self.assertEqual(tags[1:], [f"Topic {index:02}" for index in range(11, 2, -1)])
+        self.assertEqual(tags[1:], [f"Topic {index:02}" for index in range(11, 4, -1)])
         self.assertEqual(len(top_tags(self.database, 20)), 13)
 
     @covers("navigation-and-deep-links")
@@ -723,7 +723,7 @@ class HttpTests(ServerTestCase):
             }, token="write-secret")
         status, tags, _ = self.request("/api/tags")
         self.assertEqual(status, 200)
-        self.assertEqual(len(json.loads(tags)), 10)
+        self.assertEqual(len(json.loads(tags)), 8)
         status, limited_tags, _ = self.request("/api/tags?limit=3")
         self.assertEqual(len(json.loads(limited_tags)), 3)
         status, filtered, _ = self.request("/api/search?tag=Diary")

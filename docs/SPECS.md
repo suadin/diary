@@ -35,7 +35,7 @@ How a reader reaches a date, an entry, or a section.
   older or newer windows on demand. A date shows its entries eight per page with lazy
   loading, and arrows step to the neighbouring date, including across a page boundary.
 - Deep links are first-class: `#/day/2026-10-22`, `#/entry/42`,
-  `#/docs/readme/ai-api`, `#/guide`, `#/search/boot`, and `#/tag/Diary`. Opening one
+  `#/docs/readme/ai-api`, `#/guide`, `#/all?q=boot`, and `#/tag/Diary?q=boot`. Opening one
   restores the same view and the surrounding sidebar window; an unknown link returns to
   the start.
 - A refresh opens the requested view directly. The welcome panel stays hidden until the
@@ -44,8 +44,13 @@ How a reader reaches a date, an entry, or a section.
   compact. Results are paged eight at a time.
 - Search runs inside the current scope. With a tag selected it searches that tag; with a
   date selected it searches that date; the entry count in the sidebar opens every entry
-  first. Clearing the text returns to the scope's full list.
-- The sidebar shows the ten most frequent title topics as tag chips. Ties go to the
+  first. Clearing the text returns to the scope's full list. The search text stays in the
+  address, so a refresh or a shared link shows the same filtered list.
+- The result heading names only the scope: the tag, or the date, with “(filtered)” added
+  while search text narrows it. The whole journal shows a count instead.
+- An open entry steps to the newer or older entry of the list it came from. Back returns
+  to that list with its search text.
+- The sidebar shows the eight most frequent title topics as tag chips. Ties go to the
   topic used most recently. A chip filters entries by the exact topic before the earliest
   separator (`—` or `:`). No separate tagging step is needed.
 
@@ -158,7 +163,12 @@ How the interface should feel and speak.
 
 - The visual style is simple and playful: thicker outlines, short hover motion, and
   tooltips as speech bubbles that stay inside the viewport. Purple marks the Memory
-  spark as something special; yellow stays emphasis, red warns, green marks good.
+  spark as something special; yellow marks the selection and emphasis, red warns, green
+  marks good.
+- Sizes are relative. The root font size follows the viewport width, and every length in
+  the stylesheet is in `rem`, so 1080p, 1440p, and 2160p show the same layout at a
+  different scale. The header, footer, and sidebar stay in place; only the main card
+  scrolls.
   Include one small, relevant surprise. The page uses a journal icon.
 - Use one name for one thing. The page says “entries” and “dates”, not “notes”,
   “threads”, or “days” where an entry or a calendar date is meant. The browser test

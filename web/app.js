@@ -22,6 +22,7 @@ const elements = {
   entryView: document.getElementById("entry-view"),
   tagFilter: document.getElementById("tag-filter"),
   tagChips: document.getElementById("tag-chips"),
+  mainPanel: document.getElementById("main-panel"),
   resultPager: document.getElementById("result-pager"),
   resultRange: document.getElementById("result-range"),
   resultsNewer: document.getElementById("results-newer"),
@@ -64,16 +65,25 @@ const ENTRY_WARN = 2000;
 const ENTRY_CRITICAL = 5000;
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
 
+function queryPart(query) {
+  return query ? `?q=${encodeURIComponent(query)}` : "";
+}
+
 const ROUTE = {
   welcome: "#/",
-  day: (date) => `#/day/${date}`,
+  day: (date, query = "") => `#/day/${date}${queryPart(query)}`,
   entry: (id) => `#/entry/${id}`,
   docs: (doc, section) => (section ? `#/docs/${doc}/${section}` : `#/docs/${doc}`),
   guide: "#/guide",
-  search: (query) => `#/search/${encodeURIComponent(query)}`,
-  tag: (tag) => `#/tag/${encodeURIComponent(tag)}`,
-  all: "#/all",
+  tag: (tag, query = "") => `#/tag/${encodeURIComponent(tag)}${queryPart(query)}`,
+  all: (query = "") => `#/all${queryPart(query)}`,
 };
+
+function parseRoute() {
+  const [path, search = ""] = window.location.hash.replace(/^#\/?/, "").split("?");
+  const parts = path.split("/").filter(Boolean).map((part) => decodeURIComponent(part));
+  return { parts, query: (new URLSearchParams(search).get("q") || "").trim() };
+}
 
 const ICONS = {
   overview: '<path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1v-9.5Z"/>',
@@ -114,6 +124,9 @@ const state = {
   tags: [],
   activeTag: null,
   globalSearch: false,
+  returnHash: null,
+  pendingEntryContext: null,
+  entryContext: null,
   resultOffset: 0,
   resultTotal: 0,
   resultTicket: 0,
@@ -143,6 +156,7 @@ function showOnly(section) {
   for (const item of [elements.welcome, elements.selection, elements.searchResults, elements.entryView, elements.editor, elements.docsView]) {
     item.hidden = item !== section;
   }
+  elements.mainPanel.scrollTop = 0;
 }
 
 function svgIcon(name) {
@@ -308,9 +322,15 @@ function renderEntryCards(entries, container) {
     const preview = document.createElement("p");
     preview.textContent = plainText(entry.content).slice(0, 84);
     button.append(dateLabel(entry), title, preview);
-    button.addEventListener("click", () => navigate(ROUTE.entry(entry.id)).catch((error) => showToast(error.message)));
+    button.addEventListener("click", () => openFromList(entry.id));
     container.append(button);
   }
+}
+
+function openFromList(id) {
+  state.returnHash = window.location.hash;
+  state.pendingEntryContext = { ...resultScope(), query: elements.searchInput.value.trim() };
+  navigate(ROUTE.entry(id)).catch((error) => showToast(error.message));
 }
 
 function renderEntryPager() {
@@ -413,7 +433,36 @@ async function copyLink() {
   }
 }
 
-function openEntry(entry) {
+async function neighbours(entry, context) {
+  const params = new URLSearchParams();
+  if (context.query) params.set("q", context.query);
+  if (context.tag) params.set("tag", context.tag);
+  if (context.date) params.set("date", context.date);
+  const list = await request(`/api/search?${params}`);
+  const index = list.findIndex((item) => item.id === entry.id);
+  return {
+    newer: index > 0 ? list[index - 1] : null,
+    older: index >= 0 && index < list.length - 1 ? list[index + 1] : null,
+  };
+}
+
+function stepButton(label, target, tip) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "link-button has-tip";
+  button.textContent = label;
+  button.dataset.tip = tip;
+  button.disabled = !target;
+  if (target) {
+    button.addEventListener("click", () => {
+      state.pendingEntryContext = state.entryContext;
+      navigate(ROUTE.entry(target.id)).catch((error) => showToast(error.message));
+    });
+  }
+  return button;
+}
+
+function openEntry(entry, steps = { newer: null, older: null }) {
   showOnly(elements.entryView);
   elements.entryView.replaceChildren();
   const meta = document.createElement("div");
@@ -443,8 +492,14 @@ function openEntry(entry) {
   back.type = "button";
   back.className = "back-button";
   back.textContent = "← Back";
-  back.addEventListener("click", () => navigate(ROUTE.day(entry.date)).catch((error) => showToast(error.message)));
-  meta.append(left, copy, back);
+  back.addEventListener("click", () => navigate(state.returnHash || ROUTE.day(entry.date)).catch((error) => showToast(error.message)));
+  const step = document.createElement("div");
+  step.className = "entry-step";
+  step.append(
+    stepButton("‹ Newer", steps.newer, "Previous entry in this list"),
+    stepButton("Older ›", steps.older, "Next entry in this list"),
+  );
+  meta.append(left, copy, step, back);
   const title = document.createElement("h2");
   title.textContent = entry.title;
   const content = document.createElement("div");
@@ -460,10 +515,10 @@ function resultScope() {
 }
 
 function resultTitle(total, tag, date, query) {
+  if (tag) return query ? `${tag} (filtered)` : tag;
+  if (date) return query ? `${date} (filtered)` : date;
   const noun = total === 1 ? "entry" : "entries";
-  const scope = tag ? ` tagged “${tag}”` : date ? ` on ${date}` : "";
-  const matching = query ? ` matching “${query}”` : "";
-  return `${total} ${noun}${scope}${matching}`;
+  return query ? `${total} ${noun} matching “${query}”` : `${total} ${noun}`;
 }
 
 function renderResultPager() {
@@ -495,23 +550,31 @@ async function showResults(offset = 0) {
   showOnly(elements.searchResults);
 }
 
-async function search({ keepRoute = false } = {}) {
+// The address always shows the current scope and search text, so a refresh or a shared link restores the same list.
+function syncRoute() {
+  const query = elements.searchInput.value.trim();
+  const { tag, date } = resultScope();
+  let hash = ROUTE.welcome;
+  if (tag) hash = ROUTE.tag(tag, query);
+  else if (date) hash = ROUTE.day(date, query);
+  else if (state.globalSearch) hash = ROUTE.all(query);
+  if (window.location.hash !== hash) history.replaceState({}, "", hash);
+}
+
+async function search() {
   const query = elements.searchInput.value.trim();
   const scope = resultScope();
   renderDays();
   renderTags();
+  syncRoute();
   if (!query && !scope.tag && !scope.date && !state.globalSearch) {
-    if (!keepRoute) {
-      history.replaceState({}, "", state.selectedDate ? ROUTE.day(state.selectedDate) : ROUTE.welcome);
-    }
     showOnly(state.selectedDate ? elements.selection : elements.welcome);
     return;
   }
-  if (!query && scope.date) {
+  if (!query && !scope.tag && scope.date) {
     showOnly(elements.selection);
     return;
   }
-  if (!keepRoute && !scope.tag && !scope.date && query) history.replaceState({}, "", ROUTE.search(query));
   await showResults(0);
 }
 
@@ -865,8 +928,6 @@ async function renderDocs(doc, page) {
     renderRequirementTests(page.slug, metrics);
   }
   showOnly(elements.docsView);
-  window.scrollTo(0, 0);
-  fitDocBody();
 }
 
 function renderRequirementTests(slug, metrics) {
@@ -902,22 +963,9 @@ function renderRequirementTests(slug, metrics) {
   elements.docBody.append(box);
 }
 
-function fitDocBody() {
-  if (elements.docsView.hidden) return;
-  const body = elements.docBody;
-  body.style.fontSize = "";
-  const footer = document.querySelector(".footer").getBoundingClientRect();
-  const top = body.getBoundingClientRect().top;
-  const available = window.innerHeight - top - footer.height - 24;
-  if (available < 160) return;
-  let size = 16;
-  while (size > 10 && body.scrollHeight > available) {
-    size -= 0.5;
-    body.style.fontSize = `${size}px`;
-  }
-}
 
-async function showDayRoute(date) {
+
+async function showDayRoute(date, query = "") {
   if (!ISO_DAY.test(date) || !(await ensureDayWindow(date))) {
     showToast(`${date} has no entries.`);
     showOnly(elements.welcome);
@@ -925,7 +973,9 @@ async function showDayRoute(date) {
     return;
   }
   await selectDay(date);
-  if (window.location.hash !== ROUTE.day(date)) history.replaceState({}, "", ROUTE.day(date));
+  elements.searchInput.value = query;
+  if (query) await showResults(0);
+  if (window.location.hash !== ROUTE.day(date, query)) history.replaceState({}, "", ROUTE.day(date, query));
 }
 
 async function showEntryRoute(id) {
@@ -938,17 +988,23 @@ async function showEntryRoute(id) {
     history.replaceState({}, "", ROUTE.welcome);
     return;
   }
+  const pending = state.pendingEntryContext;
+  state.pendingEntryContext = null;
+  if (!pending) state.returnHash = ROUTE.day(entry.date);
+  state.entryContext = pending || { tag: null, date: entry.date, query: "" };
   await ensureDayWindow(entry.date);
   await selectDay(entry.date);
-  openEntry(entry);
+  const steps = await neighbours(entry, state.entryContext);
+  openEntry(entry, steps);
 }
 
-async function showTagRoute(tag) {
+async function showTagRoute(tag, query = "") {
   state.activeTag = tag;
-  elements.searchInput.value = "";
+  elements.searchInput.value = query;
   renderDays();
   renderTags();
   await showResults(0);
+  if (window.location.hash !== ROUTE.tag(tag, query)) history.replaceState({}, "", ROUTE.tag(tag, query));
 }
 
 async function showDocsRoute(docSlug, sectionSlug) {
@@ -966,51 +1022,44 @@ async function showDocsRoute(docSlug, sectionSlug) {
 
 async function applyRoute() {
   const ticket = ++state.routeTicket;
-  const raw = window.location.hash.replace(/^#\/?/, "");
-  const parts = raw.split("/").filter(Boolean).map((part) => decodeURIComponent(part));
+  const { parts, query } = parseRoute();
   const [kind, first, second] = parts;
-
   if (kind !== "tag") state.activeTag = null;
   if (kind !== "all" && kind !== "search") state.globalSearch = false;
   renderDays();
   renderTags();
-
   if (kind === "day" && first) {
-    elements.searchInput.value = "";
-    await showDayRoute(first);
+    await showDayRoute(first, query);
     return;
   }
   if (kind === "entry" && first) {
+    elements.searchInput.value = "";
     await showEntryRoute(first);
     return;
   }
   if (kind === "docs") {
+    elements.searchInput.value = "";
     await showDocsRoute(first || "readme", second || null);
     return;
   }
   if (kind === "tag" && first) {
-    await showTagRoute(first);
-    const canonical = ROUTE.tag(first);
-    if (window.location.hash !== canonical) history.replaceState({}, "", canonical);
+    await showTagRoute(first, query);
     return;
   }
   if (kind === "guide") {
+    elements.searchInput.value = "";
     await openEditor();
     return;
   }
-  if (kind === "all") {
-    elements.searchInput.value = "";
+  if (kind === "all" || (kind === "search" && first)) {
     state.globalSearch = true;
+    elements.searchInput.value = kind === "all" ? query : first;
     await showResults(0);
-    return;
-  }
-  if (kind === "search" && first) {
-    elements.searchInput.value = first;
-    state.globalSearch = true;
-    await search({ keepRoute: true });
+    if (kind === "search") history.replaceState({}, "", ROUTE.all(first));
     return;
   }
   if (ticket !== state.routeTicket) return;
+  elements.searchInput.value = "";
   showOnly(elements.welcome);
 }
 
@@ -1088,7 +1137,7 @@ elements.entriesNewer.addEventListener("click", () => loadEntryPage(state.entryO
 elements.entriesOlder.addEventListener("click", () => loadEntryPage(state.entryOffset + ENTRY_PAGE_SIZE).catch((error) => showToast(error.message)));
 elements.resultsNewer.addEventListener("click", () => showResults(state.resultOffset - RESULT_PAGE_SIZE).catch((error) => showToast(error.message)));
 elements.resultsOlder.addEventListener("click", () => showResults(state.resultOffset + RESULT_PAGE_SIZE).catch((error) => showToast(error.message)));
-elements.dayCount.addEventListener("click", () => navigate(ROUTE.all).catch((error) => showToast(error.message)));
+elements.dayCount.addEventListener("click", () => navigate(ROUTE.all()).catch((error) => showToast(error.message)));
 elements.runTests.addEventListener("click", async () => {
   if (elements.runTests.getAttribute("aria-disabled") === "true") return;
   elements.runTests.setAttribute("aria-disabled", "true");
@@ -1172,11 +1221,6 @@ function followDocLink(event) {
 elements.docBody.addEventListener("click", followDocLink);
 elements.entryView.addEventListener("click", followDocLink);
 
-let fitTimer = null;
-window.addEventListener("resize", () => {
-  window.clearTimeout(fitTimer);
-  fitTimer = window.setTimeout(fitDocBody, 120);
-});
 
 window.addEventListener("popstate", () => { applyRoute().catch((error) => showToast(error.message)); });
 window.addEventListener("hashchange", () => { applyRoute().catch((error) => showToast(error.message)); });

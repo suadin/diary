@@ -94,7 +94,7 @@ class DiaryHandler(BaseHTTPRequestHandler):
             elif route.path == "/api/tags":
                 self._json(200, top_tags(
                     self.server.settings.database_path,
-                    self._integer(query, "limit", 10, minimum=1, maximum=50),
+                    self._integer(query, "limit", 8, minimum=1, maximum=50),
                 ))
             elif route.path == "/api/search":
                 self._json(200, search_entries(
