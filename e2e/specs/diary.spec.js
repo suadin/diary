@@ -140,6 +140,20 @@ test("the layout spans the full width like the header", { tag: ["@style-and-voca
   }
 });
 
+test("the welcome panel does not flash before the first route", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  await page.route("**/api/days/page?*", async (route) => {
+    await gate;
+    await route.continue();
+  });
+  await page.goto("/#/day/2026-10-22", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("#welcome")).toBeHidden();
+  release();
+  await expect(page.locator("#selected-date")).toHaveText("2026-10-22");
+  await expect(page.locator("#welcome")).toBeHidden();
+});
+
 test("an unknown deep link returns to the start", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
   await page.goto("/#/day/2020-01-01");
   await expect(page.locator("#welcome")).toBeVisible();

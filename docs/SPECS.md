@@ -37,6 +37,8 @@ How a reader reaches a date, an entry, or a section.
   `#/docs/readme/ai-api`, `#/guide`, `#/search/boot`, and `#/tag/Diary`. Opening one
   restores the same view and the surrounding sidebar window; an unknown link returns to
   the start.
+- A refresh opens the requested view directly. The welcome panel stays hidden until the
+  first route has resolved, so it never flashes before entries appear.
 - Search matches titles and content with dates in the results. Entry previews are
   compact.
 - The sidebar shows at most the ten most frequent title topics as tag chips. A chip

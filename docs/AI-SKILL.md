@@ -69,7 +69,7 @@ Deep links and a documentation reader are deployed.
 
 ✅ **Verified**
 - 45 unit tests, 76.0 % lines.
-- 13 E2E journeys, 69.8 % of app.js.
+- 14 E2E journeys, 69.8 % of app.js.
 
 ⚠️ **Open**
 - Contract icon placement still undecided.

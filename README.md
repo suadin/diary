@@ -9,7 +9,7 @@ This README explains what Diary is, how to run it, and how to operate it. The te
 rules it must satisfy live in [SPECS](docs/SPECS.md).
 
 > 🗂️ Dated entries · 🔗 deep links to every view · 🤖 append-only AI access ·
-> 🧪 45 unit tests and 13 E2E journeys
+> 🧪 45 unit tests and 14 E2E journeys
 
 ## What it does
 
@@ -30,7 +30,8 @@ rules it must satisfy live in [SPECS](docs/SPECS.md).
   title, so the chips need no separate tagging step.
 - Links are stable and shareable: `#/day/2026-10-22`, `#/entry/42`,
   `#/docs/readme/ai-api`, `#/guide`, `#/search/boot`, and `#/tag/Diary`. Opening one
-  restores the same view, including the surrounding sidebar window.
+  restores the same view, including the surrounding sidebar window; a refresh does not
+  flash the welcome panel first.
 - Keeps the writing guide and the documentation apart: the guide is editable, the
   README and `docs/*.md` are read-only. Documentation opens in the main panel with
   one tab per document and one icon per heading; the icon tooltip names the section,
@@ -225,7 +226,7 @@ and every SPECS page lists the concrete test names under “Automated tests”, 
 a rule without a test is visible instead of implied.
 
 The unit suite has 45 tests and currently covers 463 of 609 lines (76.0 %). The
-Playwright suite in `e2e/` has 13 journeys and touches 745 of 1068 `web/app.js` lines
+Playwright suite in `e2e/` has 14 journeys and touches 745 of 1068 `web/app.js` lines
 (69.8 %). It needs Node, pnpm, and a Chromium build:
 
 ```bash
