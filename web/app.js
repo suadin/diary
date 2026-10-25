@@ -919,15 +919,15 @@ async function applyRoute() {
   const raw = window.location.hash.replace(/^#\/?/, "");
   const parts = raw.split("/").filter(Boolean).map((part) => decodeURIComponent(part));
   const [kind, first, second] = parts;
+
+  if (kind !== "tag") state.activeTag = null;
+  renderTags();
+
   if (kind === "day" && first) {
-    state.activeTag = null;
-    renderTags();
     await showDayRoute(first);
     return;
   }
   if (kind === "entry" && first) {
-    state.activeTag = null;
-    renderTags();
     await showEntryRoute(first);
     return;
   }

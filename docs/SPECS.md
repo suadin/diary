@@ -42,8 +42,8 @@ How a reader reaches a date, an entry, or a section.
 - Search matches titles and content with dates in the results. Entry previews are
   compact.
 - The sidebar shows every title topic as a tag chip, ordered by frequency. A chip
-  filters entries by the exact topic before the em dash; no separate tagging step is
-  needed. In tag-filter results, no date is shown as selected.
+  filters entries by the exact topic before the first separator (`—` or `:`). No
+  separate tagging step is needed. In tag-filter results, no date is shown as selected.
 
 ## Documentation reader
 

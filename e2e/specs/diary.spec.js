@@ -79,12 +79,13 @@ test("tag chips filter entries by title topic", { tag: ["@navigation-and-deep-li
   await page.route("**/api/tags", (route) => route.fulfill({
     json: [
       { tag: "Diary", count: 1 },
+      { tag: "Topic", count: 1 },
       ...Array.from({ length: 11 }, (_, index) => ({ tag: `Topic ${index}`, count: 1 })),
     ],
   }));
   await page.goto("/");
   const chips = page.locator(".tag-chip");
-  await expect(chips).toHaveCount(12);
+  await expect(chips).toHaveCount(13);
   await expect(page.locator('.tag-chip[data-tag="Diary"]')).toContainText("1");
 
   await page.locator('.tag-chip[data-tag="Diary"]').click();

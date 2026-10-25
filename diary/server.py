@@ -92,7 +92,7 @@ class DiaryHandler(BaseHTTPRequestHandler):
                 self._entry(query)
             elif route.path == "/api/tags":
                 limit = (
-                    self._integer(query, "limit", 10, minimum=1, maximum=50)
+                    self._integer(query, "limit", 1, minimum=1, maximum=50)
                     if self._query_value(query, "limit") is not None
                     else None
                 )

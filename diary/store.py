@@ -7,7 +7,7 @@ import sqlite3
 from typing import Iterator
 
 
-TOPIC_SEPARATOR = "—"
+TOPIC_SEPARATORS = ("—", ":")
 
 
 def valid_day(value: str) -> bool:
@@ -182,10 +182,13 @@ def list_entries(database_path: Path, day: str | None = None) -> list[dict[str, 
 
 
 def entry_topic(title: str) -> str | None:
-    """Return the topic before the em dash in a title, or None."""
-    topic, separator, _ = title.partition(TOPIC_SEPARATOR)
-    topic = topic.strip()
-    return topic if separator and topic else None
+    """Return the topic before the first separator in a title, or None."""
+    for separator in TOPIC_SEPARATORS:
+        if separator in title:
+            topic, _, _ = title.partition(separator)
+            topic = topic.strip()
+            return topic if topic else None
+    return None
 
 
 def top_tags(database_path: Path, limit: int | None = None) -> list[dict[str, object]]:
@@ -219,11 +222,13 @@ def search_entries(database_path: Path, query: str, tag: str | None = None) -> l
         parameters.extend((pattern, pattern))
     if tag:
         clauses.append(
-            "instr(entries.title, '—') > 0"
-            " AND lower(trim(substr(entries.title, 1, instr(entries.title, '—') - 1)))"
-            " = lower(?)"
+            "(instr(entries.title, '—') > 0 OR instr(entries.title, ':') > 0)"
+            " AND ("
+            " (instr(entries.title, '—') > 0 AND lower(trim(substr(entries.title, 1, instr(entries.title, '—') - 1))) = lower(?))"
+            " OR (instr(entries.title, ':') > 0 AND lower(trim(substr(entries.title, 1, instr(entries.title, ':') - 1))) = lower(?))"
+            ")"
         )
-        parameters.append(tag.strip())
+        parameters.extend((tag.strip(), tag.strip()))
     where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
     return _entries(
         database_path,

@@ -26,8 +26,8 @@ rules it must satisfy live in [SPECS](docs/SPECS.md).
   and author, and can copy its own link. Stored Markdown renders with the document
   reader's typography — paragraphs, lists, headings, code, tables, and links.
 - Shows every title topic as a tag chip in the sidebar. A chip filters the journal by
-  that exact topic; topics come from the part before the em dash in a title, so the
-  chips need no separate tagging step.
+  that exact topic; topics come from the part before the first separator (`—` or `:`)
+  in a title, so the chips need no separate tagging step.
 - Links are stable and shareable: `#/day/2026-10-22`, `#/entry/42`,
   `#/docs/readme/ai-api`, `#/guide`, `#/search/boot`, and `#/tag/Diary`. Opening one
   restores the same view, including the surrounding sidebar window; a refresh does not
