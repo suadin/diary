@@ -45,6 +45,8 @@ button { color: inherit; cursor: pointer; }
 .sidebar-title h1, h2, h3, p { margin-top: 0; }
 .sidebar-title h1 { margin-bottom: .5rem; font-size: 1.2rem; }
 .count { display: inline-grid; place-items: center; min-width: 29px; height: 29px; border: 2px solid var(--ink); border-radius: 50%; background: var(--card); font-size: .75rem; font-weight: 900; transition: background .2s ease, color .2s ease; }
+button.count { padding: 0; color: inherit; font-family: inherit; cursor: pointer; }
+button.count:hover { background: var(--yellow); }
 .count.warn { background: var(--yellow); }
 .count.critical { background: var(--red); color: var(--paper); }
 
@@ -76,7 +78,6 @@ button { color: inherit; cursor: pointer; }
 .pager-button:disabled { cursor: default; color: var(--muted); background: transparent; border-color: var(--muted); }
 .day-range { margin-left: auto; color: var(--muted); font-size: .72rem; font-weight: 800; }
 .entry-pager .day-range { flex: 1; margin-left: 0; text-align: center; }
-.sidebar-note { margin-top: 1rem; color: var(--muted); font-family: "Comic Sans MS", cursive; font-size: 1.1rem; }
 
 .main-panel { min-width: 0; padding: clamp(1.4rem, 4vw, 3.5rem); }
 .welcome { max-width: 690px; padding: clamp(1.3rem, 5vw, 3.2rem); border: 3px solid var(--ink); border-radius: 24px 24px 24px 5px; background: var(--card); box-shadow: 9px 9px 0 var(--ink); transform: rotate(-.4deg); }
@@ -206,7 +207,6 @@ span.has-tip { cursor: help; }
   .sidebar { border-right: 0; border-bottom: var(--line); padding: 1rem; }
   .day-list { display: flex; max-height: none; overflow-x: auto; padding: .2rem .1rem .5rem; }
   .day-button { flex: 0 0 auto; width: auto; gap: .7rem; border: 1px solid var(--ink); }
-  .sidebar-note { display: none; }
   .main-panel { padding: 1.2rem 1rem 2rem; }
   .footer { padding: .65rem 1rem; }
   .delete-controls { grid-template-columns: 1fr; }

@@ -22,6 +22,10 @@ const elements = {
   entryView: document.getElementById("entry-view"),
   tagFilter: document.getElementById("tag-filter"),
   tagChips: document.getElementById("tag-chips"),
+  resultPager: document.getElementById("result-pager"),
+  resultRange: document.getElementById("result-range"),
+  resultsNewer: document.getElementById("results-newer"),
+  resultsOlder: document.getElementById("results-older"),
   runTests: document.getElementById("run-tests"),
   unitMetrics: document.getElementById("unit-metrics"),
   e2eMetrics: document.getElementById("e2e-metrics"),
@@ -53,7 +57,8 @@ const elements = {
 };
 
 const PAGE_SIZE = 7;
-const ENTRY_PAGE_SIZE = 5;
+const ENTRY_PAGE_SIZE = 8;
+const RESULT_PAGE_SIZE = 8;
 const TEST_POLL_MS = 5000;
 const ENTRY_WARN = 2000;
 const ENTRY_CRITICAL = 5000;
@@ -67,6 +72,7 @@ const ROUTE = {
   guide: "#/guide",
   search: (query) => `#/search/${encodeURIComponent(query)}`,
   tag: (tag) => `#/tag/${encodeURIComponent(tag)}`,
+  all: "#/all",
 };
 
 const ICONS = {
@@ -107,6 +113,10 @@ const state = {
   metrics: null,
   tags: [],
   activeTag: null,
+  globalSearch: false,
+  resultOffset: 0,
+  resultTotal: 0,
+  resultTicket: 0,
   routeTicket: 0,
 };
 
@@ -176,7 +186,7 @@ function renderDays() {
   for (const day of state.days) {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = `day-button${!state.activeTag && state.selectedDate === day.date ? " active" : ""}`;
+    button.className = `day-button${!state.activeTag && !state.globalSearch && state.selectedDate === day.date ? " active" : ""}`;
     const date = document.createElement("span");
     date.textContent = day.date;
     const count = document.createElement("span");
@@ -443,23 +453,66 @@ function openEntry(entry) {
   elements.entryView.append(meta, title, content);
 }
 
+function resultScope() {
+  if (state.activeTag) return { tag: state.activeTag, date: null };
+  if (state.globalSearch || !state.selectedDate) return { tag: null, date: null };
+  return { tag: null, date: state.selectedDate };
+}
+
+function resultTitle(total, tag, date, query) {
+  const noun = total === 1 ? "entry" : "entries";
+  const scope = tag ? ` tagged “${tag}”` : date ? ` on ${date}` : "";
+  const matching = query ? ` matching “${query}”` : "";
+  return `${total} ${noun}${scope}${matching}`;
+}
+
+function renderResultPager() {
+  elements.resultPager.hidden = state.resultTotal <= RESULT_PAGE_SIZE;
+  if (elements.resultPager.hidden) return;
+  const first = state.resultOffset + 1;
+  const last = Math.min(state.resultOffset + RESULT_PAGE_SIZE, state.resultTotal);
+  elements.resultRange.textContent = `${first}–${last} / ${state.resultTotal}`;
+  elements.resultsNewer.disabled = state.resultOffset <= 0;
+  elements.resultsOlder.disabled = last >= state.resultTotal;
+}
+
+// One result list for every scope: a tag, a selected date, the whole journal,
+// or any of them narrowed by the search text. Pages are RESULT_PAGE_SIZE long.
+async function showResults(offset = 0) {
+  const query = elements.searchInput.value.trim();
+  const { tag, date } = resultScope();
+  const ticket = ++state.resultTicket;
+  const params = new URLSearchParams({ q: query, offset: String(offset), limit: String(RESULT_PAGE_SIZE) });
+  if (tag) params.set("tag", tag);
+  if (date) params.set("date", date);
+  const page = await request(`/api/search/page?${params}`);
+  if (ticket !== state.resultTicket) return;
+  state.resultOffset = page.offset;
+  state.resultTotal = page.total;
+  elements.searchTitle.textContent = resultTitle(page.total, tag, date, query);
+  renderEntryCards(page.entries, elements.resultList);
+  renderResultPager();
+  showOnly(elements.searchResults);
+}
+
 async function search({ keepRoute = false } = {}) {
   const query = elements.searchInput.value.trim();
-  state.activeTag = null;
+  const scope = resultScope();
   renderDays();
   renderTags();
-  if (!query) {
+  if (!query && !scope.tag && !scope.date && !state.globalSearch) {
     if (!keepRoute) {
       history.replaceState({}, "", state.selectedDate ? ROUTE.day(state.selectedDate) : ROUTE.welcome);
     }
     showOnly(state.selectedDate ? elements.selection : elements.welcome);
     return;
   }
-  const results = await request(`/api/search?q=${encodeURIComponent(query)}`);
-  elements.searchTitle.textContent = `${results.length} ${results.length === 1 ? "entry" : "entries"} found`;
-  renderEntryCards(results, elements.resultList);
-  showOnly(elements.searchResults);
-  if (!keepRoute) history.replaceState({}, "", ROUTE.search(query));
+  if (!query && scope.date) {
+    showOnly(elements.selection);
+    return;
+  }
+  if (!keepRoute && !scope.tag && !scope.date && query) history.replaceState({}, "", ROUTE.search(query));
+  await showResults(0);
 }
 
 function stopTestPolling() {
@@ -895,10 +948,7 @@ async function showTagRoute(tag) {
   elements.searchInput.value = "";
   renderDays();
   renderTags();
-  const results = await request(`/api/search?tag=${encodeURIComponent(tag)}`);
-  elements.searchTitle.textContent = `${results.length} ${results.length === 1 ? "entry" : "entries"} tagged “${tag}”`;
-  renderEntryCards(results, elements.resultList);
-  showOnly(elements.searchResults);
+  await showResults(0);
 }
 
 async function showDocsRoute(docSlug, sectionSlug) {
@@ -921,9 +971,12 @@ async function applyRoute() {
   const [kind, first, second] = parts;
 
   if (kind !== "tag") state.activeTag = null;
+  if (kind !== "all" && kind !== "search") state.globalSearch = false;
+  renderDays();
   renderTags();
 
   if (kind === "day" && first) {
+    elements.searchInput.value = "";
     await showDayRoute(first);
     return;
   }
@@ -945,8 +998,15 @@ async function applyRoute() {
     await openEditor();
     return;
   }
+  if (kind === "all") {
+    elements.searchInput.value = "";
+    state.globalSearch = true;
+    await showResults(0);
+    return;
+  }
   if (kind === "search" && first) {
     elements.searchInput.value = first;
+    state.globalSearch = true;
     await search({ keepRoute: true });
     return;
   }
@@ -1026,6 +1086,9 @@ elements.dayOlder.addEventListener("click", () => adjacentDay(1).then((moved) =>
 }).catch((error) => showToast(error.message)));
 elements.entriesNewer.addEventListener("click", () => loadEntryPage(state.entryOffset - ENTRY_PAGE_SIZE).catch((error) => showToast(error.message)));
 elements.entriesOlder.addEventListener("click", () => loadEntryPage(state.entryOffset + ENTRY_PAGE_SIZE).catch((error) => showToast(error.message)));
+elements.resultsNewer.addEventListener("click", () => showResults(state.resultOffset - RESULT_PAGE_SIZE).catch((error) => showToast(error.message)));
+elements.resultsOlder.addEventListener("click", () => showResults(state.resultOffset + RESULT_PAGE_SIZE).catch((error) => showToast(error.message)));
+elements.dayCount.addEventListener("click", () => navigate(ROUTE.all).catch((error) => showToast(error.message)));
 elements.runTests.addEventListener("click", async () => {
   if (elements.runTests.getAttribute("aria-disabled") === "true") return;
   elements.runTests.setAttribute("aria-disabled", "true");

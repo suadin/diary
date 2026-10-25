@@ -190,12 +190,17 @@ def entry_topic(title: str) -> str | None:
     return topic or None
 
 
-def top_tags(database_path: Path, limit: int | None = None) -> list[dict[str, object]]:
-    """Return title topics ordered by frequency; newest spelling wins."""
+def top_tags(database_path: Path, limit: int = 10) -> list[dict[str, object]]:
+    """Return the most frequent title topics.
+
+    Ties go to the topic used most recently, then to the name. Rows arrive newest
+    first, so the first time a topic appears is its latest use.
+    """
     with connection(database_path) as database:
-        rows = database.execute("SELECT title FROM entries ORDER BY id DESC").fetchall()
+        rows = database.execute("SELECT id, title FROM entries ORDER BY id DESC").fetchall()
     counts: dict[str, int] = {}
     display: dict[str, str] = {}
+    latest: dict[str, int] = {}
     for row in rows:
         topic = entry_topic(row["title"])
         if topic is None:
@@ -203,12 +208,29 @@ def top_tags(database_path: Path, limit: int | None = None) -> list[dict[str, ob
         key = topic.casefold()
         counts[key] = counts.get(key, 0) + 1
         display.setdefault(key, topic)
-    ordered = sorted(counts.items(), key=lambda item: (-item[1], display[item[0]].casefold()))
-    selected = ordered if limit is None else ordered[:limit]
-    return [{"tag": display[key], "count": count} for key, count in selected]
+        latest.setdefault(key, row["id"])
+    ordered = sorted(
+        counts,
+        key=lambda key: (-counts[key], -latest[key], display[key].casefold()),
+    )
+    return [{"tag": display[key], "count": counts[key]} for key in ordered[:limit]]
 
 
-def search_entries(database_path: Path, query: str, tag: str | None = None) -> list[dict[str, object]]:
+def entry_has_tag(title: str, tag: str) -> bool:
+    topic = entry_topic(title)
+    return topic is not None and topic.casefold() == tag.strip().casefold()
+
+
+def search_entries(
+    database_path: Path,
+    query: str = "",
+    tag: str | None = None,
+    day: str | None = None,
+) -> list[dict[str, object]]:
+    """Return entries matching all given filters, newest first.
+
+    The tag filter uses entry_topic, the same rule the sidebar counts with.
+    """
     term = query.strip()
     clauses: list[str] = []
     parameters: list[object] = []
@@ -219,21 +241,36 @@ def search_entries(database_path: Path, query: str, tag: str | None = None) -> l
             "(entries.title LIKE ? ESCAPE '\\' OR entries.content LIKE ? ESCAPE '\\')"
         )
         parameters.extend((pattern, pattern))
-    if tag:
-        clauses.append(
-            "(instr(entries.title, '—') > 0 OR instr(entries.title, ':') > 0)"
-            " AND ("
-            " (instr(entries.title, '—') > 0 AND lower(trim(substr(entries.title, 1, instr(entries.title, '—') - 1))) = lower(?))"
-            " OR (instr(entries.title, ':') > 0 AND lower(trim(substr(entries.title, 1, instr(entries.title, ':') - 1))) = lower(?))"
-            ")"
-        )
-        parameters.extend((tag.strip(), tag.strip()))
+    if day:
+        clauses.append("entries.day = ?")
+        parameters.append(day)
     where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
-    return _entries(
+    entries = _entries(
         database_path,
         f"SELECT entries.* FROM entries {where} ORDER BY entries.day DESC, entries.id DESC",
         tuple(parameters),
     )
+    if tag:
+        entries = [entry for entry in entries if entry_has_tag(str(entry["title"]), tag)]
+    return entries
+
+
+def search_page(
+    database_path: Path,
+    query: str = "",
+    tag: str | None = None,
+    day: str | None = None,
+    offset: int = 0,
+    limit: int = 8,
+) -> dict[str, object]:
+    """Return one window of search results plus the total that matched."""
+    matches = search_entries(database_path, query, tag, day)
+    return {
+        "entries": matches[offset : offset + limit],
+        "offset": offset,
+        "limit": limit,
+        "total": len(matches),
+    }
 
 
 def delete_entries(database_path: Path, day: str | None = None, before: str | None = None) -> int:

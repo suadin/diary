@@ -9,12 +9,12 @@ This README explains what Diary is, how to run it, and how to operate it. The te
 rules it must satisfy live in [SPECS](docs/SPECS.md).
 
 > 🗂️ Dated entries · 🔗 deep links to every view · 🤖 append-only AI access ·
-> 🧪 46 unit tests and 14 E2E journeys
+> 🧪 50 unit tests and 18 E2E journeys
 
 ## What it does
 
 - Lists dates newest-first, seven per page, in `YYYY-MM-DD` form. Arrows load the
-  previous or next window on demand; a date opens with its entries, five at a time,
+  previous or next window on demand; a date opens with its entries, eight at a time,
   and the entry list pages lazily as well. A coarse `hh24:mi` sits beside each date;
   entries without a same-day timestamp show `12:00`. Arrow buttons walk to the
   neighbouring date with a short slide, even across a page boundary.
@@ -25,9 +25,13 @@ rules it must satisfy live in [SPECS](docs/SPECS.md).
   show their date; previews are deliberately compact. An entry view shows date, time,
   and author, and can copy its own link. Stored Markdown renders with the document
   reader's typography — paragraphs, lists, headings, code, tables, and links.
-- Shows every title topic as a tag chip in the sidebar. A chip filters the journal by
-  that exact topic; topics come from the part before the first separator (`—` or `:`)
-  in a title, so the chips need no separate tagging step.
+- Shows the ten most frequent title topics as tag chips in the sidebar, ties going to
+  the topic used most recently. A chip filters the journal by that exact topic; topics
+  come from the part before the earliest separator (`—` or `:`) in a title, so the chips
+  need no separate tagging step.
+- Search works inside the current scope: with a tag selected it searches that tag, with
+  a date selected it searches that date, and the entry count in the sidebar opens every
+  entry before searching. Results are paged eight at a time.
 - Links are stable and shareable: `#/day/2026-10-22`, `#/entry/42`,
   `#/docs/readme/ai-api`, `#/guide`, `#/search/boot`, and `#/tag/Diary`. Opening one
   restores the same view, including the surrounding sidebar window; a refresh does not
@@ -139,8 +143,9 @@ writing through the API may use their own name. The field defaults to `AI` and i
 limited to 80 characters. That credential can only append entries; there is no AI
 endpoint for editing or deleting. Titles name topic and action, joined by an em dash,
 for example `Diary — README reader added`, so tags can group entries by topic. Search
-matches titles and content. Tags are the exact title topic before the first em dash or colon; the
-sidebar chips and the `tag` search parameter filter by them. The server binds only to
+matches titles and content, and narrows by tag or date. Tags are the exact title topic
+before the earliest em dash or colon; the sidebar chips and the `tag` search parameter
+filter by them. The server binds only to
 loopback and does not enable CORS.
 
 ## Web endpoints
@@ -152,12 +157,14 @@ same-origin check described below.
 GET /api/days                          # every day with its entry count
 GET /api/days/page?offset=0&limit=7    # one window plus total days and entries
 GET /api/entries?date=2026-10-22
-GET /api/entries/page?date=2026-10-22&offset=0&limit=5  # one window plus the day's total
+GET /api/entries/page?date=2026-10-22&offset=0&limit=8  # one window plus the day's total
 GET /api/entry?id=42                   # one entry for a deep link
 GET /api/search?q=boot
 GET /api/search?q=boot&tag=Diary      # text and exact title topic
+GET /api/search?q=boot&date=2026-10-22  # text and one date
+GET /api/search/page?q=boot&tag=Diary&offset=0&limit=8  # one window plus the total
 GET /api/tags                          # all title topics, ordered by frequency
-GET /api/tags?limit=10                 # optional limit
+GET /api/tags?limit=10                 # most frequent topics, default 10
 GET /api/skill
 GET /api/docs                          # README and docs/*.md, each split into pages
 GET /api/metrics                       # unit and end-to-end numbers, and whether a run is active
@@ -226,9 +233,9 @@ a `covers` tag, an E2E journey with a Playwright tag. The server merges both run
 and every SPECS page lists the concrete test names under “Automated tests”, so
 a rule without a test is visible instead of implied.
 
-The unit suite has 46 tests and currently covers 467 of 613 lines (76.2 %). The
-Playwright suite in `e2e/` has 14 journeys and touches 744 of 1068 `web/app.js` lines
-(69.7 %). It needs Node, pnpm, and a Chromium build:
+The unit suite has 50 tests and currently covers 480 of 629 lines (76.3 %). The
+Playwright suite in `e2e/` has 18 journeys and touches 799 of 1125 `web/app.js` lines
+(71.0 %). It needs Node, pnpm, and a Chromium build:
 
 ```bash
 cd e2e

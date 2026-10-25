@@ -26,6 +26,7 @@ from diary.store import (
     list_days,
     list_entries,
     search_entries,
+    search_page,
     top_tags,
 )
 
@@ -89,22 +90,68 @@ class StoreTests(unittest.TestCase):
         self.add("2026-10-21", "Diary — First", "body one")
         self.add("2026-10-21", "Diary — Second", "body two")
         self.add("2026-10-21", "hub — Boot", "body three")
-        for index in range(12):
-            self.add("2026-10-21", f"Topic {index:02} — Entry", "body")
         self.add("2026-10-21", "No topic", "Diary appears in the body only")
-        all_tags = top_tags(self.database)
-        self.assertEqual(len(all_tags), 14)
-        self.assertEqual(all_tags[:2], [
+        self.assertEqual(top_tags(self.database), [
             {"tag": "Diary", "count": 2},
             {"tag": "hub", "count": 1},
         ])
-        self.assertEqual(len(top_tags(self.database, 10)), 10)
         self.assertEqual(len(top_tags(self.database, 1)), 1)
         tagged = search_entries(self.database, "", "diary")
         self.assertEqual([entry["title"] for entry in tagged], ["Diary — Second", "Diary — First"])
         both = search_entries(self.database, "body two", "Diary")
         self.assertEqual([entry["title"] for entry in both], ["Diary — Second"])
         self.assertEqual(search_entries(self.database, "", "missing"), [])
+
+    @covers("navigation-and-deep-links")
+    def test_top_tags_show_ten_by_count_then_latest_use(self):
+        for index in range(12):
+            self.add("2026-10-21", f"Topic {index:02} — Entry", "body")
+        self.add("2026-10-21", "Diary — One", "body")
+        self.add("2026-10-21", "Diary — Two", "body")
+        tags = [item["tag"] for item in top_tags(self.database)]
+        self.assertEqual(len(tags), 10)
+        self.assertEqual(tags[0], "Diary")
+        self.assertEqual(tags[1:], [f"Topic {index:02}" for index in range(11, 2, -1)])
+        self.assertEqual(len(top_tags(self.database, 20)), 13)
+
+    @covers("navigation-and-deep-links")
+    def test_tag_filter_follows_the_same_topic_rule_as_the_sidebar(self):
+        self.add("2026-10-21", "Hub: Boot — Doku", "body colon first")
+        self.add("2026-10-21", "four-wins: Power-Scheibe", "body colon")
+        self.assertEqual(top_tags(self.database), [
+            {"tag": "four-wins", "count": 1},
+            {"tag": "Hub", "count": 1},
+        ])
+        self.assertEqual([e["title"] for e in search_entries(self.database, "", "Hub")], ["Hub: Boot — Doku"])
+        self.assertEqual(search_entries(self.database, "", "Hub: Boot"), [])
+        self.assertEqual([e["title"] for e in search_entries(self.database, "", "FOUR-WINS")], ["four-wins: Power-Scheibe"])
+
+    @covers("navigation-and-deep-links", "entries-and-writing")
+    def test_search_combines_text_with_a_tag_or_a_day(self):
+        self.add("2026-10-21", "Diary — One", "alpha")
+        self.add("2026-10-22", "Diary — Two", "alpha")
+        self.add("2026-10-22", "Hub — Three", "alpha")
+        self.add("2026-10-22", "Diary — Four", "beta")
+        titles = lambda rows: [entry["title"] for entry in rows]
+        self.assertEqual(titles(search_entries(self.database, "alpha")), ["Hub — Three", "Diary — Two", "Diary — One"])
+        self.assertEqual(titles(search_entries(self.database, "alpha", "Diary")), ["Diary — Two", "Diary — One"])
+        self.assertEqual(titles(search_entries(self.database, "alpha", None, "2026-10-22")), ["Hub — Three", "Diary — Two"])
+        self.assertEqual(titles(search_entries(self.database, "alpha", "Diary", "2026-10-22")), ["Diary — Two"])
+        self.assertEqual(titles(search_entries(self.database, "", "Diary", "2026-10-22")), ["Diary — Four", "Diary — Two"])
+        self.assertEqual(search_entries(self.database, "beta", "Hub"), [])
+
+    @covers("navigation-and-deep-links")
+    def test_search_page_windows_results_and_reports_the_total(self):
+        for index in range(10):
+            self.add("2026-10-21", f"Diary — Note {index:02}", "same body")
+        first = search_page(self.database, "", "Diary", None, 0, 8)
+        second = search_page(self.database, "", "Diary", None, 8, 8)
+        self.assertEqual(first["total"], 10)
+        self.assertEqual(len(first["entries"]), 8)
+        self.assertEqual(len(second["entries"]), 2)
+        self.assertEqual(second["entries"][0]["title"], "Diary — Note 01")
+        narrowed = search_page(self.database, "same", "Diary", "2026-10-22", 0, 8)
+        self.assertEqual((narrowed["total"], narrowed["entries"]), (0, []))
 
     @covers("entries-and-writing", "navigation-and-deep-links")
     def test_colon_titles_yield_topics_and_the_earliest_separator_wins(self):
@@ -580,8 +627,8 @@ class HttpTests(ServerTestCase):
         page = json.loads(text)
         self.assertEqual(page["total"], 7)
         self.assertEqual(page["offset"], 0)
-        self.assertEqual(page["limit"], 5)
-        self.assertEqual(len(page["entries"]), 5)
+        self.assertEqual(page["limit"], 8)
+        self.assertEqual(len(page["entries"]), 7)
         status, text, _ = self.request("/api/entries/page?date=2026-10-21&offset=5&limit=5")
         self.assertEqual(status, 200)
         self.assertEqual(len(json.loads(text)["entries"]), 2)
@@ -676,14 +723,23 @@ class HttpTests(ServerTestCase):
             }, token="write-secret")
         status, tags, _ = self.request("/api/tags")
         self.assertEqual(status, 200)
-        self.assertEqual(len(json.loads(tags)), 13)
-        status, limited_tags, _ = self.request("/api/tags?limit=10")
-        self.assertEqual(status, 200)
-        self.assertEqual(len(json.loads(limited_tags)), 10)
+        self.assertEqual(len(json.loads(tags)), 10)
+        status, limited_tags, _ = self.request("/api/tags?limit=3")
+        self.assertEqual(len(json.loads(limited_tags)), 3)
         status, filtered, _ = self.request("/api/search?tag=Diary")
         self.assertEqual(status, 200)
         self.assertEqual([entry["title"] for entry in json.loads(filtered)], ["Diary — Tagged note"])
         self.assertEqual(self.request("/api/tags?limit=0")[0], 400)
+        status, paged, _ = self.request("/api/search/page?q=Tagged&limit=8")
+        self.assertEqual(status, 200)
+        self.assertEqual((json.loads(paged)["total"], len(json.loads(paged)["entries"])), (13, 8))
+        status, by_day, _ = self.request("/api/search?date=2026-10-22&q=tagged")
+        self.assertEqual(status, 200)
+        self.assertEqual(len(json.loads(by_day)), 13)
+        self.assertEqual(self.request("/api/search?date=2026-02-30")[0], 400)
+        self.assertEqual(self.request("/api/search/page?date=nope")[0], 400)
+        status, window, _ = self.request("/api/entries/page?date=2026-10-22")
+        self.assertEqual(json.loads(window)["limit"], 8)
         status, page, headers = self.request("/")
         self.assertEqual(status, 200)
         self.assertIn("Diary", page)

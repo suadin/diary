@@ -41,6 +41,10 @@ add_entry(
 for index in range(7):
     author = "AI" if index % 2 else "opencode/deepseek-v4.1-flash-free"
     add_entry(database, "2026-10-22", f"Today {index + 1}", f"Body {index + 1}.", author=author)
+add_entry(database, "2026-10-21", "Diary — Second note", "Second alpha note.", author="AI")
+add_entry(database, "2026-10-21", "Hub — Boot note", "Alpha for the hub.", author="AI")
+for index in range(9):
+    add_entry(database, "2026-10-21", f"Hub — Note {index + 1}", "Hub body.", author="AI")
 PY
 
 exec python3 -m diary serve

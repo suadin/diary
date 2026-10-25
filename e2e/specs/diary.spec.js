@@ -7,12 +7,8 @@ test("a journey through days, entries, documents, and the guide", { tag: ["@entr
     await page.goto("/");
     await expect(page.locator("h1")).toHaveText("Entries");
     await expect(page).toHaveURL(/#\/day\/2026-10-22$/);
-    await expect(page.locator(".entry-card")).toHaveCount(5);
-    await expect(page.locator("#entry-range")).toHaveText("1–5 / 7");
-
-    await page.locator("#entries-older").click();
-    await expect(page.locator(".entry-card")).toHaveCount(2);
-    await expect(page.locator("#entry-range")).toHaveText("6–7 / 7");
+    await expect(page.locator(".entry-card")).toHaveCount(7);
+    await expect(page.locator("#entry-pager")).toBeHidden();
 
     await page.locator(".entry-card").first().click();
     await expect(page.locator("#entry-view h2")).toBeVisible();
@@ -51,6 +47,7 @@ test("a journey through days, entries, documents, and the guide", { tag: ["@entr
     await expect(page.locator("#save-status")).toContainText("Guide reset");
 
     await page.locator("#back-to-journal").click();
+    await page.locator("#day-count").click();
     await page.locator("#search-input").fill("Deep links");
     await expect(page.locator(".result-card")).toHaveCount(1);
     await page.locator(".result-card").click();
@@ -65,7 +62,9 @@ test("a journey through days, entries, documents, and the guide", { tag: ["@entr
 
 test("entry content renders as Markdown", { tag: ["@entries-and-writing"] }, async ({ page }) => {
   await page.goto("/");
+  await page.locator("#day-count").click();
   await page.locator("#search-input").fill("Deep links");
+  await expect(page.locator(".result-card")).toHaveCount(1);
   await expect(page.locator(".result-card p")).not.toContainText("**");
   await page.locator(".result-card").click();
   await expect(page.locator("#entry-view strong").first()).toHaveText("icons");
@@ -91,8 +90,8 @@ test("tag chips filter entries by title topic", { tag: ["@navigation-and-deep-li
   await page.locator('.tag-chip[data-tag="Diary"]').click();
   await expect(page).toHaveURL(/#\/tag\/Diary$/);
   await expect(page.locator("#search-title")).toContainText("tagged “Diary”");
-  await expect(page.locator(".result-card")).toHaveCount(1);
-  await expect(page.locator(".result-card h3")).toContainText("Deep links added");
+  await expect(page.locator(".result-card")).toHaveCount(2);
+  await expect(page.locator("#result-list")).toContainText("Deep links added");
   await expect(page.locator('.tag-chip[data-tag="Diary"]')).toHaveClass(/active/);
   await expect(page.locator(".day-button.active")).toHaveCount(0);
 
@@ -104,6 +103,53 @@ test("tag chips filter entries by title topic", { tag: ["@navigation-and-deep-li
   await page.locator('.tag-chip[data-tag="Diary"]').click();
   await expect(page).toHaveURL(/#\/day\/2026-10-22$/);
   await expect(page.locator(".day-button.active")).toHaveCount(1);
+});
+
+test("search narrows the selected tag", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
+  await page.goto("/#/tag/Diary");
+  await expect(page.locator(".result-card")).toHaveCount(2);
+  await page.locator("#search-input").fill("alpha");
+  await expect(page.locator(".result-card")).toHaveCount(1);
+  await expect(page.locator(".result-card h3")).toHaveText("Diary — Second note");
+  await expect(page.locator("#search-title")).toHaveText("1 entry tagged “Diary” matching “alpha”");
+  await expect(page).toHaveURL(/#\/tag\/Diary$/);
+  await page.locator("#search-input").fill("");
+  await expect(page.locator(".result-card")).toHaveCount(2);
+});
+
+test("search narrows the selected date and the sidebar note is gone", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
+  await page.goto("/#/day/2026-10-22");
+  await expect(page.locator("#selection")).toBeVisible();
+  await expect(page.locator(".sidebar-note")).toHaveCount(0);
+  await page.locator("#search-input").fill("Today 3");
+  await expect(page.locator(".result-card")).toHaveCount(1);
+  await expect(page.locator(".result-card h3")).toHaveText("Today 3");
+  await expect(page.locator("#search-title")).toHaveText("1 entry on 2026-10-22 matching “Today 3”");
+  await page.locator("#search-input").fill("");
+  await expect(page.locator("#selection")).toBeVisible();
+});
+
+test("the entry count opens the whole journal, and search runs inside it", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
+  await page.goto("/#/day/2026-10-22");
+  await page.locator("#day-count").click();
+  await expect(page).toHaveURL(/#\/all$/);
+  await expect(page.locator(".result-card")).toHaveCount(8);
+  await expect(page.locator("#result-range")).toHaveText(/^1–8 \/ \d+$/);
+  await page.locator("#search-input").fill("alpha");
+  await expect(page.locator(".result-card")).toHaveCount(2);
+  await expect(page.locator("#search-title")).toHaveText("2 entries matching “alpha”");
+  await expect(page.locator("#result-pager")).toBeHidden();
+});
+
+test("tag results page eight at a time", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
+  await page.goto("/#/tag/Hub");
+  await expect(page.locator(".result-card")).toHaveCount(8);
+  await expect(page.locator("#result-range")).toHaveText("1–8 / 10");
+  await page.locator("#results-older").click();
+  await expect(page.locator(".result-card")).toHaveCount(2);
+  await expect(page.locator("#result-range")).toHaveText("9–10 / 10");
+  await page.locator("#results-newer").click();
+  await expect(page.locator(".result-card")).toHaveCount(8);
 });
 
 test("documentation wraps bullets, follows links, and fits the page", { tag: ["@documentation-reader"] }, async ({ page }) => {

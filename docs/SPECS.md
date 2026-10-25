@@ -32,7 +32,7 @@ What an entry is, and who may write one.
 How a reader reaches a date, an entry, or a section.
 
 - The page lists dates newest-first in `yyyy-mm-dd` form, seven per page; arrows load
-  older or newer windows on demand. A date shows its entries five per page with lazy
+  older or newer windows on demand. A date shows its entries eight per page with lazy
   loading, and arrows step to the neighbouring date, including across a page boundary.
 - Deep links are first-class: `#/day/2026-10-22`, `#/entry/42`,
   `#/docs/readme/ai-api`, `#/guide`, `#/search/boot`, and `#/tag/Diary`. Opening one
@@ -41,10 +41,13 @@ How a reader reaches a date, an entry, or a section.
 - A refresh opens the requested view directly. The welcome panel stays hidden until the
   first route has resolved, so it never flashes before entries appear.
 - Search matches titles and content with dates in the results. Entry previews are
-  compact.
-- The sidebar shows every title topic as a tag chip, ordered by frequency. A chip
-  filters entries by the exact topic before the first separator (`—` or `:`). No
-  separate tagging step is needed. In tag-filter results, no date is shown as selected.
+  compact. Results are paged eight at a time.
+- Search runs inside the current scope. With a tag selected it searches that tag; with a
+  date selected it searches that date; the entry count in the sidebar opens every entry
+  first. Clearing the text returns to the scope's full list.
+- The sidebar shows the ten most frequent title topics as tag chips. Ties go to the
+  topic used most recently. A chip filters entries by the exact topic before the earliest
+  separator (`—` or `:`). No separate tagging step is needed.
 
 ## Documentation reader
 

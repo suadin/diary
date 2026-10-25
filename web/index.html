@@ -22,7 +22,7 @@
 
     <main class="layout">
       <aside class="sidebar" aria-label="Entries by date">
-        <div class="sidebar-title"><h1>Entries</h1><span id="day-count" class="count has-tip" data-tip="Loading">0</span></div>
+        <div class="sidebar-title"><h1>Entries</h1><button id="day-count" class="count has-tip" type="button" data-tip="Loading" aria-label="Show all entries">0</button></div>
         <label class="search-label" for="search-input">Search entries</label>
         <div class="search-row">
           <input id="search-input" type="search" placeholder="Search a topic…" autocomplete="off">
@@ -38,7 +38,6 @@
           <span id="day-range" class="day-range"></span>
           <button id="days-older" class="pager-button down has-tip" type="button" data-tip="Older seven dates" aria-label="Older seven dates">↓</button>
         </div>
-        <p class="sidebar-note">The past, newest first, seven dates at a time. Pick a date to find its entries.</p>
       </aside>
 
       <section class="main-panel">
@@ -68,6 +67,11 @@
         <div id="search-results" class="search-results" hidden>
           <p class="eyebrow">Looking back</p><h2 id="search-title">Search results</h2>
           <div id="result-list" class="result-list"></div>
+          <div id="result-pager" class="entry-pager" hidden>
+            <button id="results-newer" class="pager-button up has-tip" type="button" data-tip="Newer results" aria-label="Newer results">↑</button>
+            <span id="result-range" class="day-range"></span>
+            <button id="results-older" class="pager-button down has-tip" type="button" data-tip="Older results" aria-label="Older results">↓</button>
+          </div>
         </div>
 
         <article id="entry-view" class="entry-view" hidden></article>
