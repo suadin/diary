@@ -261,7 +261,7 @@ def search_page(
     tag: str | None = None,
     day: str | None = None,
     offset: int = 0,
-    limit: int = 8,
+    limit: int = 10,
 ) -> dict[str, object]:
     """Return one window of search results plus the total that matched."""
     matches = search_entries(database_path, query, tag, day)

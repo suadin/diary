@@ -42,7 +42,7 @@ button { color: inherit; cursor: pointer; }
 .button-danger { color: var(--danger); border-color: var(--danger); box-shadow: 0.25rem 0.25rem 0 var(--danger); }
 .button-plain { background: transparent; box-shadow: none; }
 
-.layout { display: grid; grid-template-columns: minmax(14.375rem, 18.125rem) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); flex: 1; min-height: 0; width: 100%; }
+.layout { display: grid; grid-template-columns: 24rem minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); flex: 1; min-height: 0; width: 100%; }
 .sidebar { display: flex; flex-direction: column; min-height: 0; overflow: hidden; padding: 1.5rem 1.2rem; border-right: var(--line); }
 .sidebar-title, .selection-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .sidebar-title h1, h2, h3, p { margin-top: 0; }
@@ -68,7 +68,7 @@ button.count:hover { background: var(--yellow); animation: wiggle .5s ease-in-ou
 .tag-chip.active { color: var(--paper); background: var(--green); border-color: var(--ink); }
 .tag-chip .tag-count { margin-left: .2rem; color: var(--muted); font-weight: 800; }
 .tag-chip.active .tag-count { color: var(--paper); }
-.day-list { display: grid; flex: 1; align-content: start; gap: .35rem; min-height: 0; margin-top: 1rem; overflow-x: hidden; overflow-y: auto; scrollbar-gutter: stable; }
+.day-list { display: grid; flex: 0 1 auto; align-content: start; gap: .35rem; min-height: 0; margin-top: 1rem; overflow-x: hidden; overflow-y: auto; scrollbar-gutter: stable; }
 .day-button { display: flex; justify-content: space-between; width: 100%; border: 0.125rem solid transparent; border-radius: 0.5625rem; background: transparent; padding: .6rem .65rem; text-align: left; transition: background .15s ease, transform .15s ease, border-color .15s ease; }
 .day-button:hover, .day-button.active { background: var(--yellow); border-color: var(--ink); }
 .day-button:hover { transform: translateX(0.125rem); }
@@ -90,7 +90,7 @@ button.count:hover { background: var(--yellow); animation: wiggle .5s ease-in-ou
 .eyebrow { margin-bottom: .4rem; color: var(--green); font-size: .72rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
 .welcome-hint { font-family: "Comic Sans MS", cursive; font-size: 1.25rem !important; }
 
-.selection, .search-results, .entry-view, .editor, .docs-view { max-width: 53.75rem; margin: 0 auto; }
+.selection, .search-results, .entry-view, .editor, .docs-view { width: 100%; }
 .selection-heading h2, .search-results h2, .editor h2, .docs-view h2 { margin-bottom: .5rem; font-size: clamp(1.7rem, 4vw, 2.4rem); }
 .day-nav { display: flex; gap: .35rem; }
 
@@ -130,7 +130,7 @@ button.count:hover { background: var(--yellow); animation: wiggle .5s ease-in-ou
 
 .editor-hint { color: var(--muted); }
 #skill-editor { width: 100%; max-height: 9.4rem; resize: vertical; border: 0.125rem solid var(--ink); border-radius: 0.75rem; background: var(--card); padding: 1rem; font: .95rem/1.6 ui-monospace, monospace; overflow: auto; transition: max-height .2s ease; }
-#skill-editor.expanded { max-height: 40rem; }
+#skill-editor.expanded { max-height: 18.8rem; }
 .editor-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem; margin: .8rem 0 2rem; }
 .delete-box { border-top: var(--line); padding-top: 1.3rem; }
 .delete-box h3 { margin-bottom: .3rem; }
@@ -185,6 +185,7 @@ span.has-tip { cursor: help; }
 
 .tooltip { position: fixed; z-index: 50; max-width: min(16.25rem, calc(100vw - 1rem)); border-radius: 0.625rem; background: var(--ink); padding: .42rem .62rem; color: var(--paper); font-size: .73rem; font-weight: 700; line-height: 1.35; text-align: center; white-space: pre-line; pointer-events: none; box-shadow: 0.1875rem 0.1875rem 0 rgb(0 0 0 / .22); }
 .tooltip::after { content: ""; position: absolute; left: 50%; width: 0.625rem; height: 0.625rem; background: var(--ink); transform: translateX(-50%) rotate(45deg); }
+.tooltip.wide { max-width: min(36rem, calc(100vw - 1rem)); }
 .tooltip[data-placement="top"]::after { bottom: -0.25rem; }
 .tooltip[data-placement="bottom"]::after { top: -0.25rem; }
 

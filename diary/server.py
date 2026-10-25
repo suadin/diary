@@ -85,7 +85,7 @@ class DiaryHandler(BaseHTTPRequestHandler):
                     self.server.settings.database_path,
                     day,
                     self._integer(query, "offset", 0, minimum=0),
-                    self._integer(query, "limit", 8, minimum=1, maximum=50),
+                    self._integer(query, "limit", 10, minimum=1, maximum=50),
                 ))
             elif route.path == "/api/docs":
                 self._json(200, {"documents": documents(Path(__file__).resolve().parent.parent)})
@@ -110,7 +110,7 @@ class DiaryHandler(BaseHTTPRequestHandler):
                     self._query_value(query, "tag"),
                     self._day_value(query),
                     self._integer(query, "offset", 0, minimum=0),
-                    self._integer(query, "limit", 8, minimum=1, maximum=50),
+                    self._integer(query, "limit", 10, minimum=1, maximum=50),
                 ))
             elif route.path == "/api/skill":
                 self._text(200, self._read_skill(), "text/markdown; charset=utf-8")

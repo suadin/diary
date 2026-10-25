@@ -9,12 +9,12 @@ This README explains what Diary is, how to run it, and how to operate it. The te
 rules it must satisfy live in [SPECS](docs/SPECS.md).
 
 > 🗂️ Dated entries · 🔗 deep links to every view · 🤖 append-only AI access ·
-> 🧪 50 unit tests and 23 E2E journeys
+> 🧪 50 unit tests and 27 E2E journeys
 
 ## What it does
 
 - Lists dates newest-first, seven per page, in `YYYY-MM-DD` form. Arrows load the
-  previous or next window on demand; a date opens with its entries, eight at a time,
+  previous or next window on demand; a date opens with its entries, ten at a time,
   and the entry list pages lazily as well. A coarse `hh24:mi` sits beside each date;
   entries without a same-day timestamp show `12:00`. Arrow buttons walk to the
   neighbouring date with a short slide, even across a page boundary.
@@ -32,7 +32,7 @@ rules it must satisfy live in [SPECS](docs/SPECS.md).
 - Search works inside the current scope: with a tag selected it searches that tag, with
   a date selected it searches that date, and the entry count in the sidebar opens every
   entry before searching. The search text is part of the address, so a link restores it.
-  Results are paged eight at a time, and an open entry steps to the neighbours in the
+  Results are paged ten at a time, and an open entry steps to the neighbours in the
   list it came from.
 - Links are stable and shareable: `#/day/2026-10-22`, `#/entry/42`,
   `#/docs/readme/ai-api`, `#/guide`, `#/all?q=boot`, and `#/tag/Diary?q=boot`. Opening one
@@ -159,12 +159,12 @@ same-origin check described below.
 GET /api/days                          # every day with its entry count
 GET /api/days/page?offset=0&limit=7    # one window plus total days and entries
 GET /api/entries?date=2026-10-22
-GET /api/entries/page?date=2026-10-22&offset=0&limit=8  # one window plus the day's total
+GET /api/entries/page?date=2026-10-22&offset=0&limit=10  # one window plus the day's total
 GET /api/entry?id=42                   # one entry for a deep link
 GET /api/search?q=boot
 GET /api/search?q=boot&tag=Diary      # text and exact title topic
 GET /api/search?q=boot&date=2026-10-22  # text and one date
-GET /api/search/page?q=boot&tag=Diary&offset=0&limit=8  # one window plus the total
+GET /api/search/page?q=boot&tag=Diary&offset=0&limit=10  # one window plus the total
 GET /api/tags                          # all title topics, ordered by frequency
 GET /api/tags?limit=8                  # most frequent topics, default 8
 GET /api/skill
@@ -236,8 +236,8 @@ and every SPECS page lists the concrete test names under “Automated tests”, 
 a rule without a test is visible instead of implied.
 
 The unit suite has 50 tests and currently covers 480 of 629 lines (76.3 %). The
-Playwright suite in `e2e/` has 23 journeys and touches 847 of 1163 `web/app.js` lines
-(72.8 %). It needs Node, pnpm, and a Chromium build:
+Playwright suite in `e2e/` has 27 journeys and touches 854 of 1166 `web/app.js` lines
+(73.2 %). It needs Node, pnpm, and a Chromium build:
 
 ```bash
 cd e2e

@@ -136,23 +136,23 @@ test("the entry count opens the whole journal, and search runs inside it", { tag
   await page.goto("/#/day/2026-10-22");
   await page.locator("#day-count").click();
   await expect(page).toHaveURL(/#\/all$/);
-  await expect(page.locator(".result-card")).toHaveCount(8);
-  await expect(page.locator("#result-range")).toHaveText(/^1–8 \/ \d+$/);
+  await expect(page.locator(".result-card")).toHaveCount(10);
+  await expect(page.locator("#result-range")).toHaveText(/^1–10 \/ \d+$/);
   await page.locator("#search-input").fill("alpha");
   await expect(page.locator(".result-card")).toHaveCount(2);
   await expect(page.locator("#search-title")).toHaveText("2 entries matching “alpha”");
   await expect(page.locator("#result-pager")).toBeHidden();
 });
 
-test("tag results page eight at a time", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
+test("tag results page ten at a time", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
   await page.goto("/#/tag/Hub");
-  await expect(page.locator(".result-card")).toHaveCount(8);
-  await expect(page.locator("#result-range")).toHaveText("1–8 / 10");
+  await expect(page.locator(".result-card")).toHaveCount(10);
+  await expect(page.locator("#result-range")).toHaveText("1–10 / 11");
   await page.locator("#results-older").click();
-  await expect(page.locator(".result-card")).toHaveCount(2);
-  await expect(page.locator("#result-range")).toHaveText("9–10 / 10");
+  await expect(page.locator(".result-card")).toHaveCount(1);
+  await expect(page.locator("#result-range")).toHaveText("11–11 / 11");
   await page.locator("#results-newer").click();
-  await expect(page.locator(".result-card")).toHaveCount(8);
+  await expect(page.locator(".result-card")).toHaveCount(10);
 });
 
 test("deep links restore the search text and typing updates the link", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
@@ -228,6 +228,46 @@ test("entry cards browse the list they came from", { tag: ["@navigation-and-deep
   await expect(page).toHaveURL(/#\/all\?q=alpha$/);
   await expect(page.locator("#search-input")).toHaveValue("alpha");
   await expect(page.locator(".result-card")).toHaveCount(2);
+});
+
+test("the day pager sits under the day list, and no day is marked in the docs", { tag: ["@navigation-and-deep-links", "@documentation-reader"] }, async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto("/#/day/2026-10-22");
+  const list = await page.locator("#day-list").boundingBox();
+  const pager = await page.locator(".day-pager").boundingBox();
+  expect(pager.y - (list.y + list.height)).toBeLessThan(24);
+  await expect(page.locator(".day-button.active")).toHaveCount(1);
+  await page.goto("/#/docs/readme/what-it-does");
+  await expect(page.locator(".day-button.active")).toHaveCount(0);
+  await expect(page.locator(".tag-chip.active")).toHaveCount(0);
+});
+
+test("the sidebar is wider and the card spans the main panel", { tag: ["@style-and-vocabulary"] }, async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto("/#/day/2026-10-22");
+  const side = await page.locator(".sidebar").boundingBox();
+  expect(side.width).toBeCloseTo(384, 0);
+  const main = await page.locator("#main-panel").evaluate((node) => ({
+    width: node.clientWidth,
+    padding: parseFloat(getComputedStyle(node).paddingLeft),
+  }));
+  const card = await page.locator("#selection").boundingBox();
+  expect(card.width).toBeCloseTo(main.width - 2 * main.padding, 0);
+});
+
+test("footer test tooltips are wide, other tooltips stay narrow", { tag: ["@footer", "@tests"] }, async ({ page }) => {
+  await page.goto("/");
+  await page.locator("#run-tests").hover();
+  await expect(page.locator("#tooltip")).toHaveClass(/wide/);
+  await page.locator("#day-count").hover();
+  await expect(page.locator("#tooltip")).not.toHaveClass(/wide/);
+});
+
+test("the writing guide grows to at most twice its compact height", { tag: ["@writing-guide"] }, async ({ page }) => {
+  await page.goto("/#/guide");
+  const compact = await page.locator("#skill-editor").evaluate((node) => parseFloat(getComputedStyle(node).maxHeight));
+  await page.locator("#guide-toggle").click();
+  await expect.poll(() => page.locator("#skill-editor").evaluate((node) => parseFloat(getComputedStyle(node).maxHeight))).toBeCloseTo(compact * 2, 0);
 });
 
 test("documentation wraps bullets, follows links, and the card scrolls", { tag: ["@documentation-reader"] }, async ({ page }) => {

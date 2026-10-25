@@ -43,7 +43,7 @@ for index in range(7):
     add_entry(database, "2026-10-22", f"Today {index + 1}", f"Body {index + 1}.", author=author)
 add_entry(database, "2026-10-21", "Diary — Second note", "Second alpha note.", author="AI")
 add_entry(database, "2026-10-21", "Hub — Boot note", "Alpha for the hub.", author="AI")
-for index in range(9):
+for index in range(10):
     add_entry(database, "2026-10-21", f"Hub — Note {index + 1}", "Hub body.", author="AI")
 PY
 

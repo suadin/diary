@@ -58,8 +58,8 @@ const elements = {
 };
 
 const PAGE_SIZE = 7;
-const ENTRY_PAGE_SIZE = 8;
-const RESULT_PAGE_SIZE = 8;
+const ENTRY_PAGE_SIZE = 10;
+const RESULT_PAGE_SIZE = 10;
 const TEST_POLL_MS = 5000;
 const ENTRY_WARN = 2000;
 const ENTRY_CRITICAL = 5000;
@@ -124,6 +124,7 @@ const state = {
   tags: [],
   activeTag: null,
   globalSearch: false,
+  inDocs: false,
   returnHash: null,
   pendingEntryContext: null,
   entryContext: null,
@@ -200,7 +201,7 @@ function renderDays() {
   for (const day of state.days) {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = `day-button${!state.activeTag && !state.globalSearch && state.selectedDate === day.date ? " active" : ""}`;
+    button.className = `day-button${!state.activeTag && !state.globalSearch && !state.inDocs && state.selectedDate === day.date ? " active" : ""}`;
     const date = document.createElement("span");
     date.textContent = day.date;
     const count = document.createElement("span");
@@ -1026,6 +1027,7 @@ async function applyRoute() {
   const [kind, first, second] = parts;
   if (kind !== "tag") state.activeTag = null;
   if (kind !== "all" && kind !== "search") state.globalSearch = false;
+  state.inDocs = kind === "docs";
   renderDays();
   renderTags();
   if (kind === "day" && first) {
@@ -1080,6 +1082,7 @@ function showTooltip(target) {
   if (!text) return;
   tooltipTarget = target;
   elements.tooltip.textContent = text;
+  elements.tooltip.classList.toggle("wide", target.hasAttribute("data-tip-wide"));
   elements.tooltip.hidden = false;
   const rect = target.getBoundingClientRect();
   const tip = elements.tooltip.getBoundingClientRect();
