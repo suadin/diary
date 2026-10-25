@@ -37,9 +37,9 @@ test("a journey through days, entries, documents, and the guide", { tag: ["@entr
     await expect(page).toHaveURL(/#\/docs\/readme\/ai-api$/);
     await expect(page.locator("#doc-body")).toContainText("/ai/entries");
 
-    await page.locator(".doc-tab", { hasText: "Requirements" }).click();
-    await expect(page.locator("#docs-title")).toHaveText("Requirements");
-    await expect(page).toHaveURL(/#\/docs\/requirements\/overview$/);
+    await page.locator(".doc-tab", { hasText: "SPECS" }).click();
+    await expect(page.locator("#docs-title")).toHaveText("SPECS");
+    await expect(page).toHaveURL(/#\/docs\/specs\/overview$/);
 
     await page.goto("/#/guide");
     await page.locator("#skill-editor").fill("# Changed\n");
@@ -75,6 +75,24 @@ test("entry content renders as Markdown", { tag: ["@entries-and-writing"] }, asy
   await expect(page.locator("#entry-view")).not.toContainText("**");
 });
 
+test("tag chips filter entries by title topic", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
+  await page.goto("/");
+  const chips = page.locator(".tag-chip");
+  await expect(chips).toHaveCount(1);
+  await expect(chips.first()).toContainText("Diary");
+  await expect(chips.first()).toContainText("1");
+
+  await chips.first().click();
+  await expect(page).toHaveURL(/#\/tag\/Diary$/);
+  await expect(page.locator("#search-title")).toContainText("tagged “Diary”");
+  await expect(page.locator(".result-card")).toHaveCount(1);
+  await expect(page.locator(".result-card h3")).toContainText("Deep links added");
+  await expect(page.locator(".tag-chip")).toHaveClass(/active/);
+
+  await page.locator(".tag-chip").first().click();
+  await expect(page).toHaveURL(/#\/day\/2026-10-22$/);
+});
+
 test("documentation wraps bullets, follows links, and fits the page", { tag: ["@documentation-reader"] }, async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto("/#/docs/readme/what-it-does");
@@ -85,17 +103,17 @@ test("documentation wraps bullets, follows links, and fits the page", { tag: ["@
   expect(fits).toBe(true);
 
   await page.goto("/#/docs/readme/tests-and-coverage");
-  await page.locator('a[data-doc-link="requirements#tests"]').click();
-  await expect(page).toHaveURL(/#\/docs\/requirements\/tests$/);
+  await page.locator('a[data-doc-link="specs#tests"]').click();
+  await expect(page).toHaveURL(/#\/docs\/specs\/tests$/);
   await expect(page.locator("#doc-section-title")).toHaveText("Tests");
 
-  await page.goto("/#/docs/requirements/overview");
+  await page.goto("/#/docs/specs/overview");
   await page.locator('a[data-doc-link="readme#overview"]').first().click();
   await expect(page).toHaveURL(/#\/docs\/readme\/overview$/);
 });
 
-test("requirements sections use distinct icons", { tag: ["@documentation-reader", "@style-and-vocabulary"] }, async ({ page }) => {
-  await page.goto("/#/docs/requirements");
+test("specs sections use distinct icons", { tag: ["@documentation-reader", "@style-and-vocabulary"] }, async ({ page }) => {
+  await page.goto("/#/docs/specs");
   const icons = await page.locator(".doc-section svg").evaluateAll(
     (nodes) => nodes.map((node) => node.innerHTML),
   );
@@ -110,6 +128,16 @@ test("tooltip-only text uses the help cursor and the sidebar stays fixed", { tag
   await expect(page.locator("#day-list")).toHaveCSS("overflow-x", "hidden");
   await page.locator(".day-button").first().hover();
   await expect(page.locator("#day-list")).toHaveCSS("overflow-x", "hidden");
+});
+
+test("the layout spans the full width like the header", { tag: ["@style-and-vocabulary"] }, async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto("/");
+  for (const selector of [".topbar", ".layout", ".footer"]) {
+    const box = await page.locator(selector).boundingBox();
+    expect(box.x).toBeCloseTo(0, 0);
+    expect(box.width).toBeCloseTo(1920, 0);
+  }
 });
 
 test("an unknown deep link returns to the start", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
@@ -161,22 +189,50 @@ test("the footer is centred with separators and renders end-to-end numbers", { t
       failures: 0,
       coverage: 75.5,
       measuredAt: "2026-10-22T14:00:00+00:00",
+      durationSeconds: 84,
       running: false,
-      e2e: { tests: 12, failures: 0, coverage: 61.5, measuredAt: "2026-10-22T14:00:00+00:00" },
+      e2e: {
+        tests: 12,
+        failures: 0,
+        coverage: 61.5,
+        measuredAt: "2026-10-22T14:00:00+00:00",
+        durationSeconds: 84,
+      },
     },
   }));
   await page.goto("/");
-  await expect(page.locator("#e2e-metrics")).toHaveText("e2e 12 · 0 fail · 61.5 %");
+  await expect(page.locator("#e2e-metrics")).toHaveText("e2e 12 · 61.5 %");
   await expect(page.locator(".footer-sep")).toHaveCount(3);
+  await expect(page.locator(".footer-items svg")).toHaveCount(4);
+  await expect(page.locator(".fail-count")).toHaveCount(0);
+  const tip = await page.locator("#e2e-metrics").getAttribute("data-tip");
+  expect(tip).toContain("Measured: 2026-10-22");
+  expect(tip).toContain("Duration: 01:24 minutes");
 
   const boxes = await page.locator(".footer-items > *").evaluateAll((nodes) => nodes.map((node) => {
     const rect = node.getBoundingClientRect();
     return rect.top + rect.height / 2;
   }));
   expect(Math.max(...boxes) - Math.min(...boxes)).toBeLessThan(3);
+
+  await page.unroute("**/api/metrics");
+  await page.route("**/api/metrics", (route) => route.fulfill({
+    json: {
+      tests: 42,
+      failures: 2,
+      coverage: 75.5,
+      measuredAt: "2026-10-22T14:00:00+00:00",
+      running: false,
+      e2e: { tests: 12, failures: 1, coverage: 61.5, measuredAt: "2026-10-22T14:00:00+00:00" },
+    },
+  }));
+  await page.reload();
+  await expect(page.locator("#run-tests .fail-count")).toHaveText("2 fail");
+  await expect(page.locator("#e2e-metrics .fail-count")).toHaveText("1 fail");
+  await expect(page.locator("#run-tests .fail-count")).toHaveCSS("color", "rgb(232, 76, 61)");
 });
 
-test("requirements list the tests that verify them", { tag: ["@tests", "@documentation-reader"] }, async ({ page }) => {
+test("specs list the tests that verify them", { tag: ["@tests", "@documentation-reader"] }, async ({ page }) => {
   await page.route("**/api/metrics", (route) => route.fulfill({
     json: {
       tests: 44,
@@ -193,10 +249,14 @@ test("requirements list the tests that verify them", { tag: ["@tests", "@documen
       },
     },
   }));
-  await page.goto("/#/docs/requirements/entries-and-writing");
+  await page.goto("/#/docs/specs/entries-and-writing");
   await expect(page.locator(".doc-tests")).toContainText("Automated tests");
   await expect(page.locator(".doc-tests li")).toHaveCount(2);
-  await expect(page.locator(".doc-tests")).toContainText("StoreTests.test_author_defaults_normalizes_and_has_a_limit");
+  await expect(page.locator(".doc-tests ol li")).toHaveCount(2);
+  await expect(page.locator(".doc-test-kind")).toHaveCount(2);
+  await expect(page.locator(".doc-tests")).toContainText("E2E · 1");
+  await expect(page.locator(".doc-tests")).not.toContainText("Last run:");
+  await expect(page.locator(".doc-tests")).toContainText("author defaults normalizes and has a limit");
   await expect(page.locator(".doc-tests")).toContainText("entry content renders as Markdown");
 });
 
@@ -205,11 +265,11 @@ test("the unit button runs the suite once", { tag: ["@tests"] }, async ({ page }
   await page.goto("/");
   await expect(page.locator("#run-tests")).toHaveText("unit not measured — run");
   await page.locator("#run-tests").click();
-  await expect(page.locator("#run-tests")).toHaveText(/unit \d+ · \d+ fail · [\d.]+ %/, { timeout: 120_000 });
+  await expect(page.locator("#run-tests")).toHaveText(/unit \d+ · [\d.]+ %/, { timeout: 120_000 });
   await expect(page.locator("#run-tests")).toHaveAttribute("aria-disabled", "true");
 
   await page.reload();
-  await expect(page.locator("#run-tests")).toHaveText(/unit \d+ · \d+ fail · [\d.]+ %/);
+  await expect(page.locator("#run-tests")).toHaveText(/unit \d+ · [\d.]+ %/);
   const before = await page.locator("#run-tests").textContent();
   await page.locator("#run-tests").evaluate((node) => node.click());
   await page.waitForTimeout(500);

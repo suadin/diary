@@ -25,6 +25,7 @@ from diary.store import (
     list_days,
     list_entries,
     search_entries,
+    top_tags,
 )
 
 
@@ -81,6 +82,23 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(delete_entries(self.database, before="2026-10-20"), 2)
         self.assertEqual(delete_entries(self.database, day="2026-10-21"), 1)
         self.assertEqual(list_entries(self.database), [])
+
+    @covers("entries-and-writing", "navigation-and-deep-links")
+    def test_top_tags_and_tag_search_use_the_title_topic(self):
+        self.add("2026-10-21", "Diary — First", "body one")
+        self.add("2026-10-21", "Diary — Second", "body two")
+        self.add("2026-10-21", "hub — Boot", "body three")
+        self.add("2026-10-21", "No topic", "Diary appears in the body only")
+        self.assertEqual(top_tags(self.database), [
+            {"tag": "Diary", "count": 2},
+            {"tag": "hub", "count": 1},
+        ])
+        self.assertEqual(len(top_tags(self.database, 1)), 1)
+        tagged = search_entries(self.database, "", "diary")
+        self.assertEqual([entry["title"] for entry in tagged], ["Diary — Second", "Diary — First"])
+        both = search_entries(self.database, "body two", "Diary")
+        self.assertEqual([entry["title"] for entry in both], ["Diary — Second"])
+        self.assertEqual(search_entries(self.database, "", "missing"), [])
 
     @covers("entries-and-writing")
     def test_entry_validation_and_idempotent_source_key(self):
@@ -567,7 +585,8 @@ class HttpTests(ServerTestCase):
         status, text, _ = self.request("/api/docs")
         self.assertEqual(status, 200)
         result = json.loads(text)
-        self.assertEqual([item["slug"] for item in result["documents"]], ["readme", "requirements"])
+        self.assertEqual([item["slug"] for item in result["documents"]], ["readme", "specs"])
+        self.assertEqual(result["documents"][1]["title"], "SPECS")
         readme = result["documents"][0]
         titles = [page["title"] for page in readme["pages"]]
         self.assertIn("What it does", titles)
@@ -632,6 +651,16 @@ class HttpTests(ServerTestCase):
         status, results, _ = self.request("/api/search?q=searchable")
         self.assertEqual(status, 200)
         self.assertEqual(json.loads(results)[0]["date"], "2026-10-21")
+        self.request("/ai/entries", "POST", {
+            "date": "2026-10-22", "title": "Diary — Tagged note", "content": "Tagged body",
+        }, token="write-secret")
+        status, tags, _ = self.request("/api/tags")
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(tags), [{"tag": "Diary", "count": 1}])
+        status, filtered, _ = self.request("/api/search?tag=Diary")
+        self.assertEqual(status, 200)
+        self.assertEqual([entry["title"] for entry in json.loads(filtered)], ["Diary — Tagged note"])
+        self.assertEqual(self.request("/api/tags?limit=0")[0], 400)
         status, page, headers = self.request("/")
         self.assertEqual(status, 200)
         self.assertIn("Diary", page)
@@ -742,7 +771,7 @@ class TraceabilityTests(unittest.TestCase):
     def test_every_requirement_section_is_named_by_a_test(self):
         sections = {
             page["slug"]
-            for page in readme_pages(ROOT / "docs" / "REQUIREMENTS.md")["pages"]
+            for page in readme_pages(ROOT / "docs" / "SPECS.md")["pages"]
         } - {"overview"}
         covered = set()
         suite = unittest.defaultTestLoader.discover(str(ROOT / "tests"))

@@ -1,4 +1,4 @@
-# Diary requirements
+# Diary specs
 
 Diary is a small, local web journal whose primary reader is a future AI session.
 The web app, API, documentation, and code are English-only; imported historical
@@ -17,7 +17,7 @@ What an entry is, and who may write one.
   reader. Wrapped lines join into paragraphs; `-` starts a list, `###` a heading,
   backticks code, and links stay clickable. Stored text is not altered.
 - A title names topic and action, joined by an em dash: `Topic — Action`, for example
-  `Diary — README reader added`. The topic is a stable word so later tagging can group
+  `Diary — README reader added`. The topic is a stable word so tags can group
   entries; the action says what was done.
 - The author is the model name for AI work, for example
   `opencode/deepseek-v4.1-flash-free`, `AI` for imported history, or a human name
@@ -34,10 +34,14 @@ How a reader reaches a date, an entry, or a section.
   older or newer windows on demand. A date shows its entries five per page with lazy
   loading, and arrows step to the neighbouring date, including across a page boundary.
 - Deep links are first-class: `#/day/2026-10-22`, `#/entry/42`,
-  `#/docs/readme/ai-api`, `#/guide`, and `#/search/boot`. Opening one restores the
-  same view and the surrounding sidebar window; an unknown link returns to the start.
+  `#/docs/readme/ai-api`, `#/guide`, `#/search/boot`, and `#/tag/Diary`. Opening one
+  restores the same view and the surrounding sidebar window; an unknown link returns to
+  the start.
 - Search matches titles and content with dates in the results. Entry previews are
   compact.
+- The sidebar shows at most the ten most frequent title topics as tag chips. A chip
+  filters entries by the exact topic before the em dash; no separate tagging step is
+  needed.
 
 ## Documentation reader
 
@@ -65,10 +69,12 @@ What the editable AI guide does.
 
 What the page points to.
 
-- One compact, centred footer carries README, source, unit tests, and end-to-end
-  tests, separated by `|`. It must keep those items on one line at desktop width.
+- One compact, centred footer carries README, source, unit tests, and E2E tests,
+  separated by `|`. Each item has its own icon and must stay on one line at desktop
+  width.
 - The items name what they open: the documentation reader, the source repository, the
-  unit report, and the browser report.
+  unit report, and the E2E report. A failure count appears only when at least one test
+  failed, and then in red.
 
 ## Tests
 
@@ -80,16 +86,19 @@ Run commands and measured numbers are in
 - The unit button shows the latest count and application line coverage and starts the
   suite once. Results are one-shot: once they exist the button shows them and refuses
   another start. It polls every five seconds while a run is active.
-- The end-to-end item shows Playwright journeys and `web/app.js` line coverage from
+- The E2E item shows Playwright journeys and `web/app.js` line coverage from
   `test-metrics.e2e.json`. Playwright runs locally, not in the container; a missing
   file shows “not measured”, never zero.
 - Coverage is line coverage, not branch coverage. A missing unit report is shown as
   “not measured”, not as zero.
 - Tests cover the API, storage, search, deletion, AI/human mutation boundaries, deep
   links, and legacy Markdown import.
-- Every automated test names the requirement it protects: unit tests carry a `covers`
-  tag, browser journeys a Playwright tag. Each requirement page lists the concrete test
-  names under “Automated tests”; a section without names is a gap, not a pass.
+- Every automated test names the rule it protects: unit tests carry a `covers` tag,
+  E2E journeys a Playwright tag. Each SPECS page lists the concrete test names under
+  “Automated tests”, unit methods as readable sentences and numbered below their
+  group; a section without names is a gap, not a pass.
+- Test tooltips name the measurement time and duration, not a second copy of the
+  numbers already in the footer.
 
 ## Human controls
 
@@ -146,4 +155,5 @@ How the interface should feel and speak.
   spark as something special; yellow stays emphasis, red warns, green marks good.
   Include one small, relevant surprise. The page uses a journal icon.
 - Use one name for one thing. The page says “entries” and “dates”, not “notes”,
-  “threads”, or “days” where an entry or a calendar date is meant. Sentences are short.
+  “threads”, or “days” where an entry or a calendar date is meant. The browser test
+  suite is called “E2E”, never “browser”. Sentences are short.

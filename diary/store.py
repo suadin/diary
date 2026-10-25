@@ -7,6 +7,9 @@ import sqlite3
 from typing import Iterator
 
 
+TOPIC_SEPARATOR = "—"
+
+
 def valid_day(value: str) -> bool:
     try:
         return date.fromisoformat(value).isoformat() == value
@@ -178,7 +181,31 @@ def list_entries(database_path: Path, day: str | None = None) -> list[dict[str, 
     )
 
 
-def search_entries(database_path: Path, query: str) -> list[dict[str, object]]:
+def entry_topic(title: str) -> str | None:
+    """Return the topic before the em dash in a title, or None."""
+    topic, separator, _ = title.partition(TOPIC_SEPARATOR)
+    topic = topic.strip()
+    return topic if separator and topic else None
+
+
+def top_tags(database_path: Path, limit: int = 10) -> list[dict[str, object]]:
+    """Return the most frequent title topics, newest spelling wins."""
+    with connection(database_path) as database:
+        rows = database.execute("SELECT title FROM entries ORDER BY id DESC").fetchall()
+    counts: dict[str, int] = {}
+    display: dict[str, str] = {}
+    for row in rows:
+        topic = entry_topic(row["title"])
+        if topic is None:
+            continue
+        key = topic.casefold()
+        counts[key] = counts.get(key, 0) + 1
+        display.setdefault(key, topic)
+    ordered = sorted(counts.items(), key=lambda item: (-item[1], display[item[0]].casefold()))
+    return [{"tag": display[key], "count": count} for key, count in ordered[:limit]]
+
+
+def search_entries(database_path: Path, query: str, tag: str | None = None) -> list[dict[str, object]]:
     term = query.strip()
     clauses: list[str] = []
     parameters: list[object] = []
@@ -189,6 +216,13 @@ def search_entries(database_path: Path, query: str) -> list[dict[str, object]]:
             "(entries.title LIKE ? ESCAPE '\\' OR entries.content LIKE ? ESCAPE '\\')"
         )
         parameters.extend((pattern, pattern))
+    if tag:
+        clauses.append(
+            "instr(entries.title, '—') > 0"
+            " AND lower(trim(substr(entries.title, 1, instr(entries.title, '—') - 1)))"
+            " = lower(?)"
+        )
+        parameters.append(tag.strip())
     where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
     return _entries(
         database_path,

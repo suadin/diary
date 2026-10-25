@@ -10,6 +10,7 @@ class MetricsReporter {
       || path.join(__dirname, ".coverage.json");
     this.statuses = [];
     this.requirements = {};
+    this.startedAt = Date.now();
   }
 
   onBegin() {
@@ -46,6 +47,7 @@ class MetricsReporter {
       totalLines: coverage ? coverage.totalLines : 0,
       coverage: coverage ? coverage.percent : 0,
       measuredAt: new Date().toISOString(),
+      durationSeconds: Math.round((Date.now() - this.startedAt) / 1000),
       requirements: Object.fromEntries(
         Object.entries(this.requirements)
           .sort(([left], [right]) => left.localeCompare(right))

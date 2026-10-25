@@ -28,6 +28,10 @@
           <input id="search-input" type="search" placeholder="Search a topic…" autocomplete="off">
           <button id="clear-search" class="icon-button" type="button" aria-label="Clear search">×</button>
         </div>
+        <div id="tag-filter" class="tag-filter" hidden>
+          <span class="search-label">Tags</span>
+          <div id="tag-chips" class="tag-chips" role="group" aria-label="Filter entries by tag"></div>
+        </div>
         <nav id="day-list" class="day-list"></nav>
         <div class="day-pager">
           <button id="days-newer" class="pager-button up has-tip" type="button" data-tip="Newer seven dates" aria-label="Newer seven dates">↑</button>
@@ -107,11 +111,11 @@
       <div class="footer-items">
         <button id="readme-button" class="footer-item has-tip" type="button" data-tip="Read the documentation"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H19v20H7.5A2.5 2.5 0 0 1 5 19.5v-15Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 7.5h6M9 11.5h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>README</span></button>
         <span class="footer-sep" aria-hidden="true">|</span>
-        <span class="footer-item">source: <a href="https://github.com/suadin/diary" target="_blank" rel="noopener noreferrer">suadin/diary</a></span>
+        <span class="footer-item footer-source"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="m9 7.5-4.5 4.5L9 16.5M15 7.5l4.5 4.5L15 16.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>source: <a href="https://github.com/suadin/diary" target="_blank" rel="noopener noreferrer">suadin/diary</a></span></span>
         <span class="footer-sep" aria-hidden="true">|</span>
-        <button id="run-tests" class="footer-item test-button has-tip" type="button" data-tip="Run the test suite once">unit not measured — run</button>
+        <button id="run-tests" class="footer-item test-button has-tip" type="button" data-tip="Run the test suite once"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 3h6M10 3v6l-5 8.5A1.6 1.6 0 0 0 6.4 20h11.2a1.6 1.6 0 0 0 1.4-2.5L14 9V3M7.5 14h9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="unit-metrics">unit not measured — run</span></button>
         <span class="footer-sep" aria-hidden="true">|</span>
-        <span id="e2e-metrics" class="footer-item e2e-metrics has-tip" data-tip="Playwright end-to-end results are not installed here">e2e not measured</span>
+        <span id="e2e-metrics" class="footer-item e2e-metrics has-tip" data-tip="Playwright end-to-end results are not installed here"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 9h18M7 7h.01M10 7h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span id="e2e-metrics-label">e2e not measured</span></span>
       </div>
     </footer>
 

@@ -6,10 +6,10 @@ can search it and append new entries without being able to rewrite the writing r
 or erase history.
 
 This README explains what Diary is, how to run it, and how to operate it. The testable
-rules it must satisfy live in [Requirements](docs/REQUIREMENTS.md).
+rules it must satisfy live in [SPECS](docs/SPECS.md).
 
 > 🗂️ Dated entries · 🔗 deep links to every view · 🤖 append-only AI access ·
-> 🧪 44 unit tests and 11 browser journeys
+> 🧪 45 unit tests and 13 E2E journeys
 
 ## What it does
 
@@ -25,9 +25,12 @@ rules it must satisfy live in [Requirements](docs/REQUIREMENTS.md).
   show their date; previews are deliberately compact. An entry view shows date, time,
   and author, and can copy its own link. Stored Markdown renders with the document
   reader's typography — paragraphs, lists, headings, code, tables, and links.
+- Shows the ten most frequent title topics as tag chips in the sidebar. A chip filters
+  the journal by that exact topic; topics come from the part before the em dash in a
+  title, so the chips need no separate tagging step.
 - Links are stable and shareable: `#/day/2026-10-22`, `#/entry/42`,
-  `#/docs/readme/ai-api`, `#/guide`, and `#/search/boot`. Opening one restores the
-  same view, including the surrounding sidebar window.
+  `#/docs/readme/ai-api`, `#/guide`, `#/search/boot`, and `#/tag/Diary`. Opening one
+  restores the same view, including the surrounding sidebar window.
 - Keeps the writing guide and the documentation apart: the guide is editable, the
   README and `docs/*.md` are read-only. Documentation opens in the main panel with
   one tab per document and one icon per heading; the icon tooltip names the section,
@@ -39,10 +42,10 @@ rules it must satisfy live in [Requirements](docs/REQUIREMENTS.md).
   entered as `yyyy-mm-dd`. Every destructive action asks for confirmation.
 - Provides a read-only AI skill and history-search API, plus a separate append-only
   AI entry endpoint.
-- Shows the latest unit-test count and coverage, plus the Playwright end-to-end
+- Shows the latest unit-test count and coverage, plus the Playwright E2E
   numbers, in a compact centred footer separated by `|`. The unit button starts the
   suite once and then polls until it finishes; once results exist it shows them and
-  refuses to run again. End-to-end results are display-only in the container.
+  refuses to run again. E2E results are display-only in the container.
 - Includes a small purple **Memory spark** button that resurfaces a random older entry.
 - Serves this README and the documents under `docs/`: a book icon in the footer opens
   the reader, one page per heading, with a row of section icons instead of arrows.
@@ -134,9 +137,10 @@ example `opencode/deepseek-v4.1-flash-free`; imported history uses `AI`; a human
 writing through the API may use their own name. The field defaults to `AI` and is
 limited to 80 characters. That credential can only append entries; there is no AI
 endpoint for editing or deleting. Titles name topic and action, joined by an em dash,
-for example `Diary — README reader added`, so later tagging can group entries by
-topic. Search matches titles and content, not tags. The server binds only to loopback
-and does not enable CORS.
+for example `Diary — README reader added`, so tags can group entries by topic. Search
+matches titles and content. Tags are the exact title topic before the em dash; the
+sidebar chips and the `tag` search parameter filter by them. The server binds only to
+loopback and does not enable CORS.
 
 ## Web endpoints
 
@@ -150,6 +154,8 @@ GET /api/entries?date=2026-10-22
 GET /api/entries/page?date=2026-10-22&offset=0&limit=5  # one window plus the day's total
 GET /api/entry?id=42                   # one entry for a deep link
 GET /api/search?q=boot
+GET /api/search?q=boot&tag=Diary      # text and exact title topic
+GET /api/tags?limit=10                 # most frequent title topics
 GET /api/skill
 GET /api/docs                          # README and docs/*.md, each split into pages
 GET /api/metrics                       # unit and end-to-end numbers, and whether a run is active
@@ -199,7 +205,7 @@ deleted by Diary.
 ## Tests and coverage
 
 The rules this section proves are in
-[Requirements › Tests](docs/REQUIREMENTS.md#tests).
+[SPECS › Tests](docs/SPECS.md#tests).
 
 Run `python3 -m diary test` after a change, or use the quiet test button in the page
 footer. Both use Python's standard-library test runner and line tracing; the count
@@ -214,13 +220,13 @@ configuration, and test-runner modules; it is line coverage, not branch coverage
 A missing report is shown as “not measured”, not as zero.
 
 Tests trace back to the rules they protect: a unit test declares its requirement with
-a `covers` tag, a browser journey with a Playwright tag. The server merges both runs,
-and every Requirements page lists the concrete test names under “Automated tests”, so
+a `covers` tag, an E2E journey with a Playwright tag. The server merges both runs,
+and every SPECS page lists the concrete test names under “Automated tests”, so
 a rule without a test is visible instead of implied.
 
-The unit suite has 44 tests and currently covers 441 of 584 lines (75.5 %). The
-Playwright suite in `e2e/` has 11 journeys and touches 715 of 966 `web/app.js` lines
-(74 %). It needs Node, pnpm, and a Chromium build:
+The unit suite has 45 tests and currently covers 463 of 609 lines (76.0 %). The
+Playwright suite in `e2e/` has 13 journeys and touches 745 of 1068 `web/app.js` lines
+(69.8 %). It needs Node, pnpm, and a Chromium build:
 
 ```bash
 cd e2e
@@ -248,7 +254,7 @@ the numbers in the footer; the container never runs Playwright itself.
 | `web/` | Small, dependency-free browser interface (deep links, paging, documents, quiet test button) |
 | `e2e/` | Playwright journeys and the end-to-end metrics reporter |
 | `docs/AI-SKILL.md` | Seed for the human-editable AI writing guide |
-| `docs/REQUIREMENTS.md` | Short, testable product requirements |
+| `docs/SPECS.md` | Short, testable product rules |
 | `mcp/` | Optional MCP client for AI assistants, configured by environment |
 | `tests/` | Storage, import, and HTTP/API checks |
 

@@ -19,6 +19,7 @@ from diary.store import (
     list_days,
     list_entries,
     search_entries,
+    top_tags,
     valid_day,
 )
 from diary.testrunner import TestRunner
@@ -89,10 +90,16 @@ class DiaryHandler(BaseHTTPRequestHandler):
                 self._json(200, {"documents": documents(Path(__file__).resolve().parent.parent)})
             elif route.path == "/api/entry":
                 self._entry(query)
+            elif route.path == "/api/tags":
+                self._json(200, top_tags(
+                    self.server.settings.database_path,
+                    self._integer(query, "limit", 10, minimum=1, maximum=50),
+                ))
             elif route.path == "/api/search":
                 self._json(200, search_entries(
                     self.server.settings.database_path,
                     self._query_value(query, "q") or "",
+                    self._query_value(query, "tag"),
                 ))
             elif route.path == "/api/skill":
                 self._text(200, self._read_skill(), "text/markdown; charset=utf-8")

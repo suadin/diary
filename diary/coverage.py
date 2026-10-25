@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 import json
 from pathlib import Path
 import sys
+import time
 import trace
 import unittest
 
@@ -62,11 +63,13 @@ def run() -> int:
     requirements = _requirement_map(suite)
     runner = unittest.TextTestRunner(verbosity=2)
     tracer = trace.Trace(count=True, trace=False, ignoredirs=[sys.prefix, sys.exec_prefix, str(ROOT / "tests")])
+    started_at = time.monotonic()
     trace.threading.settrace(tracer.globaltrace)
     try:
         result = tracer.runfunc(runner.run, suite)
     finally:
         trace.threading.settrace(None)
+    duration_seconds = round(time.monotonic() - started_at)
     counts = tracer.results().counts
     total = 0
     covered = 0
@@ -86,6 +89,7 @@ def run() -> int:
         "totalLines": total,
         "coverage": coverage_percent,
         "measuredAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "durationSeconds": duration_seconds,
         "requirements": requirements,
     }
     temporary = current.metrics_path.with_suffix(".tmp")

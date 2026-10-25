@@ -20,8 +20,12 @@ const elements = {
   searchTitle: document.getElementById("search-title"),
   resultList: document.getElementById("result-list"),
   entryView: document.getElementById("entry-view"),
+  tagFilter: document.getElementById("tag-filter"),
+  tagChips: document.getElementById("tag-chips"),
   runTests: document.getElementById("run-tests"),
+  unitMetrics: document.getElementById("unit-metrics"),
   e2eMetrics: document.getElementById("e2e-metrics"),
+  e2eMetricsLabel: document.getElementById("e2e-metrics-label"),
   sparkButton: document.getElementById("spark-button"),
   guideButton: document.getElementById("guide-button"),
   editor: document.getElementById("editor"),
@@ -62,6 +66,7 @@ const ROUTE = {
   docs: (doc, section) => (section ? `#/docs/${doc}/${section}` : `#/docs/${doc}`),
   guide: "#/guide",
   search: (query) => `#/search/${encodeURIComponent(query)}`,
+  tag: (tag) => `#/tag/${encodeURIComponent(tag)}`,
 };
 
 const ICONS = {
@@ -100,6 +105,8 @@ const state = {
   testTimer: null,
   docs: null,
   metrics: null,
+  tags: [],
+  activeTag: null,
   routeTicket: 0,
 };
 
@@ -183,6 +190,57 @@ function renderDays() {
   elements.dayRange.textContent = state.totalDays ? `${first}–${last} / ${state.totalDays}` : "";
   elements.daysNewer.disabled = state.pageOffset <= 0;
   elements.daysOlder.disabled = last >= state.totalDays;
+}
+
+function renderTags() {
+  elements.tagFilter.hidden = !state.tags.length;
+  elements.tagChips.replaceChildren();
+  for (const item of state.tags) {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = `tag-chip${state.activeTag === item.tag ? " active" : ""}`;
+    chip.setAttribute("aria-pressed", String(state.activeTag === item.tag));
+    chip.dataset.tag = item.tag;
+    chip.append(document.createTextNode(item.tag));
+    const count = document.createElement("span");
+    count.className = "tag-count";
+    count.textContent = String(item.count);
+    chip.append(count);
+    chip.addEventListener("click", () => toggleTag(item.tag).catch((error) => showToast(error.message)));
+    elements.tagChips.append(chip);
+  }
+}
+
+async function loadTags() {
+  try {
+    state.tags = await request("/api/tags?limit=10");
+  } catch (error) {
+    state.tags = [];
+  }
+  renderTags();
+}
+
+async function toggleTag(tag) {
+  if (state.activeTag === tag) {
+    state.activeTag = null;
+    elements.searchInput.value = "";
+    renderTags();
+    if (state.selectedDate) {
+      await selectDay(state.selectedDate);
+      history.replaceState({}, "", ROUTE.day(state.selectedDate));
+    } else {
+      showOnly(elements.welcome);
+      history.replaceState({}, "", ROUTE.welcome);
+    }
+    return;
+  }
+  await navigate(ROUTE.tag(tag));
+}
+
+function readableTestName(name) {
+  const marker = name.lastIndexOf(".test_");
+  if (marker === -1) return name;
+  return name.slice(marker + 6).replace(/_/g, " ");
 }
 
 function entryTime(entry) {
@@ -387,6 +445,8 @@ function openEntry(entry) {
 
 async function search({ keepRoute = false } = {}) {
   const query = elements.searchInput.value.trim();
+  state.activeTag = null;
+  renderTags();
   if (!query) {
     if (!keepRoute) {
       history.replaceState({}, "", state.selectedDate ? ROUTE.day(state.selectedDate) : ROUTE.welcome);
@@ -414,11 +474,53 @@ function startTestPolling() {
   }, TEST_POLL_MS);
 }
 
+function metricParts(label, item) {
+  const parts = [`${label} ${item.tests}`];
+  if (item.failures) parts.push({ fail: `${item.failures} fail` });
+  parts.push(`${item.coverage} %`);
+  return parts;
+}
+
+function setMetricLabel(node, parts) {
+  node.replaceChildren();
+  for (const [index, part] of parts.entries()) {
+    if (index) node.append(document.createTextNode(" · "));
+    if (typeof part === "string") {
+      node.append(document.createTextNode(part));
+    } else {
+      const failure = document.createElement("span");
+      failure.className = "fail-count";
+      failure.textContent = part.fail;
+      node.append(failure);
+    }
+  }
+}
+
+function formatMeasured(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value).replace("T", " ").slice(0, 16);
+  const pad = (number) => String(number).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function formatDuration(seconds) {
+  const pad = (number) => String(number).padStart(2, "0");
+  const whole = Math.max(0, Math.round(Number(seconds) || 0));
+  return `${pad(Math.floor(whole / 60))}:${pad(whole % 60)}`;
+}
+
+function measurementTip(item, fallback) {
+  const lines = [];
+  if (item.measuredAt) lines.push(`Measured: ${formatMeasured(item.measuredAt)}`);
+  if (item.durationSeconds) lines.push(`Duration: ${formatDuration(item.durationSeconds)} minutes`);
+  return lines.join("\n") || fallback;
+}
+
 function renderMetrics(metrics) {
   if (metrics.running) {
     elements.runTests.setAttribute("aria-disabled", "true");
     elements.runTests.classList.add("running");
-    elements.runTests.textContent = "unit running…";
+    elements.unitMetrics.textContent = "unit running…";
     elements.runTests.dataset.tip = "The suite is running";
     startTestPolling();
   } else {
@@ -426,11 +528,11 @@ function renderMetrics(metrics) {
     elements.runTests.classList.remove("running");
     if (metrics.measuredAt) {
       elements.runTests.setAttribute("aria-disabled", "true");
-      elements.runTests.textContent = `unit ${metrics.tests} · ${metrics.failures} fail · ${metrics.coverage} %`;
-      elements.runTests.dataset.tip = `Measured ${metrics.measuredAt}. Results are final. Delete test-metrics.json to run the suite again.`;
+      setMetricLabel(elements.unitMetrics, metricParts("unit", metrics));
+      elements.runTests.dataset.tip = measurementTip(metrics, "Measured once; results are final.");
     } else {
       elements.runTests.setAttribute("aria-disabled", "false");
-      elements.runTests.textContent = "unit not measured — run";
+      elements.unitMetrics.textContent = "unit not measured — run";
       elements.runTests.dataset.tip = "Run the test suite once";
     }
   }
@@ -439,12 +541,12 @@ function renderMetrics(metrics) {
 
 function renderE2E(e2e) {
   if (!e2e) {
-    elements.e2eMetrics.textContent = "e2e not measured";
-    elements.e2eMetrics.dataset.tip = "Playwright end-to-end results are not installed here.";
+    elements.e2eMetricsLabel.textContent = "e2e not measured";
+    elements.e2eMetrics.dataset.tip = "Playwright E2E results are not installed here.";
     return;
   }
-  elements.e2eMetrics.textContent = `e2e ${e2e.tests} · ${e2e.failures} fail · ${e2e.coverage} %`;
-  elements.e2eMetrics.dataset.tip = `Playwright end-to-end: ${e2e.tests} tests, ${e2e.failures} failures, ${e2e.coverage}% of app.js lines, measured ${e2e.measuredAt}.`;
+  setMetricLabel(elements.e2eMetricsLabel, metricParts("e2e", e2e));
+  elements.e2eMetrics.dataset.tip = measurementTip(e2e, "Playwright E2E results.");
 }
 
 async function loadMetrics() {
@@ -510,7 +612,9 @@ async function deleteBy(filter, label) {
     state.pages.clear();
     state.entryPages.clear();
     state.selectedDate = null;
+    state.activeTag = null;
     await loadDayPage(0);
+    await loadTags();
     if (state.days.length) {
       await selectDay(state.days[0].date);
       history.replaceState({}, "", ROUTE.day(state.days[0].date));
@@ -702,7 +806,7 @@ async function renderDocs(doc, page) {
   }
   elements.docSectionTitle.textContent = page.title;
   elements.docBody.innerHTML = renderMarkdown(page.markdown);
-  if (doc.slug === "requirements") {
+  if (doc.slug === "specs") {
     const metrics = state.metrics || await loadMetrics();
     renderRequirementTests(page.slug, metrics);
   }
@@ -720,35 +824,22 @@ function renderRequirementTests(slug, metrics) {
   const heading = document.createElement("h4");
   heading.textContent = "Automated tests";
   box.append(heading);
-  const note = document.createElement("p");
-  note.className = "doc-tests-note";
-  const parts = [];
-  if (metrics.measuredAt && metrics.tests) {
-    parts.push(`${metrics.tests} unit tests, ${metrics.failures || 0} failures`);
-  }
-  if (metrics.e2e) {
-    parts.push(`${metrics.e2e.tests} browser journeys, ${metrics.e2e.failures || 0} failures`);
-  }
-  note.textContent = parts.length
-    ? `Last run: ${parts.join(" · ")}.`
-    : "No test run recorded yet.";
-  box.append(note);
   if (!unit.length && !e2e.length) {
     const empty = document.createElement("p");
     empty.textContent = "No automated test names this requirement yet.";
     box.append(empty);
   }
-  for (const [label, names] of [["Unit", unit], ["Browser", e2e]]) {
+  for (const [label, names] of [["Unit", unit], ["E2E", e2e]]) {
     if (!names.length) continue;
     const group = document.createElement("div");
     group.className = "doc-test-group";
     const kind = document.createElement("span");
     kind.className = "doc-test-kind";
     kind.textContent = `${label} · ${names.length}`;
-    const list = document.createElement("ul");
+    const list = document.createElement("ol");
     for (const name of names) {
       const item = document.createElement("li");
-      item.textContent = name;
+      item.textContent = label === "Unit" ? readableTestName(name) : name;
       list.append(item);
     }
     group.append(kind, list);
@@ -798,6 +889,16 @@ async function showEntryRoute(id) {
   openEntry(entry);
 }
 
+async function showTagRoute(tag) {
+  state.activeTag = tag;
+  elements.searchInput.value = "";
+  renderTags();
+  const results = await request(`/api/search?tag=${encodeURIComponent(tag)}`);
+  elements.searchTitle.textContent = `${results.length} ${results.length === 1 ? "entry" : "entries"} tagged “${tag}”`;
+  renderEntryCards(results, elements.resultList);
+  showOnly(elements.searchResults);
+}
+
 async function showDocsRoute(docSlug, sectionSlug) {
   await loadDocs();
   if (!state.docs.documents.length) {
@@ -817,15 +918,25 @@ async function applyRoute() {
   const parts = raw.split("/").filter(Boolean).map((part) => decodeURIComponent(part));
   const [kind, first, second] = parts;
   if (kind === "day" && first) {
+    state.activeTag = null;
+    renderTags();
     await showDayRoute(first);
     return;
   }
   if (kind === "entry" && first) {
+    state.activeTag = null;
+    renderTags();
     await showEntryRoute(first);
     return;
   }
   if (kind === "docs") {
     await showDocsRoute(first || "readme", second || null);
+    return;
+  }
+  if (kind === "tag" && first) {
+    await showTagRoute(first);
+    const canonical = ROUTE.tag(first);
+    if (window.location.hash !== canonical) history.replaceState({}, "", canonical);
     return;
   }
   if (kind === "guide") {
@@ -919,7 +1030,7 @@ elements.runTests.addEventListener("click", async () => {
   try {
     await request("/api/tests", { method: "POST" });
     elements.runTests.classList.add("running");
-    elements.runTests.textContent = "unit running…";
+    elements.unitMetrics.textContent = "unit running…";
     startTestPolling();
   } catch (error) {
     elements.runTests.setAttribute("aria-disabled", "false");
@@ -1007,6 +1118,7 @@ window.addEventListener("hashchange", () => { applyRoute().catch((error) => show
 
 async function init() {
   await loadDayPage(0);
+  await loadTags();
   loadMetrics().catch(() => {});
   const hash = window.location.hash;
   if (hash && hash !== "#/" && hash !== "#") {
