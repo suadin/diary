@@ -76,21 +76,28 @@ test("entry content renders as Markdown", { tag: ["@entries-and-writing"] }, asy
 });
 
 test("tag chips filter entries by title topic", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
+  await page.route("**/api/tags", (route) => route.fulfill({
+    json: [
+      { tag: "Diary", count: 1 },
+      ...Array.from({ length: 11 }, (_, index) => ({ tag: `Topic ${index}`, count: 1 })),
+    ],
+  }));
   await page.goto("/");
   const chips = page.locator(".tag-chip");
-  await expect(chips).toHaveCount(1);
-  await expect(chips.first()).toContainText("Diary");
-  await expect(chips.first()).toContainText("1");
+  await expect(chips).toHaveCount(12);
+  await expect(page.locator('.tag-chip[data-tag="Diary"]')).toContainText("1");
 
-  await chips.first().click();
+  await page.locator('.tag-chip[data-tag="Diary"]').click();
   await expect(page).toHaveURL(/#\/tag\/Diary$/);
   await expect(page.locator("#search-title")).toContainText("tagged “Diary”");
   await expect(page.locator(".result-card")).toHaveCount(1);
   await expect(page.locator(".result-card h3")).toContainText("Deep links added");
-  await expect(page.locator(".tag-chip")).toHaveClass(/active/);
+  await expect(page.locator('.tag-chip[data-tag="Diary"]')).toHaveClass(/active/);
+  await expect(page.locator(".day-button.active")).toHaveCount(0);
 
-  await page.locator(".tag-chip").first().click();
+  await page.locator('.tag-chip[data-tag="Diary"]').click();
   await expect(page).toHaveURL(/#\/day\/2026-10-22$/);
+  await expect(page.locator(".day-button.active")).toHaveCount(1);
 });
 
 test("documentation wraps bullets, follows links, and fits the page", { tag: ["@documentation-reader"] }, async ({ page }) => {

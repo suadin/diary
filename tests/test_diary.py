@@ -88,11 +88,16 @@ class StoreTests(unittest.TestCase):
         self.add("2026-10-21", "Diary — First", "body one")
         self.add("2026-10-21", "Diary — Second", "body two")
         self.add("2026-10-21", "hub — Boot", "body three")
+        for index in range(12):
+            self.add("2026-10-21", f"Topic {index:02} — Entry", "body")
         self.add("2026-10-21", "No topic", "Diary appears in the body only")
-        self.assertEqual(top_tags(self.database), [
+        all_tags = top_tags(self.database)
+        self.assertEqual(len(all_tags), 14)
+        self.assertEqual(all_tags[:2], [
             {"tag": "Diary", "count": 2},
             {"tag": "hub", "count": 1},
         ])
+        self.assertEqual(len(top_tags(self.database, 10)), 10)
         self.assertEqual(len(top_tags(self.database, 1)), 1)
         tagged = search_entries(self.database, "", "diary")
         self.assertEqual([entry["title"] for entry in tagged], ["Diary — Second", "Diary — First"])
@@ -654,9 +659,18 @@ class HttpTests(ServerTestCase):
         self.request("/ai/entries", "POST", {
             "date": "2026-10-22", "title": "Diary — Tagged note", "content": "Tagged body",
         }, token="write-secret")
+        for index in range(12):
+            self.request("/ai/entries", "POST", {
+                "date": "2026-10-22",
+                "title": f"Topic {index:02} — Tagged note",
+                "content": "Tagged body",
+            }, token="write-secret")
         status, tags, _ = self.request("/api/tags")
         self.assertEqual(status, 200)
-        self.assertEqual(json.loads(tags), [{"tag": "Diary", "count": 1}])
+        self.assertEqual(len(json.loads(tags)), 13)
+        status, limited_tags, _ = self.request("/api/tags?limit=10")
+        self.assertEqual(status, 200)
+        self.assertEqual(len(json.loads(limited_tags)), 10)
         status, filtered, _ = self.request("/api/search?tag=Diary")
         self.assertEqual(status, 200)
         self.assertEqual([entry["title"] for entry in json.loads(filtered)], ["Diary — Tagged note"])

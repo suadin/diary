@@ -188,8 +188,8 @@ def entry_topic(title: str) -> str | None:
     return topic if separator and topic else None
 
 
-def top_tags(database_path: Path, limit: int = 10) -> list[dict[str, object]]:
-    """Return the most frequent title topics, newest spelling wins."""
+def top_tags(database_path: Path, limit: int | None = None) -> list[dict[str, object]]:
+    """Return title topics ordered by frequency; newest spelling wins."""
     with connection(database_path) as database:
         rows = database.execute("SELECT title FROM entries ORDER BY id DESC").fetchall()
     counts: dict[str, int] = {}
@@ -202,7 +202,8 @@ def top_tags(database_path: Path, limit: int = 10) -> list[dict[str, object]]:
         counts[key] = counts.get(key, 0) + 1
         display.setdefault(key, topic)
     ordered = sorted(counts.items(), key=lambda item: (-item[1], display[item[0]].casefold()))
-    return [{"tag": display[key], "count": count} for key, count in ordered[:limit]]
+    selected = ordered if limit is None else ordered[:limit]
+    return [{"tag": display[key], "count": count} for key, count in selected]
 
 
 def search_entries(database_path: Path, query: str, tag: str | None = None) -> list[dict[str, object]]:

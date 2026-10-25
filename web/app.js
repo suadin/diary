@@ -176,7 +176,7 @@ function renderDays() {
   for (const day of state.days) {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = `day-button${state.selectedDate === day.date ? " active" : ""}`;
+    button.className = `day-button${!state.activeTag && state.selectedDate === day.date ? " active" : ""}`;
     const date = document.createElement("span");
     date.textContent = day.date;
     const count = document.createElement("span");
@@ -213,7 +213,7 @@ function renderTags() {
 
 async function loadTags() {
   try {
-    state.tags = await request("/api/tags?limit=10");
+    state.tags = await request("/api/tags");
   } catch (error) {
     state.tags = [];
   }
@@ -446,6 +446,7 @@ function openEntry(entry) {
 async function search({ keepRoute = false } = {}) {
   const query = elements.searchInput.value.trim();
   state.activeTag = null;
+  renderDays();
   renderTags();
   if (!query) {
     if (!keepRoute) {
@@ -892,6 +893,7 @@ async function showEntryRoute(id) {
 async function showTagRoute(tag) {
   state.activeTag = tag;
   elements.searchInput.value = "";
+  renderDays();
   renderTags();
   const results = await request(`/api/search?tag=${encodeURIComponent(tag)}`);
   elements.searchTitle.textContent = `${results.length} ${results.length === 1 ? "entry" : "entries"} tagged “${tag}”`;

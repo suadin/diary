@@ -25,9 +25,9 @@ rules it must satisfy live in [SPECS](docs/SPECS.md).
   show their date; previews are deliberately compact. An entry view shows date, time,
   and author, and can copy its own link. Stored Markdown renders with the document
   reader's typography — paragraphs, lists, headings, code, tables, and links.
-- Shows the ten most frequent title topics as tag chips in the sidebar. A chip filters
-  the journal by that exact topic; topics come from the part before the em dash in a
-  title, so the chips need no separate tagging step.
+- Shows every title topic as a tag chip in the sidebar. A chip filters the journal by
+  that exact topic; topics come from the part before the em dash in a title, so the
+  chips need no separate tagging step.
 - Links are stable and shareable: `#/day/2026-10-22`, `#/entry/42`,
   `#/docs/readme/ai-api`, `#/guide`, `#/search/boot`, and `#/tag/Diary`. Opening one
   restores the same view, including the surrounding sidebar window; a refresh does not
@@ -156,7 +156,8 @@ GET /api/entries/page?date=2026-10-22&offset=0&limit=5  # one window plus the da
 GET /api/entry?id=42                   # one entry for a deep link
 GET /api/search?q=boot
 GET /api/search?q=boot&tag=Diary      # text and exact title topic
-GET /api/tags?limit=10                 # most frequent title topics
+GET /api/tags                          # all title topics, ordered by frequency
+GET /api/tags?limit=10                 # optional limit
 GET /api/skill
 GET /api/docs                          # README and docs/*.md, each split into pages
 GET /api/metrics                       # unit and end-to-end numbers, and whether a run is active
