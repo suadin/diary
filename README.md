@@ -9,7 +9,7 @@ This README explains what Diary is, how to run it, and how to operate it. The te
 rules it must satisfy live in [SPECS](docs/SPECS.md).
 
 > 🗂️ Dated entries · 🔗 deep links to every view · 🤖 append-only AI access ·
-> 🧪 45 unit tests and 14 E2E journeys
+> 🧪 46 unit tests and 14 E2E journeys
 
 ## What it does
 
@@ -139,7 +139,7 @@ writing through the API may use their own name. The field defaults to `AI` and i
 limited to 80 characters. That credential can only append entries; there is no AI
 endpoint for editing or deleting. Titles name topic and action, joined by an em dash,
 for example `Diary — README reader added`, so tags can group entries by topic. Search
-matches titles and content. Tags are the exact title topic before the em dash; the
+matches titles and content. Tags are the exact title topic before the first em dash or colon; the
 sidebar chips and the `tag` search parameter filter by them. The server binds only to
 loopback and does not enable CORS.
 
@@ -226,9 +226,9 @@ a `covers` tag, an E2E journey with a Playwright tag. The server merges both run
 and every SPECS page lists the concrete test names under “Automated tests”, so
 a rule without a test is visible instead of implied.
 
-The unit suite has 45 tests and currently covers 463 of 609 lines (76.0 %). The
-Playwright suite in `e2e/` has 14 journeys and touches 745 of 1068 `web/app.js` lines
-(69.8 %). It needs Node, pnpm, and a Chromium build:
+The unit suite has 46 tests and currently covers 467 of 613 lines (76.2 %). The
+Playwright suite in `e2e/` has 14 journeys and touches 744 of 1068 `web/app.js` lines
+(69.7 %). It needs Node, pnpm, and a Chromium build:
 
 ```bash
 cd e2e

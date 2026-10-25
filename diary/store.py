@@ -182,13 +182,12 @@ def list_entries(database_path: Path, day: str | None = None) -> list[dict[str, 
 
 
 def entry_topic(title: str) -> str | None:
-    """Return the topic before the first separator in a title, or None."""
-    for separator in TOPIC_SEPARATORS:
-        if separator in title:
-            topic, _, _ = title.partition(separator)
-            topic = topic.strip()
-            return topic if topic else None
-    return None
+    """Return the topic before the earliest separator in a title, or None."""
+    positions = [title.index(separator) for separator in TOPIC_SEPARATORS if separator in title]
+    if not positions:
+        return None
+    topic = title[: min(positions)].strip()
+    return topic or None
 
 
 def top_tags(database_path: Path, limit: int | None = None) -> list[dict[str, object]]:

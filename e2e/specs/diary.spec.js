@@ -96,6 +96,11 @@ test("tag chips filter entries by title topic", { tag: ["@navigation-and-deep-li
   await expect(page.locator('.tag-chip[data-tag="Diary"]')).toHaveClass(/active/);
   await expect(page.locator(".day-button.active")).toHaveCount(0);
 
+  await page.locator("#readme-button").click();
+  await expect(page).toHaveURL(/#\/docs\/readme/);
+  await expect(page.locator('.tag-chip[data-tag="Diary"]')).not.toHaveClass(/active/);
+
+  await page.goto("/#/tag/Diary");
   await page.locator('.tag-chip[data-tag="Diary"]').click();
   await expect(page).toHaveURL(/#\/day\/2026-10-22$/);
   await expect(page.locator(".day-button.active")).toHaveCount(1);

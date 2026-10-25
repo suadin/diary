@@ -20,6 +20,7 @@ from diary.store import (
     add_entry,
     delete_entries,
     entry_page,
+    entry_topic,
     get_entry,
     initialize,
     list_days,
@@ -104,6 +105,14 @@ class StoreTests(unittest.TestCase):
         both = search_entries(self.database, "body two", "Diary")
         self.assertEqual([entry["title"] for entry in both], ["Diary — Second"])
         self.assertEqual(search_entries(self.database, "", "missing"), [])
+
+    @covers("entries-and-writing", "navigation-and-deep-links")
+    def test_colon_titles_yield_topics_and_the_earliest_separator_wins(self):
+        self.assertEqual(entry_topic("die-wand: ganz auf Englisch"), "die-wand")
+        self.assertEqual(entry_topic("Hub: Boot — Doku"), "Hub")
+        self.assertEqual(entry_topic("Hub — Boot: Doku"), "Hub")
+        self.assertEqual(entry_topic(": ohne Thema"), None)
+        self.assertEqual(entry_topic("Offen"), None)
 
     @covers("entries-and-writing")
     def test_entry_validation_and_idempotent_source_key(self):

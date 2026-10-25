@@ -18,7 +18,8 @@ What an entry is, and who may write one.
   backticks code, and links stay clickable. Stored text is not altered.
 - A title names topic and action, joined by an em dash: `Topic — Action`, for example
   `Diary — README reader added`. The topic is a stable word so tags can group
-  entries; the action says what was done.
+  entries; the action says what was done. Older titles may use a colon instead
+  (`four-wins: …`); the topic is the text before the earliest separator.
 - The author is the model name for AI work, for example
   `opencode/deepseek-v4.1-flash-free`, `AI` for imported history, or a human name
   given through the API. It defaults to `AI` and is limited to 80 characters.
