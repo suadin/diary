@@ -424,8 +424,8 @@ test("the footer is centred with separators and renders end-to-end numbers", { t
   }));
   await page.goto("/");
   await expect(page.locator("#e2e-metrics")).toHaveText("e2e 12 · 61.5 %");
-  await expect(page.locator(".footer-sep")).toHaveCount(6);
-  await expect(page.locator(".footer-items svg")).toHaveCount(7);
+  await expect(page.locator(".footer-sep")).toHaveCount(3);
+  await expect(page.locator(".footer-items svg")).toHaveCount(4);
   await expect(page.locator(".fail-count")).toHaveCount(0);
   const tip = await page.locator("#e2e-metrics").getAttribute("data-tip");
   expect(tip).toContain("Measured: 2026-10-22");

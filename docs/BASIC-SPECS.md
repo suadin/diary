@@ -30,10 +30,10 @@ How the README, release notes, and `docs/*.md` are read in the page.
 
 What the page points to.
 
-- One compact, centred footer carries README, APP SPECS, BASIC SPECS, RELEASE
-  NOTES, source, unit tests, and E2E tests, separated by `|`. Each documentation
-  item opens that document directly; each item has its own icon and must stay on
-  one line at desktop width.
+- One compact, centred footer carries README, source, unit tests, and E2E tests,
+  separated by `|`. Only README is a documentation item: it opens the reader,
+  which lists README, APP SPECS, BASIC SPECS and RELEASE NOTES as tabs. Each item
+  has its own icon and must stay on one line at desktop width.
 - The items name what they open: the documentation reader, the source repository, the
   unit report, and the E2E report. A failure count appears only when at least one test
   failed, and then in red.

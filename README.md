@@ -59,11 +59,11 @@ rules live in [BASIC SPECS](docs/BASIC-SPECS.md); the Diary-specific rules live 
   always carry `Measured`, `Duration`, and `Per test` on three rows. E2E results are
   display-only in the container.
 - Includes a small purple **Memory spark** button that resurfaces a random older entry.
-- Serves this README, the release notes, and the SPECS under `docs/`: each has its own
-  footer item that opens it directly, and the reader lists all of them as tabs. README
-  and SPECS use one page per heading with a row of section icons instead of arrows;
-  release notes stay one continuous page. The editable AI guide has its own editor and
-  is not duplicated in the reader.
+- Serves this README, the release notes, and the SPECS under `docs/`: README in the
+  footer opens the reader, which lists all of them as tabs. README and SPECS use one
+  page per heading with a row of section icons instead of arrows; release notes stay
+  one continuous page. The editable AI guide has its own editor and is not duplicated
+  in the reader.
 - Follows the operating system's light/dark preference and links to this repository.
 
 The interface follows the workspace contract: documentation, source, and test numbers

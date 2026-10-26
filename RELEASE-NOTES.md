@@ -2,8 +2,8 @@
 
 ## 1.2.0 — Shared contract in the footer
 
-- The footer opens README, APP SPECS, BASIC SPECS and RELEASE NOTES directly; the
-  reader keeps them as tabs.
+- README in the footer opens the reader; it lists README, APP SPECS, BASIC SPECS
+  and RELEASE NOTES as tabs.
 - The root follows the browser base at `100%`, so Ctrl + wheel zoom scales the
   page and the layout still fits at 80–200 %.
 - Unit and E2E icons are a clipboard check and a browser with a play triangle.
