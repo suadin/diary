@@ -1,6 +1,12 @@
 # Release notes
 
-Newest first. Each version is one page in the reader and one level-two heading here.
+## 1.1.1 — Release notes as one page
+
+- Release notes are now the last tab, after README and the SPECS.
+- All versions share one continuous page, newest first, without an overview page or a
+  section row.
+- `BASIC SPECS` describes that shape; existing data directories remain compatible.
+- 51 unit tests (77.1 % line coverage) and 27 E2E journeys (72.4 % of `app.js`) pass.
 
 ## 1.1.0 — Release notes in the reader
 

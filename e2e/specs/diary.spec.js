@@ -33,12 +33,14 @@ test("a journey through days, entries, documents, and the guide", { tag: ["@entr
     await expect(page).toHaveURL(/#\/docs\/readme\/ai-api$/);
     await expect(page.locator("#doc-body")).toContainText("/ai/entries");
 
+    await expect(page.locator(".doc-tab").last()).toHaveText("RELEASE NOTES");
     await page.locator(".doc-tab", { hasText: "RELEASE NOTES" }).click();
     await expect(page.locator("#docs-title")).toHaveText("RELEASE NOTES");
-    await expect(page).toHaveURL(/#\/docs\/release-notes\/overview$/);
-    await expect(page.locator(".doc-section")).toHaveCount(3);
-    await page.locator(".doc-section").nth(1).click();
-    await expect(page.locator("#doc-section-title")).toContainText("1.1.0");
+    await expect(page).toHaveURL(/#\/docs\/release-notes$/);
+    await expect(page.locator(".doc-section")).toHaveCount(0);
+    await expect(page.locator("#doc-section-title")).toBeHidden();
+    await expect(page.locator("#doc-body")).toContainText("1.1.0");
+    await expect(page.locator("#doc-body")).toContainText("1.0.0");
 
     await page.locator(".doc-tab", { hasText: "APP SPECS" }).click();
     await expect(page.locator("#docs-title")).toHaveText("APP SPECS");

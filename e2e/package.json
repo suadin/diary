@@ -1,7 +1,7 @@
 {
   "name": "diary-e2e",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Playwright journeys for the Diary web interface.",
   "scripts": {
     "test": "playwright test",

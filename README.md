@@ -41,7 +41,8 @@ rules live in [BASIC SPECS](docs/BASIC-SPECS.md); the Diary-specific rules live 
   sidebar window; a refresh does not flash the welcome panel first.
 - Keeps the writing guide and the documentation apart: the guide is editable; the
   README, the release notes, and the SPECS under `docs/` are read-only. Documentation
-  opens in the main panel with one tab per document and one icon per heading; the icon
+  opens in the main panel with one tab per document; README and SPECS offer one icon per
+  heading, while release notes stay one continuous page, newest version first. The icon
   tooltip names the section, and clicking it opens that page with its heading. The AI
   guide seed is not part of the reader.
 - Keeps the AI writing guide editable from the local web page, without a sign-in flow.
@@ -57,9 +58,9 @@ rules live in [BASIC SPECS](docs/BASIC-SPECS.md); the Diary-specific rules live 
   refuses to run again. E2E results are display-only in the container.
 - Includes a small purple **Memory spark** button that resurfaces a random older entry.
 - Serves this README, the release notes, and the SPECS under `docs/`: a book icon in
-  the footer opens the reader, one page per heading, with a row of section icons
-  instead of arrows. The editable AI guide has its own editor and is not duplicated in
-  the reader.
+  the footer opens the reader. README and SPECS use one page per heading with a row of
+  section icons instead of arrows; release notes stay one continuous page. The editable
+  AI guide has its own editor and is not duplicated in the reader.
 - Follows the operating system's light/dark preference and links to this repository.
 
 The interface follows the workspace contract: README, source, and test numbers in one
@@ -241,9 +242,9 @@ a `covers` tag, an E2E journey with a Playwright tag. The server merges both run
 and every page in BASIC SPECS and APP SPECS lists the concrete test names under
 “Automated tests”, so a rule without a test is visible instead of implied.
 
-The unit suite has 51 tests and currently covers 489 of 636 lines (76.9 %). The
-Playwright suite in `e2e/` has 27 journeys and touches 861 of 1197 `web/app.js` lines
-(71.9 %). It needs Node, pnpm, and a Chromium build:
+The unit suite has 51 tests and currently covers 497 of 645 lines (77.1 %). The
+Playwright suite in `e2e/` has 27 journeys and touches 870 of 1202 `web/app.js` lines
+(72.4 %). It needs Node, pnpm, and a Chromium build:
 
 ```bash
 cd e2e

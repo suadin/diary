@@ -15,9 +15,9 @@ How the README, release notes, and `docs/*.md` are read in the page.
   The reader also lists the documentation files under `docs/`, one tab per document and
   one page per level-two heading. An editable guide kept in the data directory has its
   own editor and is not duplicated in the reader.
-- A `RELEASE-NOTES.md` at the repository root appears as its own read-only tab next to
-  README. Versions are ordered newest first, and each level-two heading becomes one
-  page, so a release note is reached like any other section.
+- A `RELEASE-NOTES.md` at the repository root is the last read-only tab, after the
+  SPECS. It is one continuous page: versions stay together, newest first, with no
+  overview page and no section row.
 - Sections are navigated by a row of icons, not arrows. Each icon symbolises its
   section, its tooltip gives the section title, and a click opens that page with its
   heading. Long pages keep the card width and scroll inside the main panel; the reader

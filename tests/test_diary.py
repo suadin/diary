@@ -320,15 +320,17 @@ class ReadmeTests(unittest.TestCase):
             (root / "docs" / "AI-SKILL.md").write_text("# Hidden\n", encoding="utf-8")
             result = documents(root)
             self.assertEqual(
-                [item["slug"] for item in result], ["readme", "release-notes", "guide"]
+                [item["slug"] for item in result], ["readme", "guide", "release-notes"]
             )
             self.assertEqual(
-                [item["title"] for item in result], ["README", "RELEASE NOTES", "Guide"]
+                [item["title"] for item in result], ["README", "Guide", "RELEASE NOTES"]
             )
             self.assertEqual(result[0]["pages"][0]["slug"], "one")
             self.assertEqual(
-                [page["slug"] for page in result[1]["pages"]], ["overview", "1-1-0"]
+                [page["title"] for page in result[2]["pages"]], ["All versions"]
             )
+            self.assertEqual([page["slug"] for page in result[2]["pages"]], ["all"])
+            self.assertNotIn("Overview", result[2]["pages"][0]["markdown"])
 
 
 class ConfigTests(unittest.TestCase):
@@ -699,11 +701,16 @@ class HttpTests(ServerTestCase):
         result = json.loads(text)
         self.assertEqual(
             [item["slug"] for item in result["documents"]],
-            ["readme", "release-notes", "app-specs", "basic-specs"],
+            ["readme", "app-specs", "basic-specs", "release-notes"],
         )
-        self.assertEqual(result["documents"][1]["title"], "RELEASE NOTES")
-        self.assertEqual(result["documents"][2]["title"], "APP SPECS")
-        self.assertEqual(result["documents"][3]["title"], "BASIC SPECS")
+        self.assertEqual(result["documents"][1]["title"], "APP SPECS")
+        self.assertEqual(result["documents"][2]["title"], "BASIC SPECS")
+        self.assertEqual(result["documents"][3]["title"], "RELEASE NOTES")
+        release_notes = result["documents"][3]
+        self.assertEqual([page["title"] for page in release_notes["pages"]], ["All versions"])
+        self.assertEqual([page["slug"] for page in release_notes["pages"]], ["all"])
+        self.assertIn("## 1.1.0", release_notes["pages"][0]["markdown"])
+        self.assertIn("## 1.0.0", release_notes["pages"][0]["markdown"])
         readme = result["documents"][0]
         titles = [page["title"] for page in readme["pages"]]
         self.assertIn("What it does", titles)

@@ -919,18 +919,23 @@ async function renderDocs(doc, page) {
     tab.addEventListener("click", () => navigate(ROUTE.docs(item.slug)).catch((error) => showToast(error.message)));
     elements.docTabs.append(tab);
   }
+  const continuous = doc.pages.length === 1;
   elements.docSections.replaceChildren();
-  for (const item of doc.pages) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = `doc-section${item.slug === page.slug ? " active" : ""}`;
-    button.innerHTML = svgIcon(iconFor(item.title));
-    button.setAttribute("aria-label", item.title);
-    button.dataset.tip = item.title;
-    button.addEventListener("click", () => navigate(ROUTE.docs(doc.slug, item.slug)).catch((error) => showToast(error.message)));
-    elements.docSections.append(button);
+  elements.docSections.hidden = continuous;
+  elements.docSectionTitle.hidden = continuous;
+  if (!continuous) {
+    for (const item of doc.pages) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `doc-section${item.slug === page.slug ? " active" : ""}`;
+      button.innerHTML = svgIcon(iconFor(item.title));
+      button.setAttribute("aria-label", item.title);
+      button.dataset.tip = item.title;
+      button.addEventListener("click", () => navigate(ROUTE.docs(doc.slug, item.slug)).catch((error) => showToast(error.message)));
+      elements.docSections.append(button);
+    }
+    elements.docSectionTitle.textContent = page.title;
   }
-  elements.docSectionTitle.textContent = page.title;
   elements.docBody.innerHTML = renderMarkdown(page.markdown);
   if (DOC_SPECS.has(doc.slug)) {
     const metrics = state.metrics || await loadMetrics();
@@ -1043,7 +1048,7 @@ async function showDocsRoute(docSlug, sectionSlug) {
   const doc = state.docs.documents.find((item) => item.slug === docSlug) || state.docs.documents[0];
   const page = doc.pages.find((item) => item.slug === sectionSlug) || doc.pages[0];
   await renderDocs(doc, page);
-  const canonical = ROUTE.docs(doc.slug, page.slug);
+  const canonical = doc.pages.length === 1 ? ROUTE.docs(doc.slug) : ROUTE.docs(doc.slug, page.slug);
   if (window.location.hash !== canonical) history.replaceState({}, "", canonical);
 }
 

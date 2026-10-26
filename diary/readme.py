@@ -47,12 +47,20 @@ def readme_pages(path: Path) -> dict[str, object]:
     return {"title": title, "pages": pages}
 
 
+def continuous_page(path: Path) -> dict[str, object]:
+    """Return one page for the whole document, without an overview page."""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    title = path.stem
+    if lines and lines[0].startswith("# "):
+        title = lines[0][2:].strip()
+        lines = lines[1:]
+    body = "\n".join(lines).strip()
+    return {"title": title, "pages": [{"title": "All versions", "slug": "all", "markdown": body}]}
+
+
 def documents(root: Path) -> list[dict[str, object]]:
-    """Return the README, release notes, and the Markdown documents under docs/."""
-    candidates: list[tuple[str, str, Path]] = [
-        ("readme", "README", root / "README.md"),
-        ("release-notes", "RELEASE NOTES", root / "RELEASE-NOTES.md"),
-    ]
+    """Return the README, docs, and release notes in reader order."""
+    candidates: list[tuple[str, str, Path]] = [("readme", "README", root / "README.md")]
     for path in sorted((root / "docs").glob("*.md")):
         if path.name == "AI-SKILL.md":
             continue
@@ -61,10 +69,11 @@ def documents(root: Path) -> list[dict[str, object]]:
         else:
             title = path.stem.replace("_", " ").title()
         candidates.append((_slug(path.stem), title, path))
+    candidates.append(("release-notes", "RELEASE NOTES", root / "RELEASE-NOTES.md"))
     result: list[dict[str, object]] = []
     for slug, title, path in candidates:
         if not path.is_file():
             continue
-        page = readme_pages(path)
+        page = continuous_page(path) if slug == "release-notes" else readme_pages(path)
         result.append({"slug": slug, "title": title, "pages": page["pages"]})
     return result
