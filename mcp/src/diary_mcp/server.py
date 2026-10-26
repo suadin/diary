@@ -1,4 +1,4 @@
-"""MCP server for the Diary instance on the NAS."""
+"""MCP server for a Diary instance."""
 
 import sys
 
@@ -12,7 +12,7 @@ mcp = FastMCP("Diary MCP Server")
 @mcp.tool()
 def diary_append_entry(day: str, title: str, content: str, author: str = "AI") -> str:
     """
-    Append one entry to the Diary on the NAS.
+    Append one entry to Diary.
 
     Appending is the only write the AI credential may do. Existing entries
     cannot be edited or deleted through this tool; only a human can remove

@@ -56,14 +56,15 @@ def settings() -> Settings:
     config_dir = Path(os.environ.get("DIARY_CONFIG_DIR", config_home / "diary"))
     data_dir = Path(os.environ.get("DIARY_DATA_DIR", data_home / "diary"))
     credentials = _read_credentials(config_dir / "credentials.env")
+    public_origin = (os.environ.get("DIARY_PUBLIC_ORIGIN") or "").rstrip("/") or None
     return Settings(
         data_dir=data_dir,
         config_dir=config_dir,
         host=os.environ.get("DIARY_HOST", "127.0.0.1"),
         port=int(os.environ.get("DIARY_PORT", "8125")),
-        ai_read_token=os.environ.get("DIARY_AI_READ_TOKEN", credentials.get("DIARY_AI_READ_TOKEN", "")),
-        ai_write_token=os.environ.get("DIARY_AI_WRITE_TOKEN", credentials.get("DIARY_AI_WRITE_TOKEN", "")),
-        public_origin=os.environ.get("DIARY_PUBLIC_ORIGIN") or None,
+        ai_read_token=os.environ.get("DIARY_AI_READ_TOKEN") or credentials.get("DIARY_AI_READ_TOKEN", ""),
+        ai_write_token=os.environ.get("DIARY_AI_WRITE_TOKEN") or credentials.get("DIARY_AI_WRITE_TOKEN", ""),
+        public_origin=public_origin,
     )
 
 
@@ -76,9 +77,13 @@ def setup(settings_value: Settings) -> Path:
     credentials_path = settings_value.config_dir / "credentials.env"
     required = {"DIARY_AI_READ_TOKEN", "DIARY_AI_WRITE_TOKEN"}
     if credentials_path.exists():
-        missing = required - _read_credentials(credentials_path).keys()
+        stored = _read_credentials(credentials_path)
+        missing = required - stored.keys()
+        empty = {key for key in required if not stored.get(key)}
         if missing:
             raise RuntimeError(f"credentials file is missing required values: {', '.join(sorted(missing))}")
+        if empty:
+            raise RuntimeError(f"credentials file has empty values: {', '.join(sorted(empty))}")
     else:
         values = {
             "DIARY_AI_READ_TOKEN": secrets.token_urlsafe(32),

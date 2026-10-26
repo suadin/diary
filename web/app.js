@@ -82,7 +82,12 @@ const ROUTE = {
 
 function parseRoute() {
   const [path, search = ""] = window.location.hash.replace(/^#\/?/, "").split("?");
-  const parts = path.split("/").filter(Boolean).map((part) => decodeURIComponent(part));
+  let parts = [];
+  try {
+    parts = path.split("/").filter(Boolean).map((part) => decodeURIComponent(part));
+  } catch (error) {
+    return { parts: [], query: "" };
+  }
   return { parts, query: (new URLSearchParams(search).get("q") || "").trim() };
 }
 
@@ -542,8 +547,12 @@ async function showResults(offset = 0) {
   const params = new URLSearchParams({ q: query, offset: String(offset), limit: String(RESULT_PAGE_SIZE) });
   if (tag) params.set("tag", tag);
   if (date) params.set("date", date);
-  const page = await request(`/api/search/page?${params}`);
+  let page = await request(`/api/search/page?${params}`);
   if (ticket !== state.resultTicket) return;
+  if (!page.entries.length && page.total > 0 && offset > 0) {
+    const lastOffset = Math.max(0, Math.floor((page.total - 1) / RESULT_PAGE_SIZE) * RESULT_PAGE_SIZE);
+    if (lastOffset !== offset) return showResults(lastOffset);
+  }
   state.resultOffset = page.offset;
   state.resultTotal = page.total;
   elements.searchTitle.textContent = resultTitle(page.total, tag, date, query);
@@ -760,7 +769,7 @@ function inlineMarkdown(text) {
   });
   output = output.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
   output = output.replace(
-    /\[([^\]]+)\]\(((?:\.\.\/)?(?:docs\/[A-Za-z0-9._-]+\.md|README\.md))(#[A-Za-z0-9-]+)?\)/g,
+    /\[([^\]]+)\]\(((?:\.\.\/)?(?:docs\/)?[A-Za-z0-9._-]+\.md)(#[A-Za-z0-9-]+)?\)/g,
     (_, label, path, anchor) => {
       const file = path.split("/").pop();
       const slug = file.toLowerCase() === "readme.md"
@@ -968,6 +977,11 @@ function renderRequirementTests(slug, metrics) {
 async function showDayRoute(date, query = "") {
   if (!ISO_DAY.test(date) || !(await ensureDayWindow(date))) {
     showToast(`${date} has no entries.`);
+    state.selectedDate = null;
+    state.entryOffset = 0;
+    state.entryTotal = 0;
+    state.entryPages.clear();
+    renderDays();
     showOnly(elements.welcome);
     history.replaceState({}, "", ROUTE.welcome);
     return;
@@ -984,6 +998,11 @@ async function showEntryRoute(id) {
     entry = await request(`/api/entry?id=${encodeURIComponent(id)}`);
   } catch (error) {
     showToast("That entry is not here anymore.");
+    state.selectedDate = null;
+    state.entryOffset = 0;
+    state.entryTotal = 0;
+    state.entryPages.clear();
+    renderDays();
     showOnly(elements.welcome);
     history.replaceState({}, "", ROUTE.welcome);
     return;
@@ -1011,6 +1030,14 @@ async function showDocsRoute(docSlug, sectionSlug) {
   await loadDocs();
   if (!state.docs.documents.length) {
     showToast("No documentation is installed.");
+    state.inDocs = false;
+    state.selectedDate = null;
+    state.entryOffset = 0;
+    state.entryTotal = 0;
+    state.entryPages.clear();
+    renderDays();
+    showOnly(elements.welcome);
+    history.replaceState({}, "", ROUTE.welcome);
     return;
   }
   const doc = state.docs.documents.find((item) => item.slug === docSlug) || state.docs.documents[0];
@@ -1062,6 +1089,7 @@ async function applyRoute() {
   if (ticket !== state.routeTicket) return;
   elements.searchInput.value = "";
   showOnly(elements.welcome);
+  if (window.location.hash !== ROUTE.welcome) history.replaceState({}, "", ROUTE.welcome);
 }
 
 async function navigate(hash, { replace = false } = {}) {
@@ -1244,4 +1272,7 @@ async function init() {
   }
 }
 
-init().catch((error) => showToast(error.message));
+init().catch((error) => {
+  showToast(error.message);
+  showOnly(elements.welcome);
+});

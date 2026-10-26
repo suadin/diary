@@ -331,7 +331,7 @@ class DiaryHandler(BaseHTTPRequestHandler):
         )
         trusted_https_origin = (
             self.server.settings.public_origin is not None
-            and origin == self.server.settings.public_origin
+            and origin.rstrip("/") == self.server.settings.public_origin.rstrip("/")
             and parsed.netloc == host
         )
         if not loopback_origin and not trusted_https_origin:

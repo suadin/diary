@@ -12,13 +12,16 @@ it. [README](../README.md) explains setup, operation, and deployment.
 How the README and `docs/*.md` are read in the page.
 
 - The footer serves the documentation: a book icon opens the README in the main panel.
-  The reader also lists the Markdown files under `docs/`, one tab per document and one
-  page per level-two heading.
+  The reader also lists the documentation files under `docs/`, one tab per document and
+  one page per level-two heading. An editable guide kept in the data directory has its
+  own editor and is not duplicated in the reader.
 - Sections are navigated by a row of icons, not arrows. Each icon symbolises its
   section, its tooltip gives the section title, and a click opens that page with its
-  heading. Long documents reduce the font size instead of widening the page.
-- Relative Markdown links between documents open in the reader. The same links keep
-  working on GitHub, and each section has a stable anchor.
+  heading. Long pages keep the card width and scroll inside the main panel; the reader
+  never widens the page.
+- Relative Markdown links between documents open in the reader, whether the link names
+  a file in `docs/` or a sibling document. The same links keep working on GitHub, and
+  each section has a stable anchor.
 
 ## Footer
 
@@ -103,10 +106,10 @@ How the interface should feel and speak.
 - The visual style is simple and playful: thicker outlines, short hover motion, and
   tooltips as speech bubbles that stay inside the viewport. Yellow marks the selection
   and emphasis, red warns, green marks good.
-- Sizes are relative. The root font size follows the viewport width, and every length in
-  the stylesheet is in `rem`, so 1080p, 1440p, and 2160p show the same layout at a
-  different scale. The header, footer, and sidebar stay in place; only the main card
-  scrolls. The sidebar is 24rem wide, and the card spans the main panel.
+- Sizes are relative. The root font size follows the viewport width, and layout lengths
+  use `rem`, so 1080p, 1440p, and 2160p show the same layout at a different scale. The
+  header, footer, and sidebar stay in place; only the main card scrolls. The sidebar is
+  24rem wide, and the card spans the main panel.
 - Test tooltips in the footer are wider than other tooltips, so their text fits on fewer
   lines.
 - Use one name for one thing. The browser test suite is called “E2E”, never “browser”.

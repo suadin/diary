@@ -10,7 +10,7 @@ rules live in [BASIC SPECS](docs/BASIC-SPECS.md); the Diary-specific rules live 
 [APP SPECS](docs/APP-SPECS.md).
 
 > 🗂️ Dated entries · 🔗 deep links to every view · 🤖 append-only AI access ·
-> 🧪 50 unit tests and 27 E2E journeys
+> 🧪 51 unit tests and 27 E2E journeys
 
 ## What it does
 
@@ -39,10 +39,11 @@ rules live in [BASIC SPECS](docs/BASIC-SPECS.md); the Diary-specific rules live 
   `#/docs/readme/ai-api`, `#/guide`, `#/all?q=boot`, and `#/tag/Diary?q=boot`. Opening one
   restores the same view, including the surrounding sidebar window; a refresh does not
   flash the welcome panel first.
-- Keeps the writing guide and the documentation apart: the guide is editable, the
-  README and `docs/*.md` are read-only. Documentation opens in the main panel with
-  one tab per document and one icon per heading; the icon tooltip names the section,
-  and clicking it opens that page with its heading.
+- Keeps the writing guide and the documentation apart: the guide is editable; the
+  README and the SPECS under `docs/` are read-only. Documentation opens in the main
+  panel with one tab per document and one icon per heading; the icon tooltip names the
+  section, and clicking it opens that page with its heading. The AI guide seed is not
+  part of the reader.
 - Keeps the AI writing guide editable from the local web page, without a sign-in flow.
   The editor shows seven lines and can be expanded, so the delete controls stay visible.
   **Reset** restores the built-in default from `docs/AI-SKILL.md`.
@@ -55,8 +56,9 @@ rules live in [BASIC SPECS](docs/BASIC-SPECS.md); the Diary-specific rules live 
   suite once and then polls until it finishes; once results exist it shows them and
   refuses to run again. E2E results are display-only in the container.
 - Includes a small purple **Memory spark** button that resurfaces a random older entry.
-- Serves this README and the documents under `docs/`: a book icon in the footer opens
-  the reader, one page per heading, with a row of section icons instead of arrows.
+- Serves this README and the SPECS under `docs/`: a book icon in the footer opens the
+  reader, one page per heading, with a row of section icons instead of arrows. The
+  editable AI guide has its own editor and is not duplicated in the reader.
 - Follows the operating system's light/dark preference and links to this repository.
 
 The interface follows the workspace contract: README, source, and test numbers in one
@@ -124,8 +126,9 @@ To import existing dated Markdown logs without changing or deleting the original
 python3 -m diary import ~/dev/logs
 ```
 
-The importer turns each level-two section into an entry and uses a stable fingerprint
-so repeating the import does not duplicate entries. Source files remain untouched.
+The importer turns each level-two section into an entry and keeps any introductory
+text as a “Daily summary” entry. It uses a stable fingerprint so repeating the import
+does not duplicate entries. Source files remain untouched.
 
 ## AI API
 
@@ -145,11 +148,11 @@ example `opencode/deepseek-v4.1-flash-free`; imported history uses `AI`; a human
 writing through the API may use their own name. The field defaults to `AI` and is
 limited to 80 characters. That credential can only append entries; there is no AI
 endpoint for editing or deleting. Titles name topic and action, joined by an em dash,
-for example `Diary — README reader added`, so tags can group entries by topic. Search
-matches titles and content, and narrows by tag or date. Tags are the exact title topic
-before the earliest em dash or colon; the sidebar chips and the `tag` search parameter
-filter by them. The server binds only to
-loopback and does not enable CORS.
+for example `Diary — README reader added`, so tags can group entries by topic. The web
+search matches titles and content and narrows by tag or date; the AI search endpoint
+accepts only the `q` text. Tags are the exact title topic before the earliest em dash or
+colon; the sidebar chips and the `tag` search parameter filter by them. The server binds
+only to loopback and does not enable CORS.
 
 ## Web endpoints
 
@@ -166,8 +169,8 @@ GET /api/search?q=boot
 GET /api/search?q=boot&tag=Diary      # text and exact title topic
 GET /api/search?q=boot&date=2026-10-22  # text and one date
 GET /api/search/page?q=boot&tag=Diary&offset=0&limit=8   # one window plus the total
-GET /api/tags                          # all title topics, ordered by frequency
-GET /api/tags?limit=8                  # most frequent topics, default 8
+GET /api/tags                          # title topics by frequency, default 8
+GET /api/tags?limit=8                  # explicit limit, 1 to 50
 GET /api/skill
 GET /api/docs                          # README and docs/*.md, each split into pages
 GET /api/metrics                       # unit and end-to-end numbers, and whether a run is active
@@ -236,9 +239,9 @@ a `covers` tag, an E2E journey with a Playwright tag. The server merges both run
 and every page in BASIC SPECS and APP SPECS lists the concrete test names under
 “Automated tests”, so a rule without a test is visible instead of implied.
 
-The unit suite has 50 tests and currently covers 482 of 631 lines (76.4 %). The
-Playwright suite in `e2e/` has 27 journeys and touches 851 of 1166 `web/app.js` lines
-(73.0 %). It needs Node, pnpm, and a Chromium build:
+The unit suite has 51 tests and currently covers 489 of 636 lines (76.9 %). The
+Playwright suite in `e2e/` has 27 journeys and touches 859 of 1197 `web/app.js` lines
+(71.8 %). It needs Node, pnpm, and a Chromium build:
 
 ```bash
 cd e2e

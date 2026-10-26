@@ -291,6 +291,11 @@ test("documentation wraps bullets, follows links, and the card scrolls", { tag: 
   await page.goto("/#/docs/basic-specs/overview");
   await page.locator('a[data-doc-link="readme#overview"]').first().click();
   await expect(page).toHaveURL(/#\/docs\/readme\/overview$/);
+
+  await page.goto("/#/docs/app-specs/human-controls");
+  await page.locator('a[data-doc-link="basic-specs#local-access"]').click();
+  await expect(page).toHaveURL(/#\/docs\/basic-specs\/local-access$/);
+  await expect(page.locator("#doc-section-title")).toHaveText("Local access");
 });
 
 test("specs sections use distinct icons", { tag: ["@documentation-reader", "@style-and-vocabulary"] }, async ({ page }) => {
@@ -338,11 +343,21 @@ test("the welcome panel does not flash before the first route", { tag: ["@naviga
 });
 
 test("an unknown deep link returns to the start", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
-  await page.goto("/#/day/2020-01-01");
+  await page.goto("/#/day/2026-10-22");
+  await expect(page.locator(".day-button.active")).toHaveCount(1);
+  await page.evaluate(() => { window.location.hash = "#/day/2020-01-01"; });
   await expect(page.locator("#welcome")).toBeVisible();
   await expect(page).toHaveURL(/#\/$/);
+  await expect(page.locator(".day-button.active")).toHaveCount(0);
 
-  await page.goto("/#/entry/99999");
+  await page.goto("/#/day/2026-10-22");
+  await expect(page.locator(".day-button.active")).toHaveCount(1);
+  await page.evaluate(() => { window.location.hash = "#/entry/99999"; });
+  await expect(page.locator("#welcome")).toBeVisible();
+  await expect(page).toHaveURL(/#\/$/);
+  await expect(page.locator(".day-button.active")).toHaveCount(0);
+
+  await page.goto("/#/tag/%E0%A4%A");
   await expect(page.locator("#welcome")).toBeVisible();
   await expect(page).toHaveURL(/#\/$/);
 

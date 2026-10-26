@@ -355,6 +355,8 @@ class ConfigTests(unittest.TestCase):
             self.assertEqual(current.ai_write_token, "write")
             with patch.dict("os.environ", {**env, "DIARY_PUBLIC_ORIGIN": "https://192.168.178.50:8444"}, clear=True):
                 self.assertEqual(settings().public_origin, "https://192.168.178.50:8444")
+            with patch.dict("os.environ", {**env, "DIARY_PUBLIC_ORIGIN": "https://192.168.178.50:8444/"}, clear=True):
+                self.assertEqual(settings().public_origin, "https://192.168.178.50:8444")
 
     @covers("deployment")
     def test_settings_load_credentials_file_and_reject_non_loopback(self):
@@ -368,6 +370,13 @@ class ConfigTests(unittest.TestCase):
             with patch.dict("os.environ", {"DIARY_CONFIG_DIR": str(config)}, clear=True):
                 current = settings()
             self.assertEqual(current.ai_read_token, "read")
+            with patch.dict(
+                "os.environ",
+                {"DIARY_CONFIG_DIR": str(config), "DIARY_AI_READ_TOKEN": "", "DIARY_AI_WRITE_TOKEN": ""},
+                clear=True,
+            ):
+                inherited = settings()
+            self.assertEqual((inherited.ai_read_token, inherited.ai_write_token), ("read", "write"))
             unsafe = Settings(Path(folder) / "data", config, "0.0.0.0", 8125, "r", "w")
             with self.assertRaises(ValueError):
                 ensure_local_paths(unsafe)
@@ -382,6 +391,20 @@ class ConfigTests(unittest.TestCase):
             )
             with self.assertRaisesRegex(ValueError, "HTTPS origin"):
                 ensure_local_paths(unsafe_origin)
+
+    @covers("data", "deployment")
+    def test_setup_rejects_empty_credentials_in_an_existing_file(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            config_dir = root / "config"
+            config_dir.mkdir()
+            (config_dir / "credentials.env").write_text(
+                "DIARY_AI_READ_TOKEN=\nDIARY_AI_WRITE_TOKEN=write\n",
+                encoding="utf-8",
+            )
+            current = Settings(root / "data", config_dir, "127.0.0.1", 8125, "r", "w")
+            with self.assertRaisesRegex(RuntimeError, "empty values"):
+                setup(current)
 
     @covers("data")
     def test_local_data_and_credentials_cannot_be_inside_repository(self):
@@ -527,6 +550,23 @@ class HttpTests(ServerTestCase):
             "/api/skill",
             "PUT",
             {"content": "# Updated over HTTPS"},
+            origin=public_origin,
+            host="192.168.178.50:8444",
+        )
+        self.assertEqual(status, 200)
+        self.server.settings = Settings(
+            self.settings.data_dir,
+            self.settings.config_dir,
+            self.settings.host,
+            self.settings.port,
+            self.settings.ai_read_token,
+            self.settings.ai_write_token,
+            public_origin + "/",
+        )
+        status, _, _ = self.request(
+            "/api/skill",
+            "PUT",
+            {"content": "# Updated with a trailing slash"},
             origin=public_origin,
             host="192.168.178.50:8444",
         )
@@ -845,10 +885,6 @@ class TestRunnerTests(ServerTestCase):
         self.assertEqual(status, 409)
         self.assertIn("already exist", json.loads(text)["error"])
         self.assertFalse(json.loads(self.request("/api/metrics")[1])["running"])
-
-
-if __name__ == "__main__":
-    unittest.main()
 
 
 class TraceabilityTests(unittest.TestCase):

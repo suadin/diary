@@ -6,12 +6,13 @@ a transcript or repeat stable instructions that belong in project documentation.
 
 ## Before writing
 
-- Search `GET /ai/search?q=...` for the relevant topic and date range first.
+- Search `GET /ai/search?q=...` for the relevant topic first.
 - Read `GET /ai/skill` before writing when the format or scope is uncertain.
-- Use `http://127.0.0.1:8125` as the local base URL. Send the AI read token as a
-  `Bearer` token for `GET /ai/skill` and `GET /ai/search`; send the separate AI write
-  token only for `POST /ai/entries`. The tokens are in the private credentials file,
-  never in this skill or the repository.
+- Use the Diary base URL configured for your client; a local install defaults to
+  `http://127.0.0.1:8125`. Send the AI read token as a `Bearer` token for
+  `GET /ai/skill` and `GET /ai/search`; send the separate AI write token only for
+  `POST /ai/entries`. The tokens are in the private credentials file, never in this
+  skill or the repository.
 - Never invent outcomes, measurements, decisions, or user preferences.
 - Keep private data and credentials out of entries. Do not store tokens, passwords,
   full personal identifiers, or secrets.
@@ -74,8 +75,8 @@ Deep links and a documentation reader are deployed.
 - Section icons replace arrows in the README reader.
 
 ✅ **Verified**
-- 50 unit tests, 76.3 % lines.
-- 27 E2E journeys, 73.2 % of app.js.
+- The unit count and line coverage shown in the footer.
+- The E2E journey count and app.js coverage shown beside it.
 
 ⚠️ **Open**
 - Contract icon placement still undecided.
@@ -85,8 +86,9 @@ This shape applies to new entries. Do not rewrite old entries, and leave importe
 history as written.
 
 Search results match entry titles and content, include the entry date, and arrive
-newest first. Omit `q` to review all entries. Diary does not categorize entries with
-tags; use the search text itself to find related history.
+newest first. Omit `q` to review all entries. Diary derives a topic tag from each title
+before the earliest `—` or `:`; the sidebar chips and the `tag` search parameter use it.
+There is no separate tagging step, so write a stable topic into every title.
 
 ## Read history
 

@@ -9,7 +9,7 @@ that the write credential can append but never edit or delete.
 
 | Tool | Credential | Purpose |
 |---|---|---|
-| `diary_append_entry(day, title, content)` | write | Append one entry |
+| `diary_append_entry(day, title, content, author="AI")` | write | Append one entry |
 | `diary_search(query)` | read | Full-text search in titles and content |
 | `diary_list_days()` | none | Days with entry counts |
 | `diary_get_skill()` | read | The human-editable AI writing guide |

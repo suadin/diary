@@ -43,10 +43,10 @@ How a reader moves through Diary's dates, entries, and topics.
 - Search runs inside the current scope. With a tag selected it searches that tag; with a
   date selected it searches that date; the entry count in the sidebar opens every entry
   first. Clearing the text returns to the scope's full list.
-- The result heading names the tag, or the date; the whole journal shows a count
-  instead.
-- The day arrows sit directly under the day list. While README or a SPECS document is
-  open, no date is marked as selected and no tag chip is active.
+- The result heading names the tag or date and adds “(filtered)” while search text
+  narrows it; the whole journal shows a count, plus the query when one is active.
+- The day-window pager sits directly under the day list. While README or a SPECS
+  document is open, no date is marked as selected and no tag chip is active.
 - The sidebar shows the eight most frequent title topics as tag chips. Ties go to the
   topic used most recently. A chip filters entries by the exact topic before the earliest
   separator (`—` or `:`). No separate tagging step is needed.
@@ -58,8 +58,8 @@ What the editable AI guide does.
 - The AI writing guide is separate from the read-only documents: it is editable in the
   page, seven lines tall by default, expandable to twice that height, with a reset to the
   built-in default.
-- The guide describes the entry shape and the writing rules. It is the single place
-  those rules live; the page does not repeat them.
+- The guide describes the entry shape and the writing rules. It is the single editable
+  place those rules live; the page does not repeat them.
 - The guide names the author rule literally: a model writes its own exact identifier
   and never copies one from the guide, an example, or older history.
 
@@ -89,9 +89,10 @@ What the AI credential may do.
 
 How an assistant reaches that API.
 
-- An optional MCP client in `mcp/` exposes search and append to AI assistants over
-  stdio. It is configured only through environment variables (API URL, token values
-  or token-file paths) and contains no installation-specific address or credential.
+- An optional MCP client in `mcp/` exposes search, append, the day list, and the writing
+  guide to AI assistants over stdio. It is configured only through environment variables
+  (API URL, token values or token-file paths) and contains no installation-specific
+  address or credential.
 
 ## Diary look
 
