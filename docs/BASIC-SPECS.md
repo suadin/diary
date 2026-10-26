@@ -55,6 +55,22 @@ Run commands and measured numbers are in
 - Test tooltips name the measurement time, the total duration in seconds, and the
   seconds per test, not a second copy of the numbers already in the footer.
 
+## Navigation and deep links
+
+How a reader reaches a view, and how a link survives a refresh.
+
+- Deep links are first-class: every view has a stable address. Opening one restores
+  the same view and the surrounding list or window; an unknown link returns to the
+  start.
+- A refresh opens the requested view directly. The welcome panel stays hidden until
+  the first route has resolved, so it never flashes before content appears.
+- Lists page in fixed windows with arrows and lazy loading; the window size is an app
+  decision. An open item steps to the newer or older item of the list it came from,
+  and Back returns to that list with its search text.
+- Search text stays in the address, so a refresh or a shared link shows the same
+  filtered list. The result heading names the current scope and adds “(filtered)”
+  while search text narrows it.
+
 ## Local access
 
 Who may change state, and how the server tells a local browser from a foreign one.

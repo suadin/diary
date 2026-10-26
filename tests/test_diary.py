@@ -51,7 +51,7 @@ class StoreTests(unittest.TestCase):
     def add(self, day, title, content, source_key=None):
         return add_entry(self.database, day, title, content, source_key)
 
-    @covers("entries-and-writing", "navigation-and-deep-links")
+    @covers("entries-and-writing", "navigation-and-deep-links", "journal-navigation")
     def test_entries_and_days_sort_newest_first(self):
         self.add("2026-10-20", "Older note", "first")
         self.add("2026-10-21", "New note", "second")
@@ -62,7 +62,7 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(list_entries(self.database, "2026-10-20")[0]["title"], "Older note")
         self.assertNotIn("tags", list_entries(self.database)[0])
 
-    @covers("entries-and-writing", "navigation-and-deep-links")
+    @covers("entries-and-writing", "navigation-and-deep-links", "journal-navigation")
     def test_search_matches_title_and_content_only(self):
         self.add("2026-10-20", "Boot notes", "A tested route")
         self.assertEqual(len(search_entries(self.database, "tested")), 1)
@@ -85,7 +85,7 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(delete_entries(self.database, day="2026-10-21"), 1)
         self.assertEqual(list_entries(self.database), [])
 
-    @covers("entries-and-writing", "navigation-and-deep-links")
+    @covers("entries-and-writing", "navigation-and-deep-links", "journal-navigation")
     def test_top_tags_and_tag_search_use_the_title_topic(self):
         self.add("2026-10-21", "Diary — First", "body one")
         self.add("2026-10-21", "Diary — Second", "body two")
@@ -102,7 +102,7 @@ class StoreTests(unittest.TestCase):
         self.assertEqual([entry["title"] for entry in both], ["Diary — Second"])
         self.assertEqual(search_entries(self.database, "", "missing"), [])
 
-    @covers("navigation-and-deep-links")
+    @covers("navigation-and-deep-links", "journal-navigation")
     def test_top_tags_show_eight_by_count_then_latest_use(self):
         for index in range(12):
             self.add("2026-10-21", f"Topic {index:02} — Entry", "body")
@@ -114,7 +114,7 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(tags[1:], [f"Topic {index:02}" for index in range(11, 4, -1)])
         self.assertEqual(len(top_tags(self.database, 20)), 13)
 
-    @covers("navigation-and-deep-links")
+    @covers("navigation-and-deep-links", "journal-navigation")
     def test_tag_filter_follows_the_same_topic_rule_as_the_sidebar(self):
         self.add("2026-10-21", "Hub: Boot — Doku", "body colon first")
         self.add("2026-10-21", "four-wins: Power-Scheibe", "body colon")
@@ -126,7 +126,7 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(search_entries(self.database, "", "Hub: Boot"), [])
         self.assertEqual([e["title"] for e in search_entries(self.database, "", "FOUR-WINS")], ["four-wins: Power-Scheibe"])
 
-    @covers("navigation-and-deep-links", "entries-and-writing")
+    @covers("navigation-and-deep-links", "entries-and-writing", "journal-navigation")
     def test_search_combines_text_with_a_tag_or_a_day(self):
         self.add("2026-10-21", "Diary — One", "alpha")
         self.add("2026-10-22", "Diary — Two", "alpha")
@@ -140,7 +140,7 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(titles(search_entries(self.database, "", "Diary", "2026-10-22")), ["Diary — Four", "Diary — Two"])
         self.assertEqual(search_entries(self.database, "beta", "Hub"), [])
 
-    @covers("navigation-and-deep-links")
+    @covers("navigation-and-deep-links", "journal-navigation")
     def test_search_page_windows_results_and_reports_the_total(self):
         for index in range(10):
             self.add("2026-10-21", f"Diary — Note {index:02}", "same body")
@@ -153,7 +153,7 @@ class StoreTests(unittest.TestCase):
         narrowed = search_page(self.database, "same", "Diary", "2026-10-22", 0, 8)
         self.assertEqual((narrowed["total"], narrowed["entries"]), (0, []))
 
-    @covers("entries-and-writing", "navigation-and-deep-links")
+    @covers("entries-and-writing", "navigation-and-deep-links", "journal-navigation")
     def test_colon_titles_yield_topics_and_the_earliest_separator_wins(self):
         self.assertEqual(entry_topic("die-wand: ganz auf Englisch"), "die-wand")
         self.assertEqual(entry_topic("Hub: Boot — Doku"), "Hub")
@@ -174,7 +174,7 @@ class StoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.add("2026-10-21", "Long title" * 30, "content")
 
-    @covers("navigation-and-deep-links")
+    @covers("navigation-and-deep-links", "journal-navigation")
     def test_entry_page_windows_a_day_and_reports_its_total(self):
         for index in range(7):
             self.add("2026-10-21", f"Note {index}", "body")
@@ -587,7 +587,7 @@ class HttpTests(ServerTestCase):
         self.settings.e2e_metrics_path.write_text("not json", encoding="utf-8")
         self.assertIsNone(json.loads(self.request("/api/metrics")[1])["e2e"])
 
-    @covers("navigation-and-deep-links")
+    @covers("navigation-and-deep-links", "journal-navigation")
     def test_day_page_returns_seven_day_windows_with_totals(self):
         days = [f"2026-10-{day:02d}" for day in range(10, 19)]
         for day in days:
@@ -616,7 +616,7 @@ class HttpTests(ServerTestCase):
         ):
             self.assertEqual(self.request(path)[0], 400, path)
 
-    @covers("navigation-and-deep-links")
+    @covers("navigation-and-deep-links", "journal-navigation")
     def test_entry_page_endpoint_windows_and_validates(self):
         for index in range(7):
             self.request("/ai/entries", "POST", {
@@ -660,7 +660,7 @@ class HttpTests(ServerTestCase):
         self.assertTrue(all(page["slug"] for page in readme["pages"]))
         self.assertEqual(len({page["slug"] for page in readme["pages"]}), len(readme["pages"]))
 
-    @covers("navigation-and-deep-links", "entries-and-writing")
+    @covers("navigation-and-deep-links", "entries-and-writing", "journal-navigation")
     def test_entry_endpoint_reads_one_entry_and_validates_the_id(self):
         status, text, _ = self.request("/ai/entries", "POST", {
             "date": "2026-10-21", "title": "Deep link", "content": "Body",

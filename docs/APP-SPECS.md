@@ -31,29 +31,20 @@ What an entry is, and who may write one.
 - Use one name for one thing: Diary says “entries” and “dates”, not “notes”,
   “threads”, or “days” where an entry or a calendar date is meant.
 
-## Navigation and deep links
+## Journal navigation
 
-How a reader reaches a date, an entry, or a section.
+How a reader moves through Diary's dates, entries, and topics.
 
 - The page lists dates newest-first in `yyyy-mm-dd` form, seven per page; arrows load
   older or newer windows on demand. A date shows its entries eight per page with lazy
   loading, and arrows step to the neighbouring date, including across a page boundary.
-- Deep links are first-class: `#/day/2026-10-22`, `#/entry/42`,
-  `#/docs/readme/ai-api`, `#/guide`, `#/all?q=boot`, and `#/tag/Diary?q=boot`. Opening one
-  restores the same view and the surrounding sidebar window; an unknown link returns to
-  the start.
-- A refresh opens the requested view directly. The welcome panel stays hidden until the
-  first route has resolved, so it never flashes before entries appear.
 - Search matches titles and content with dates in the results. Entry previews are
   compact. Results are paged eight at a time.
 - Search runs inside the current scope. With a tag selected it searches that tag; with a
   date selected it searches that date; the entry count in the sidebar opens every entry
-  first. Clearing the text returns to the scope's full list. The search text stays in the
-  address, so a refresh or a shared link shows the same filtered list.
-- The result heading names only the scope: the tag, or the date, with “(filtered)” added
-  while search text narrows it. The whole journal shows a count instead.
-- An open entry steps to the newer or older entry of the list it came from. Back returns
-  to that list with its search text.
+  first. Clearing the text returns to the scope's full list.
+- The result heading names the tag, or the date; the whole journal shows a count
+  instead.
 - The day arrows sit directly under the day list. While README or a SPECS document is
   open, no date is marked as selected and no tag chip is active.
 - The sidebar shows the eight most frequent title topics as tag chips. Ties go to the

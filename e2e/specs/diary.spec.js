@@ -1,7 +1,7 @@
 const { test, expect } = require("@playwright/test");
 const { startCoverage, stopCoverage } = require("./coverage");
 
-test("a journey through days, entries, documents, and the guide", { tag: ["@entries-and-writing", "@navigation-and-deep-links", "@documentation-reader", "@writing-guide", "@diary-look"] }, async ({ page }) => {
+test("a journey through days, entries, documents, and the guide", { tag: ["@entries-and-writing", "@navigation-and-deep-links", "@journal-navigation", "@documentation-reader", "@writing-guide", "@diary-look"] }, async ({ page }) => {
   const measured = await startCoverage(page);
   try {
     await page.goto("/");
@@ -74,7 +74,7 @@ test("entry content renders as Markdown", { tag: ["@entries-and-writing"] }, asy
   await expect(page.locator("#entry-view")).not.toContainText("**");
 });
 
-test("tag chips filter entries by title topic", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
+test("tag chips filter entries by title topic", { tag: ["@navigation-and-deep-links", "@journal-navigation"] }, async ({ page }) => {
   await page.route("**/api/tags", (route) => route.fulfill({
     json: [
       { tag: "Diary", count: 1 },
@@ -105,7 +105,7 @@ test("tag chips filter entries by title topic", { tag: ["@navigation-and-deep-li
   await expect(page.locator(".day-button.active")).toHaveCount(1);
 });
 
-test("search narrows the selected tag", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
+test("search narrows the selected tag", { tag: ["@navigation-and-deep-links", "@journal-navigation"] }, async ({ page }) => {
   await page.goto("/#/tag/Diary");
   await expect(page.locator(".result-card")).toHaveCount(2);
   await page.locator("#search-input").fill("alpha");
@@ -119,7 +119,7 @@ test("search narrows the selected tag", { tag: ["@navigation-and-deep-links"] },
   await expect(page).toHaveURL(/#\/tag\/Diary$/);
 });
 
-test("search narrows the selected date and the sidebar note is gone", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
+test("search narrows the selected date and the sidebar note is gone", { tag: ["@navigation-and-deep-links", "@journal-navigation"] }, async ({ page }) => {
   await page.goto("/#/day/2026-10-22");
   await expect(page.locator("#selection")).toBeVisible();
   await expect(page.locator(".sidebar-note")).toHaveCount(0);
@@ -132,7 +132,7 @@ test("search narrows the selected date and the sidebar note is gone", { tag: ["@
   await expect(page.locator("#selection")).toBeVisible();
 });
 
-test("the entry count opens the whole journal, and search runs inside it", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
+test("the entry count opens the whole journal, and search runs inside it", { tag: ["@navigation-and-deep-links", "@journal-navigation"] }, async ({ page }) => {
   await page.goto("/#/day/2026-10-22");
   await page.locator("#day-count").click();
   await expect(page).toHaveURL(/#\/all$/);
@@ -144,7 +144,7 @@ test("the entry count opens the whole journal, and search runs inside it", { tag
   await expect(page.locator("#result-pager")).toBeHidden();
 });
 
-test("tag results page eight at a time", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
+test("tag results page eight at a time", { tag: ["@navigation-and-deep-links", "@journal-navigation"] }, async ({ page }) => {
   await page.goto("/#/tag/Hub");
   await expect(page.locator(".result-card")).toHaveCount(8);
   await expect(page.locator("#result-range")).toHaveText("1–8 / 11");
@@ -230,7 +230,7 @@ test("entry cards browse the list they came from", { tag: ["@navigation-and-deep
   await expect(page.locator(".result-card")).toHaveCount(2);
 });
 
-test("the day pager sits under the day list, and no day is marked in the docs", { tag: ["@navigation-and-deep-links", "@documentation-reader"] }, async ({ page }) => {
+test("the day pager sits under the day list, and no day is marked in the docs", { tag: ["@navigation-and-deep-links", "@journal-navigation", "@documentation-reader"] }, async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto("/#/day/2026-10-22");
   const list = await page.locator("#day-list").boundingBox();
@@ -294,7 +294,7 @@ test("documentation wraps bullets, follows links, and the card scrolls", { tag: 
 });
 
 test("specs sections use distinct icons", { tag: ["@documentation-reader", "@style-and-vocabulary"] }, async ({ page }) => {
-  for (const [slug, count] of [["app-specs", 8], ["basic-specs", 8]]) {
+  for (const [slug, count] of [["app-specs", 8], ["basic-specs", 9]]) {
     await page.goto(`/#/docs/${slug}`);
     const icons = await page.locator(".doc-section svg").evaluateAll(
       (nodes) => nodes.map((node) => node.innerHTML),
@@ -350,7 +350,7 @@ test("an unknown deep link returns to the start", { tag: ["@navigation-and-deep-
   await expect(page.locator("#doc-section-title")).toHaveText("Tests and coverage");
 });
 
-test("day arrows cross the seven-day window", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
+test("day arrows cross the seven-day window", { tag: ["@navigation-and-deep-links", "@journal-navigation"] }, async ({ page }) => {
   await page.goto("/#/day/2026-10-15");
   await expect(page.locator("#selected-date")).toHaveText("2026-10-15");
   await expect(page.locator("#day-range")).toHaveText("1–7 / 12");
