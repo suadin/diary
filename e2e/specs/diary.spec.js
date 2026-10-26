@@ -26,12 +26,19 @@ test("a journey through days, entries, documents, and the guide", { tag: ["@entr
     await expect(page).toHaveURL(new RegExp(`#/entry/${entries[0].id}$`));
 
     await page.goto("/#/docs/readme");
-    await expect(page.locator(".doc-tab")).toHaveCount(3);
+    await expect(page.locator(".doc-tab")).toHaveCount(4);
     await expect(page.locator(".doc-section")).toHaveCount(11);
     await page.locator('.doc-section[data-tip="AI API"]').click();
     await expect(page.locator("#doc-section-title")).toHaveText("AI API");
     await expect(page).toHaveURL(/#\/docs\/readme\/ai-api$/);
     await expect(page.locator("#doc-body")).toContainText("/ai/entries");
+
+    await page.locator(".doc-tab", { hasText: "RELEASE NOTES" }).click();
+    await expect(page.locator("#docs-title")).toHaveText("RELEASE NOTES");
+    await expect(page).toHaveURL(/#\/docs\/release-notes\/overview$/);
+    await expect(page.locator(".doc-section")).toHaveCount(3);
+    await page.locator(".doc-section").nth(1).click();
+    await expect(page.locator("#doc-section-title")).toContainText("1.1.0");
 
     await page.locator(".doc-tab", { hasText: "APP SPECS" }).click();
     await expect(page.locator("#docs-title")).toHaveText("APP SPECS");

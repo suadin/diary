@@ -9,12 +9,15 @@ it. [README](../README.md) explains setup, operation, and deployment.
 
 ## Documentation reader
 
-How the README and `docs/*.md` are read in the page.
+How the README, release notes, and `docs/*.md` are read in the page.
 
 - The footer serves the documentation: a book icon opens the README in the main panel.
   The reader also lists the documentation files under `docs/`, one tab per document and
   one page per level-two heading. An editable guide kept in the data directory has its
   own editor and is not duplicated in the reader.
+- A `RELEASE-NOTES.md` at the repository root appears as its own read-only tab next to
+  README. Versions are ordered newest first, and each level-two heading becomes one
+  page, so a release note is reached like any other section.
 - Sections are navigated by a row of icons, not arrows. Each icon symbolises its
   section, its tooltip gives the section title, and a click opens that page with its
   heading. Long pages keep the card width and scroll inside the main panel; the reader

@@ -7,6 +7,7 @@ WORKDIR /opt/diary
 COPY diary/ ./diary/
 COPY docs/ ./docs/
 COPY README.md ./README.md
+COPY RELEASE-NOTES.md ./RELEASE-NOTES.md
 COPY web/ ./web/
 COPY tests/ ./tests/
 COPY mcp/src/diary_mcp/config.py ./mcp/src/diary_mcp/config.py

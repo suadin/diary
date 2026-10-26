@@ -45,8 +45,8 @@ How a reader moves through Diary's dates, entries, and topics.
   first. Clearing the text returns to the scope's full list.
 - The result heading names the tag or date and adds “(filtered)” while search text
   narrows it; the whole journal shows a count, plus the query when one is active.
-- The day-window pager sits directly under the day list. While README or a SPECS
-  document is open, no date is marked as selected and no tag chip is active.
+- The day-window pager sits directly under the day list. While README, release notes,
+  or a SPECS document is open, no date is marked as selected and no tag chip is active.
 - The sidebar shows the eight most frequent title topics as tag chips. Ties go to the
   topic used most recently. A chip filters entries by the exact topic before the earliest
   separator (`—` or `:`). No separate tagging step is needed.

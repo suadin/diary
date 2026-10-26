@@ -7,7 +7,7 @@ or erase history.
 
 This README explains what Diary is, how to run it, and how to operate it. The reusable
 rules live in [BASIC SPECS](docs/BASIC-SPECS.md); the Diary-specific rules live in
-[APP SPECS](docs/APP-SPECS.md).
+[APP SPECS](docs/APP-SPECS.md). Changes by version are in [RELEASE NOTES](RELEASE-NOTES.md).
 
 > 🗂️ Dated entries · 🔗 deep links to every view · 🤖 append-only AI access ·
 > 🧪 51 unit tests and 27 E2E journeys
@@ -36,14 +36,14 @@ rules live in [BASIC SPECS](docs/BASIC-SPECS.md); the Diary-specific rules live 
   Results are paged eight at a time, and an open entry steps to the neighbours in the
   list it came from.
 - Links are stable and shareable: `#/day/2026-10-22`, `#/entry/42`,
-  `#/docs/readme/ai-api`, `#/guide`, `#/all?q=boot`, and `#/tag/Diary?q=boot`. Opening one
-  restores the same view, including the surrounding sidebar window; a refresh does not
-  flash the welcome panel first.
+  `#/docs/readme/ai-api`, `#/docs/release-notes`, `#/guide`, `#/all?q=boot`, and
+  `#/tag/Diary?q=boot`. Opening one restores the same view, including the surrounding
+  sidebar window; a refresh does not flash the welcome panel first.
 - Keeps the writing guide and the documentation apart: the guide is editable; the
-  README and the SPECS under `docs/` are read-only. Documentation opens in the main
-  panel with one tab per document and one icon per heading; the icon tooltip names the
-  section, and clicking it opens that page with its heading. The AI guide seed is not
-  part of the reader.
+  README, the release notes, and the SPECS under `docs/` are read-only. Documentation
+  opens in the main panel with one tab per document and one icon per heading; the icon
+  tooltip names the section, and clicking it opens that page with its heading. The AI
+  guide seed is not part of the reader.
 - Keeps the AI writing guide editable from the local web page, without a sign-in flow.
   The editor shows seven lines and can be expanded, so the delete controls stay visible.
   **Reset** restores the built-in default from `docs/AI-SKILL.md`.
@@ -56,9 +56,10 @@ rules live in [BASIC SPECS](docs/BASIC-SPECS.md); the Diary-specific rules live 
   suite once and then polls until it finishes; once results exist it shows them and
   refuses to run again. E2E results are display-only in the container.
 - Includes a small purple **Memory spark** button that resurfaces a random older entry.
-- Serves this README and the SPECS under `docs/`: a book icon in the footer opens the
-  reader, one page per heading, with a row of section icons instead of arrows. The
-  editable AI guide has its own editor and is not duplicated in the reader.
+- Serves this README, the release notes, and the SPECS under `docs/`: a book icon in
+  the footer opens the reader, one page per heading, with a row of section icons
+  instead of arrows. The editable AI guide has its own editor and is not duplicated in
+  the reader.
 - Follows the operating system's light/dark preference and links to this repository.
 
 The interface follows the workspace contract: README, source, and test numbers in one
@@ -172,7 +173,7 @@ GET /api/search/page?q=boot&tag=Diary&offset=0&limit=8   # one window plus the t
 GET /api/tags                          # title topics by frequency, default 8
 GET /api/tags?limit=8                  # explicit limit, 1 to 50
 GET /api/skill
-GET /api/docs                          # README and docs/*.md, each split into pages
+GET /api/docs                          # README, RELEASE-NOTES.md, and docs/*.md, split into pages
 GET /api/metrics                       # unit and end-to-end numbers, and whether a run is active
 POST /api/tests                        # start the unit suite once; 409 when results exist
 POST /api/skill/reset                  # restore the seed guide
@@ -228,8 +229,9 @@ and coverage percentage are saved in the private data directory and shown in the
 footer. The button polls every five seconds while a run is active. It is a one-shot
 control: as soon as `test-metrics.json` exists the button shows the result and the
 server refuses another start with `409`. Remove that file from the private data
-directory to measure a new state. The Docker image ships `tests/`, the README, and
-`docs/` so the button and the documentation reader work in the NAS deployment.
+directory to measure a new state. The Docker image ships `tests/`, the README, the
+release notes, and `docs/` so the button and the documentation reader work in the NAS
+deployment.
 Coverage measures executable application lines in the server, store, importer,
 configuration, and test-runner modules; it is line coverage, not branch coverage.
 A missing report is shown as “not measured”, not as zero.
@@ -240,8 +242,8 @@ and every page in BASIC SPECS and APP SPECS lists the concrete test names under
 “Automated tests”, so a rule without a test is visible instead of implied.
 
 The unit suite has 51 tests and currently covers 489 of 636 lines (76.9 %). The
-Playwright suite in `e2e/` has 27 journeys and touches 859 of 1197 `web/app.js` lines
-(71.8 %). It needs Node, pnpm, and a Chromium build:
+Playwright suite in `e2e/` has 27 journeys and touches 861 of 1197 `web/app.js` lines
+(71.9 %). It needs Node, pnpm, and a Chromium build:
 
 ```bash
 cd e2e
@@ -262,10 +264,11 @@ the numbers in the footer; the container never runs Playwright itself.
 | `diary/server.py` | Local HTTP API, same-origin human mutations, AI permissions, static files |
 | `diary/store.py` | SQLite schema, entries, text search, deletion |
 | `diary/importer.py` | Idempotent import of dated Markdown files |
-| `diary/readme.py` | Splits the README and `docs/*.md` into pages for the reader |
+| `diary/readme.py` | Splits the README, release notes, and `docs/*.md` into pages for the reader |
 | `diary/config.py` | XDG paths, local credentials, setup |
 | `diary/coverage.py` | Test suite execution and standard-library line coverage |
 | `diary/testrunner.py` | Starts a test run from the page and blocks duplicate runs |
+| `RELEASE-NOTES.md` | Version history, read-only in the documentation reader |
 | `web/` | Small, dependency-free browser interface (deep links, paging, documents, quiet test button) |
 | `e2e/` | Playwright journeys and the end-to-end metrics reporter |
 | `docs/AI-SKILL.md` | Seed for the human-editable AI writing guide |

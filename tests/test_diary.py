@@ -313,12 +313,22 @@ class ReadmeTests(unittest.TestCase):
             root = Path(folder)
             (root / "docs").mkdir()
             (root / "README.md").write_text("# Diary\n\n## One\nBody.\n", encoding="utf-8")
+            (root / "RELEASE-NOTES.md").write_text(
+                "# Release notes\n\nIntro.\n\n## 1.1.0\nNew.\n", encoding="utf-8"
+            )
             (root / "docs" / "guide.md").write_text("# Guide\n\n## Part\nText.\n", encoding="utf-8")
             (root / "docs" / "AI-SKILL.md").write_text("# Hidden\n", encoding="utf-8")
             result = documents(root)
-            self.assertEqual([item["slug"] for item in result], ["readme", "guide"])
-            self.assertEqual([item["title"] for item in result], ["README", "Guide"])
+            self.assertEqual(
+                [item["slug"] for item in result], ["readme", "release-notes", "guide"]
+            )
+            self.assertEqual(
+                [item["title"] for item in result], ["README", "RELEASE NOTES", "Guide"]
+            )
             self.assertEqual(result[0]["pages"][0]["slug"], "one")
+            self.assertEqual(
+                [page["slug"] for page in result[1]["pages"]], ["overview", "1-1-0"]
+            )
 
 
 class ConfigTests(unittest.TestCase):
@@ -353,10 +363,10 @@ class ConfigTests(unittest.TestCase):
             self.assertEqual(current.port, 9000)
             self.assertEqual(current.ai_read_token, "read")
             self.assertEqual(current.ai_write_token, "write")
-            with patch.dict("os.environ", {**env, "DIARY_PUBLIC_ORIGIN": "https://192.168.178.50:8444"}, clear=True):
-                self.assertEqual(settings().public_origin, "https://192.168.178.50:8444")
-            with patch.dict("os.environ", {**env, "DIARY_PUBLIC_ORIGIN": "https://192.168.178.50:8444/"}, clear=True):
-                self.assertEqual(settings().public_origin, "https://192.168.178.50:8444")
+            with patch.dict("os.environ", {**env, "DIARY_PUBLIC_ORIGIN": "https://192.0.2.50:8444"}, clear=True):
+                self.assertEqual(settings().public_origin, "https://192.0.2.50:8444")
+            with patch.dict("os.environ", {**env, "DIARY_PUBLIC_ORIGIN": "https://192.0.2.50:8444/"}, clear=True):
+                self.assertEqual(settings().public_origin, "https://192.0.2.50:8444")
 
     @covers("deployment")
     def test_settings_load_credentials_file_and_reject_non_loopback(self):
@@ -387,7 +397,7 @@ class ConfigTests(unittest.TestCase):
                 8125,
                 "r",
                 "w",
-                "http://192.168.178.50:8444",
+                "http://192.0.2.50:8444",
             )
             with self.assertRaisesRegex(ValueError, "HTTPS origin"):
                 ensure_local_paths(unsafe_origin)
@@ -439,7 +449,8 @@ class McpConfigTests(unittest.TestCase):
             clear=True,
         ):
             self.assertEqual(module.Config().api_url, "https://journal.example")
-        self.assertNotIn("192.168.", path.read_text(encoding="utf-8"))
+        addresses = set(re.findall(r"https?://[^\"'\s]+", path.read_text(encoding="utf-8")))
+        self.assertEqual(addresses, {"http://127.0.0.1:8125"})
 
 
 class ServerTestCase(unittest.TestCase):
@@ -536,7 +547,7 @@ class HttpTests(ServerTestCase):
 
     @covers("human-controls", "deployment")
     def test_configured_https_origin_allows_human_mutations_only_for_exact_host(self):
-        public_origin = "https://192.168.178.50:8444"
+        public_origin = "https://192.0.2.50:8444"
         self.server.settings = Settings(
             self.settings.data_dir,
             self.settings.config_dir,
@@ -551,7 +562,7 @@ class HttpTests(ServerTestCase):
             "PUT",
             {"content": "# Updated over HTTPS"},
             origin=public_origin,
-            host="192.168.178.50:8444",
+            host="192.0.2.50:8444",
         )
         self.assertEqual(status, 200)
         self.server.settings = Settings(
@@ -568,15 +579,15 @@ class HttpTests(ServerTestCase):
             "PUT",
             {"content": "# Updated with a trailing slash"},
             origin=public_origin,
-            host="192.168.178.50:8444",
+            host="192.0.2.50:8444",
         )
         self.assertEqual(status, 200)
         status, _, _ = self.request(
             "/api/skill",
             "PUT",
             {"content": "# Wrong origin"},
-            origin="https://192.168.178.51:8444",
-            host="192.168.178.51:8444",
+            origin="https://192.0.2.51:8444",
+            host="192.0.2.51:8444",
         )
         self.assertEqual(status, 401)
         status, _, _ = self.request(
@@ -584,7 +595,7 @@ class HttpTests(ServerTestCase):
             "PUT",
             {"content": "# Wrong host"},
             origin=public_origin,
-            host="192.168.178.51:8444",
+            host="192.0.2.51:8444",
         )
         self.assertEqual(status, 401)
 
@@ -688,10 +699,11 @@ class HttpTests(ServerTestCase):
         result = json.loads(text)
         self.assertEqual(
             [item["slug"] for item in result["documents"]],
-            ["readme", "app-specs", "basic-specs"],
+            ["readme", "release-notes", "app-specs", "basic-specs"],
         )
-        self.assertEqual(result["documents"][1]["title"], "APP SPECS")
-        self.assertEqual(result["documents"][2]["title"], "BASIC SPECS")
+        self.assertEqual(result["documents"][1]["title"], "RELEASE NOTES")
+        self.assertEqual(result["documents"][2]["title"], "APP SPECS")
+        self.assertEqual(result["documents"][3]["title"], "BASIC SPECS")
         readme = result["documents"][0]
         titles = [page["title"] for page in readme["pages"]]
         self.assertIn("What it does", titles)

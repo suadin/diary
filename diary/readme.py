@@ -48,8 +48,11 @@ def readme_pages(path: Path) -> dict[str, object]:
 
 
 def documents(root: Path) -> list[dict[str, object]]:
-    """Return the README and the Markdown documents under docs/."""
-    candidates: list[tuple[str, str, Path]] = [("readme", "README", root / "README.md")]
+    """Return the README, release notes, and the Markdown documents under docs/."""
+    candidates: list[tuple[str, str, Path]] = [
+        ("readme", "README", root / "README.md"),
+        ("release-notes", "RELEASE NOTES", root / "RELEASE-NOTES.md"),
+    ]
     for path in sorted((root / "docs").glob("*.md")):
         if path.name == "AI-SKILL.md":
             continue
