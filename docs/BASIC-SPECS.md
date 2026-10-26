@@ -1,0 +1,97 @@
+# Basic specs
+
+These rules are the reusable base for a small, local web app whose primary reader is
+a future AI session. They are not tied to Diary's journal domain, so a later app can
+adopt them as they are. Diary's own rules are in [APP SPECS](APP-SPECS.md).
+
+This document lists the rules the app must satisfy: what must be true, not how to run
+it. [README](../README.md) explains setup, operation, and deployment.
+
+## Documentation reader
+
+How the README and `docs/*.md` are read in the page.
+
+- The footer serves the documentation: a book icon opens the README in the main panel.
+  The reader also lists the Markdown files under `docs/`, one tab per document and one
+  page per level-two heading.
+- Sections are navigated by a row of icons, not arrows. Each icon symbolises its
+  section, its tooltip gives the section title, and a click opens that page with its
+  heading. Long documents reduce the font size instead of widening the page.
+- Relative Markdown links between documents open in the reader. The same links keep
+  working on GitHub, and each section has a stable anchor.
+
+## Footer
+
+What the page points to.
+
+- One compact, centred footer carries README, source, unit tests, and E2E tests,
+  separated by `|`. Each item has its own icon and must stay on one line at desktop
+  width.
+- The items name what they open: the documentation reader, the source repository, the
+  unit report, and the E2E report. A failure count appears only when at least one test
+  failed, and then in red.
+
+## Tests
+
+What the page claims about its own state.
+
+Run commands and measured numbers are in
+[README › Tests and coverage](../README.md#tests-and-coverage).
+
+- The unit button shows the latest count and application line coverage and starts the
+  suite once. Results are one-shot: once they exist the button shows them and refuses
+  another start. It polls every five seconds while a run is active.
+- The E2E item shows Playwright journeys and `web/app.js` line coverage from
+  `test-metrics.e2e.json`. Playwright runs locally, not in the container; a missing
+  file shows “not measured”, never zero.
+- Coverage is line coverage, not branch coverage. A missing unit report is shown as
+  “not measured”, not as zero.
+- Tests cover the API, storage, search, deletion, AI/human mutation boundaries, deep
+  links, and legacy Markdown import.
+- Every automated test names the rule it protects: unit tests carry a `covers` tag,
+  E2E journeys a Playwright tag. Each SPECS page lists the concrete test names under
+  “Automated tests”, unit methods as readable sentences and numbered below their
+  group; a section without names is a gap, not a pass.
+- Test tooltips name the measurement time, the total duration in seconds, and the
+  seconds per test, not a second copy of the numbers already in the footer.
+
+## Local access
+
+Who may change state, and how the server tells a local browser from a foreign one.
+
+- The local human may change app state without a sign-in. Browser mutations require a
+  same-origin loopback request, or the explicitly configured HTTPS origin behind a
+  local reverse proxy.
+- The same-origin check is not authentication. A server exposed to a LAN or the
+  internet needs its own protection.
+
+## Data
+
+Where entries live.
+
+- The app uses private data storage outside the repository. User data and the writing
+  guide are not committed; only generated sample data may be public.
+
+## Deployment
+
+How the page is exposed.
+
+- A manual NAS deployment may expose the app on a trusted LAN HTTPS origin; the
+  application server itself remains loopback-bound. No CI/CD pipeline is part of the
+  deployment.
+
+## Style and vocabulary
+
+How the interface should feel and speak.
+
+- The visual style is simple and playful: thicker outlines, short hover motion, and
+  tooltips as speech bubbles that stay inside the viewport. Yellow marks the selection
+  and emphasis, red warns, green marks good.
+- Sizes are relative. The root font size follows the viewport width, and every length in
+  the stylesheet is in `rem`, so 1080p, 1440p, and 2160p show the same layout at a
+  different scale. The header, footer, and sidebar stay in place; only the main card
+  scrolls. The sidebar is 24rem wide, and the card spans the main panel.
+- Test tooltips in the footer are wider than other tooltips, so their text fits on fewer
+  lines.
+- Use one name for one thing. The browser test suite is called “E2E”, never “browser”.
+  Sentences are short.

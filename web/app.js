@@ -58,12 +58,13 @@ const elements = {
 };
 
 const PAGE_SIZE = 7;
-const ENTRY_PAGE_SIZE = 10;
-const RESULT_PAGE_SIZE = 10;
+const ENTRY_PAGE_SIZE = 8;
+const RESULT_PAGE_SIZE = 8;
 const TEST_POLL_MS = 5000;
 const ENTRY_WARN = 2000;
 const ENTRY_CRITICAL = 5000;
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+const DOC_SPECS = new Set(["basic-specs", "app-specs"]);
 
 function queryPart(query) {
   return query ? `?q=${encodeURIComponent(query)}` : "";
@@ -178,7 +179,7 @@ function iconFor(title) {
   if (text.includes("api")) return "api";
   if (text.includes("client") || text.includes("mcp")) return "client";
   if (text.includes("web") || text.includes("endpoint")) return "web";
-  if (text.includes("control")) return "controls";
+  if (text.includes("control") || text.includes("access")) return "controls";
   if (text.includes("test")) return "test";
   if (text.includes("map") || text.includes("repository")) return "map";
   if (text.includes("data") || text.includes("trust")) return "data";
@@ -621,16 +622,14 @@ function formatMeasured(value) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-function formatDuration(seconds) {
-  const pad = (number) => String(number).padStart(2, "0");
-  const whole = Math.max(0, Math.round(Number(seconds) || 0));
-  return `${pad(Math.floor(whole / 60))}:${pad(whole % 60)}`;
-}
-
 function measurementTip(item, fallback) {
   const lines = [];
   if (item.measuredAt) lines.push(`Measured: ${formatMeasured(item.measuredAt)}`);
-  if (item.durationSeconds) lines.push(`Duration: ${formatDuration(item.durationSeconds)} minutes`);
+  if (item.durationSeconds) {
+    const seconds = Math.max(0, Math.round(Number(item.durationSeconds) || 0));
+    lines.push(`Duration: ${seconds} s`);
+    if (item.tests) lines.push(`Per test: ${(seconds / item.tests).toFixed(1)} s`);
+  }
   return lines.join("\n") || fallback;
 }
 
@@ -924,7 +923,7 @@ async function renderDocs(doc, page) {
   }
   elements.docSectionTitle.textContent = page.title;
   elements.docBody.innerHTML = renderMarkdown(page.markdown);
-  if (doc.slug === "specs") {
+  if (DOC_SPECS.has(doc.slug)) {
     const metrics = state.metrics || await loadMetrics();
     renderRequirementTests(page.slug, metrics);
   }

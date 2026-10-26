@@ -53,7 +53,10 @@ def documents(root: Path) -> list[dict[str, object]]:
     for path in sorted((root / "docs").glob("*.md")):
         if path.name == "AI-SKILL.md":
             continue
-        title = path.stem if path.stem.isupper() else path.stem.replace("_", " ").title()
+        if path.stem.isupper():
+            title = path.stem.replace("-", " ").replace("_", " ")
+        else:
+            title = path.stem.replace("_", " ").title()
         candidates.append((_slug(path.stem), title, path))
     result: list[dict[str, object]] = []
     for slug, title, path in candidates:

@@ -5,8 +5,9 @@ logs into dated, searchable entries. A human can read and curate the history; an
 can search it and append new entries without being able to rewrite the writing rules
 or erase history.
 
-This README explains what Diary is, how to run it, and how to operate it. The testable
-rules it must satisfy live in [SPECS](docs/SPECS.md).
+This README explains what Diary is, how to run it, and how to operate it. The reusable
+rules live in [BASIC SPECS](docs/BASIC-SPECS.md); the Diary-specific rules live in
+[APP SPECS](docs/APP-SPECS.md).
 
 > 🗂️ Dated entries · 🔗 deep links to every view · 🤖 append-only AI access ·
 > 🧪 50 unit tests and 27 E2E journeys
@@ -14,7 +15,7 @@ rules it must satisfy live in [SPECS](docs/SPECS.md).
 ## What it does
 
 - Lists dates newest-first, seven per page, in `YYYY-MM-DD` form. Arrows load the
-  previous or next window on demand; a date opens with its entries, ten at a time,
+  previous or next window on demand; a date opens with its entries, eight at a time,
   and the entry list pages lazily as well. A coarse `hh24:mi` sits beside each date;
   entries without a same-day timestamp show `12:00`. Arrow buttons walk to the
   neighbouring date with a short slide, even across a page boundary.
@@ -32,7 +33,7 @@ rules it must satisfy live in [SPECS](docs/SPECS.md).
 - Search works inside the current scope: with a tag selected it searches that tag, with
   a date selected it searches that date, and the entry count in the sidebar opens every
   entry before searching. The search text is part of the address, so a link restores it.
-  Results are paged ten at a time, and an open entry steps to the neighbours in the
+  Results are paged eight at a time, and an open entry steps to the neighbours in the
   list it came from.
 - Links are stable and shareable: `#/day/2026-10-22`, `#/entry/42`,
   `#/docs/readme/ai-api`, `#/guide`, `#/all?q=boot`, and `#/tag/Diary?q=boot`. Opening one
@@ -43,7 +44,7 @@ rules it must satisfy live in [SPECS](docs/SPECS.md).
   one tab per document and one icon per heading; the icon tooltip names the section,
   and clicking it opens that page with its heading.
 - Keeps the AI writing guide editable from the local web page, without a sign-in flow.
-  The editor shows five lines and can be expanded, so the delete controls stay visible.
+  The editor shows seven lines and can be expanded, so the delete controls stay visible.
   **Reset** restores the built-in default from `docs/AI-SKILL.md`.
 - Lets the local human delete entries for one day or through a date (inclusive), both
   entered as `yyyy-mm-dd`. Every destructive action asks for confirmation.
@@ -159,12 +160,12 @@ same-origin check described below.
 GET /api/days                          # every day with its entry count
 GET /api/days/page?offset=0&limit=7    # one window plus total days and entries
 GET /api/entries?date=2026-10-22
-GET /api/entries/page?date=2026-10-22&offset=0&limit=10  # one window plus the day's total
+GET /api/entries/page?date=2026-10-22&offset=0&limit=8   # one window plus the day's total
 GET /api/entry?id=42                   # one entry for a deep link
 GET /api/search?q=boot
 GET /api/search?q=boot&tag=Diary      # text and exact title topic
 GET /api/search?q=boot&date=2026-10-22  # text and one date
-GET /api/search/page?q=boot&tag=Diary&offset=0&limit=10  # one window plus the total
+GET /api/search/page?q=boot&tag=Diary&offset=0&limit=8   # one window plus the total
 GET /api/tags                          # all title topics, ordered by frequency
 GET /api/tags?limit=8                  # most frequent topics, default 8
 GET /api/skill
@@ -216,7 +217,7 @@ deleted by Diary.
 ## Tests and coverage
 
 The rules this section proves are in
-[SPECS › Tests](docs/SPECS.md#tests).
+[BASIC SPECS › Tests](docs/BASIC-SPECS.md#tests).
 
 Run `python3 -m diary test` after a change, or use the quiet test button in the page
 footer. Both use Python's standard-library test runner and line tracing; the count
@@ -232,12 +233,12 @@ A missing report is shown as “not measured”, not as zero.
 
 Tests trace back to the rules they protect: a unit test declares its requirement with
 a `covers` tag, an E2E journey with a Playwright tag. The server merges both runs,
-and every SPECS page lists the concrete test names under “Automated tests”, so
-a rule without a test is visible instead of implied.
+and every page in BASIC SPECS and APP SPECS lists the concrete test names under
+“Automated tests”, so a rule without a test is visible instead of implied.
 
-The unit suite has 50 tests and currently covers 480 of 629 lines (76.3 %). The
-Playwright suite in `e2e/` has 27 journeys and touches 854 of 1166 `web/app.js` lines
-(73.2 %). It needs Node, pnpm, and a Chromium build:
+The unit suite has 50 tests and currently covers 482 of 631 lines (76.4 %). The
+Playwright suite in `e2e/` has 27 journeys and touches 851 of 1166 `web/app.js` lines
+(73.0 %). It needs Node, pnpm, and a Chromium build:
 
 ```bash
 cd e2e
@@ -265,7 +266,8 @@ the numbers in the footer; the container never runs Playwright itself.
 | `web/` | Small, dependency-free browser interface (deep links, paging, documents, quiet test button) |
 | `e2e/` | Playwright journeys and the end-to-end metrics reporter |
 | `docs/AI-SKILL.md` | Seed for the human-editable AI writing guide |
-| `docs/SPECS.md` | Short, testable product rules |
+| `docs/BASIC-SPECS.md` | Reusable, testable rules for a small local app |
+| `docs/APP-SPECS.md` | Diary-specific, testable product rules |
 | `mcp/` | Optional MCP client for AI assistants, configured by environment |
 | `tests/` | Storage, import, and HTTP/API checks |
 

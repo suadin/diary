@@ -1,7 +1,7 @@
 const { test, expect } = require("@playwright/test");
 const { startCoverage, stopCoverage } = require("./coverage");
 
-test("a journey through days, entries, documents, and the guide", { tag: ["@entries-and-writing", "@navigation-and-deep-links", "@documentation-reader", "@writing-guide"] }, async ({ page }) => {
+test("a journey through days, entries, documents, and the guide", { tag: ["@entries-and-writing", "@navigation-and-deep-links", "@documentation-reader", "@writing-guide", "@diary-look"] }, async ({ page }) => {
   const measured = await startCoverage(page);
   try {
     await page.goto("/");
@@ -26,16 +26,16 @@ test("a journey through days, entries, documents, and the guide", { tag: ["@entr
     await expect(page).toHaveURL(new RegExp(`#/entry/${entries[0].id}$`));
 
     await page.goto("/#/docs/readme");
-    await expect(page.locator(".doc-tab")).toHaveCount(2);
+    await expect(page.locator(".doc-tab")).toHaveCount(3);
     await expect(page.locator(".doc-section")).toHaveCount(11);
     await page.locator('.doc-section[data-tip="AI API"]').click();
     await expect(page.locator("#doc-section-title")).toHaveText("AI API");
     await expect(page).toHaveURL(/#\/docs\/readme\/ai-api$/);
     await expect(page.locator("#doc-body")).toContainText("/ai/entries");
 
-    await page.locator(".doc-tab", { hasText: "SPECS" }).click();
-    await expect(page.locator("#docs-title")).toHaveText("SPECS");
-    await expect(page).toHaveURL(/#\/docs\/specs\/overview$/);
+    await page.locator(".doc-tab", { hasText: "APP SPECS" }).click();
+    await expect(page.locator("#docs-title")).toHaveText("APP SPECS");
+    await expect(page).toHaveURL(/#\/docs\/app-specs\/overview$/);
 
     await page.goto("/#/guide");
     await page.locator("#skill-editor").fill("# Changed\n");
@@ -136,23 +136,23 @@ test("the entry count opens the whole journal, and search runs inside it", { tag
   await page.goto("/#/day/2026-10-22");
   await page.locator("#day-count").click();
   await expect(page).toHaveURL(/#\/all$/);
-  await expect(page.locator(".result-card")).toHaveCount(10);
-  await expect(page.locator("#result-range")).toHaveText(/^1–10 \/ \d+$/);
+  await expect(page.locator(".result-card")).toHaveCount(8);
+  await expect(page.locator("#result-range")).toHaveText(/^1–8 \/ \d+$/);
   await page.locator("#search-input").fill("alpha");
   await expect(page.locator(".result-card")).toHaveCount(2);
   await expect(page.locator("#search-title")).toHaveText("2 entries matching “alpha”");
   await expect(page.locator("#result-pager")).toBeHidden();
 });
 
-test("tag results page ten at a time", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
+test("tag results page eight at a time", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
   await page.goto("/#/tag/Hub");
-  await expect(page.locator(".result-card")).toHaveCount(10);
-  await expect(page.locator("#result-range")).toHaveText("1–10 / 11");
+  await expect(page.locator(".result-card")).toHaveCount(8);
+  await expect(page.locator("#result-range")).toHaveText("1–8 / 11");
   await page.locator("#results-older").click();
-  await expect(page.locator(".result-card")).toHaveCount(1);
-  await expect(page.locator("#result-range")).toHaveText("11–11 / 11");
+  await expect(page.locator(".result-card")).toHaveCount(3);
+  await expect(page.locator("#result-range")).toHaveText("9–11 / 11");
   await page.locator("#results-newer").click();
-  await expect(page.locator(".result-card")).toHaveCount(10);
+  await expect(page.locator(".result-card")).toHaveCount(8);
 });
 
 test("deep links restore the search text and typing updates the link", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
@@ -200,7 +200,7 @@ test("layout sizes follow the viewport, so 1080p, 1440p and 2160p look alike", {
   expect(await ratio(3840, 2160)).toBeCloseTo(fullHd, 2);
 });
 
-test("the show-all bubble wobbles on hover and the selected doc is yellow", { tag: ["@style-and-vocabulary", "@documentation-reader"] }, async ({ page }) => {
+test("the show-all bubble wobbles on hover and the selected doc is yellow", { tag: ["@style-and-vocabulary", "@documentation-reader", "@diary-look"] }, async ({ page }) => {
   await page.goto("/");
   await page.locator("#day-count").hover();
   await expect(page.locator("#day-count")).toHaveCSS("animation-name", "wiggle");
@@ -284,22 +284,24 @@ test("documentation wraps bullets, follows links, and the card scrolls", { tag: 
   }
 
   await page.goto("/#/docs/readme/tests-and-coverage");
-  await page.locator('a[data-doc-link="specs#tests"]').click();
-  await expect(page).toHaveURL(/#\/docs\/specs\/tests$/);
+  await page.locator('a[data-doc-link="basic-specs#tests"]').click();
+  await expect(page).toHaveURL(/#\/docs\/basic-specs\/tests$/);
   await expect(page.locator("#doc-section-title")).toHaveText("Tests");
 
-  await page.goto("/#/docs/specs/overview");
+  await page.goto("/#/docs/basic-specs/overview");
   await page.locator('a[data-doc-link="readme#overview"]').first().click();
   await expect(page).toHaveURL(/#\/docs\/readme\/overview$/);
 });
 
 test("specs sections use distinct icons", { tag: ["@documentation-reader", "@style-and-vocabulary"] }, async ({ page }) => {
-  await page.goto("/#/docs/specs");
-  const icons = await page.locator(".doc-section svg").evaluateAll(
-    (nodes) => nodes.map((node) => node.innerHTML),
-  );
-  expect(icons).toHaveLength(13);
-  expect(new Set(icons).size).toBe(13);
+  for (const [slug, count] of [["app-specs", 8], ["basic-specs", 8]]) {
+    await page.goto(`/#/docs/${slug}`);
+    const icons = await page.locator(".doc-section svg").evaluateAll(
+      (nodes) => nodes.map((node) => node.innerHTML),
+    );
+    expect(icons).toHaveLength(count);
+    expect(new Set(icons).size).toBe(count);
+  }
 });
 
 test("tooltip-only text uses the help cursor and the sidebar stays fixed", { tag: ["@style-and-vocabulary"] }, async ({ page }) => {
@@ -402,7 +404,8 @@ test("the footer is centred with separators and renders end-to-end numbers", { t
   await expect(page.locator(".fail-count")).toHaveCount(0);
   const tip = await page.locator("#e2e-metrics").getAttribute("data-tip");
   expect(tip).toContain("Measured: 2026-10-22");
-  expect(tip).toContain("Duration: 01:24 minutes");
+  expect(tip).toContain("Duration: 84 s");
+  expect(tip).toContain("Per test: 7.0 s");
 
   const boxes = await page.locator(".footer-items > *").evaluateAll((nodes) => nodes.map((node) => {
     const rect = node.getBoundingClientRect();
@@ -444,7 +447,7 @@ test("specs list the tests that verify them", { tag: ["@tests", "@documentation-
       },
     },
   }));
-  await page.goto("/#/docs/specs/entries-and-writing");
+  await page.goto("/#/docs/app-specs/entries-and-writing");
   await expect(page.locator(".doc-tests")).toContainText("Automated tests");
   await expect(page.locator(".doc-tests li")).toHaveCount(2);
   await expect(page.locator(".doc-tests ol li")).toHaveCount(2);

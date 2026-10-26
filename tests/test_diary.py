@@ -627,7 +627,7 @@ class HttpTests(ServerTestCase):
         page = json.loads(text)
         self.assertEqual(page["total"], 7)
         self.assertEqual(page["offset"], 0)
-        self.assertEqual(page["limit"], 10)
+        self.assertEqual(page["limit"], 8)
         self.assertEqual(len(page["entries"]), 7)
         status, text, _ = self.request("/api/entries/page?date=2026-10-21&offset=5&limit=5")
         self.assertEqual(status, 200)
@@ -646,8 +646,12 @@ class HttpTests(ServerTestCase):
         status, text, _ = self.request("/api/docs")
         self.assertEqual(status, 200)
         result = json.loads(text)
-        self.assertEqual([item["slug"] for item in result["documents"]], ["readme", "specs"])
-        self.assertEqual(result["documents"][1]["title"], "SPECS")
+        self.assertEqual(
+            [item["slug"] for item in result["documents"]],
+            ["readme", "app-specs", "basic-specs"],
+        )
+        self.assertEqual(result["documents"][1]["title"], "APP SPECS")
+        self.assertEqual(result["documents"][2]["title"], "BASIC SPECS")
         readme = result["documents"][0]
         titles = [page["title"] for page in readme["pages"]]
         self.assertIn("What it does", titles)
@@ -739,9 +743,9 @@ class HttpTests(ServerTestCase):
         self.assertEqual(self.request("/api/search?date=2026-02-30")[0], 400)
         self.assertEqual(self.request("/api/search/page?date=nope")[0], 400)
         status, window, _ = self.request("/api/entries/page?date=2026-10-22")
-        self.assertEqual(json.loads(window)["limit"], 10)
+        self.assertEqual(json.loads(window)["limit"], 8)
         status, default_page, _ = self.request("/api/search/page?q=Tagged")
-        self.assertEqual(json.loads(default_page)["limit"], 10)
+        self.assertEqual(json.loads(default_page)["limit"], 8)
         status, page, headers = self.request("/")
         self.assertEqual(status, 200)
         self.assertIn("Diary", page)
@@ -826,7 +830,7 @@ class TestRunnerTests(ServerTestCase):
         time.sleep(1.0)
         self.assertFalse(json.loads(self.request("/api/metrics")[1])["running"])
 
-    @covers("tests", "human-controls")
+    @covers("tests", "human-controls", "local-access")
     def test_start_requires_same_origin(self):
         status, _, _ = self.request("/api/tests", "POST")
         self.assertEqual(status, 401)
@@ -850,10 +854,13 @@ if __name__ == "__main__":
 class TraceabilityTests(unittest.TestCase):
     @covers("tests")
     def test_every_requirement_section_is_named_by_a_test(self):
-        sections = {
-            page["slug"]
-            for page in readme_pages(ROOT / "docs" / "SPECS.md")["pages"]
-        } - {"overview"}
+        sections = set()
+        for name in ("BASIC-SPECS.md", "APP-SPECS.md"):
+            sections.update(
+                page["slug"]
+                for page in readme_pages(ROOT / "docs" / name)["pages"]
+            )
+        sections -= {"overview"}
         covered = set()
         suite = unittest.defaultTestLoader.discover(str(ROOT / "tests"))
 

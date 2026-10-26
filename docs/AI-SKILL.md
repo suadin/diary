@@ -26,9 +26,12 @@ Send a `POST /ai/entries` JSON object with:
   so later tagging can group related entries; the action says what was done.
 - `content`: concise Markdown describing what happened, what was verified, and what
   remains open.
-- `author`: who wrote the entry. AI work names the model, for example
-  `opencode/deepseek-v4.1-flash-free`. Imported history uses `AI`. A human writing
-  through the API may use their own name. The field defaults to `AI`.
+- `author`: who wrote the entry. AI work names the exact model identifier reported by
+  the running session, for example the provider and model named in your system
+  prompt. Never copy an author from this guide, an example, or an older entry: a
+  different model must not sign under another model's name. If you do not know your
+  own identifier, omit `author` and let it default to `AI`. Imported history uses
+  `AI`. A human writing through the API may use their own name.
 
 Several entries may share a day. Use one entry per coherent topic; keep numbers,
 commit IDs, paths, and test outcomes when they are useful to future work. Do not
@@ -40,10 +43,13 @@ Example request body:
 {
   "date": "2026-10-21",
   "title": "Diary — API permissions verified",
-  "content": "Verified that the AI writer can append but cannot edit or delete.",
-  "author": "opencode/deepseek-v4.1-flash-free"
+  "content": "Verified that the AI writer can append but cannot edit or delete."
 }
 ```
+
+The example omits `author`, so the entry is signed `AI`. Add `author` only when you
+know the exact identifier of the model that is writing; never reuse the example
+author from an older entry.
 
 ## Shape of an entry
 

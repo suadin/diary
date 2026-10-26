@@ -30,9 +30,10 @@ def diary_append_entry(day: str, title: str, content: str, author: str = "AI") -
         title: Topic and action (at most 200 characters).
         content: Concise Markdown describing what happened, what was verified
             and what remains open (at most 50 KB).
-        author: Who wrote it. Use the model name for AI work, for example
-            "opencode/deepseek-v4.1-flash-free"; use "AI" for historical
-            entries without a model.
+        author: Who wrote it. Use the exact model identifier reported by the
+            running session, as named in your system prompt. Never copy an
+            author from an example or an older entry; a different model must
+            not sign under that name. Use "AI" when the identifier is unknown.
 
     Returns:
         JSON string with ok, id, date and title of the new entry.
