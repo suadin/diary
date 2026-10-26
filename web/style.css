@@ -18,14 +18,20 @@
   background: var(--paper);
 }
 
-/* Global size rule: 120 root-widths fill the viewport, so all rem values scale with the window. */
-html { font-size: clamp(12px, calc(100vw / 120), 64px); }
+/* The root stays the browser base, so Ctrl + wheel zoom scales the page. */
+html { font-size: 100%; }
 
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 20rem; height: 100vh; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; background: var(--paper); }
 button, input, textarea { font: inherit; }
 button { color: inherit; cursor: pointer; }
 [hidden] { display: none !important; }
+
+/* Hover tells what the thing does: hand = clickable, help = tooltip only. */
+[data-tip] { cursor: help; }
+button[data-tip],
+a[data-tip],
+button:has([data-tip]) { cursor: pointer; }
 
 .topbar { flex-shrink: 0; display: flex; align-items: center; gap: 1.5rem; min-height: 4.75rem; padding: .7rem clamp(1rem, 4vw, 3.5rem); border-bottom: var(--line); }
 .brand { display: inline-flex; align-items: center; gap: .65rem; color: var(--ink); text-decoration: none; font-size: 1.5rem; font-weight: 900; }
@@ -173,6 +179,7 @@ button.count:hover { background: var(--yellow); animation: wiggle .5s ease-in-ou
 .footer a:hover { text-decoration: underline; }
 .footer-sep { color: var(--muted); opacity: .55; }
 .footer-item svg { vertical-align: -.2rem; margin-right: .25rem; }
+.footer-item.failed { color: var(--red); }
 #readme-button:hover { color: var(--ink); }
 .test-button { text-decoration: underline dotted; text-underline-offset: 0.1875rem; }
 .test-button:hover { color: var(--ink); }

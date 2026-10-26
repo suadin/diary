@@ -30,9 +30,10 @@ How the README, release notes, and `docs/*.md` are read in the page.
 
 What the page points to.
 
-- One compact, centred footer carries README, source, unit tests, and E2E tests,
-  separated by `|`. Each item has its own icon and must stay on one line at desktop
-  width.
+- One compact, centred footer carries README, APP SPECS, BASIC SPECS, RELEASE
+  NOTES, source, unit tests, and E2E tests, separated by `|`. Each documentation
+  item opens that document directly; each item has its own icon and must stay on
+  one line at desktop width.
 - The items name what they open: the documentation reader, the source repository, the
   unit report, and the E2E report. A failure count appears only when at least one test
   failed, and then in red.
@@ -58,8 +59,9 @@ Run commands and measured numbers are in
   E2E journeys a Playwright tag. Each SPECS page lists the concrete test names under
   “Automated tests”, unit methods as readable sentences and numbered below their
   group; a section without names is a gap, not a pass.
-- Test tooltips name the measurement time, the total duration in seconds, and the
-  seconds per test, not a second copy of the numbers already in the footer.
+- Test tooltips always show three rows: `Measured`, `Duration`, `Per test`; a
+  missing value is `—`. A test that has not run is red, shows no percentage, and
+  its tooltip says `not executed`.
 
 ## Navigation and deep links
 
@@ -109,10 +111,13 @@ How the interface should feel and speak.
 - The visual style is simple and playful: thicker outlines, short hover motion, and
   tooltips as speech bubbles that stay inside the viewport. Yellow marks the selection
   and emphasis, red warns, green marks good.
-- Sizes are relative. The root font size follows the viewport width, and layout lengths
-  use `rem`, so 1080p, 1440p, and 2160p show the same layout at a different scale. The
-  header, footer, and sidebar stay in place; only the main card scrolls. The sidebar is
-  24rem wide, and the card spans the main panel.
+- The root stays at `100%`, so browser zoom (Ctrl + wheel) scales the page and the
+  layout still fits at 80–200%; sizes use `rem`, widths use `clamp()`. The header,
+  footer, and sidebar stay in place; only the main card scrolls. The sidebar is
+  24rem wide, and the card spans the main panel. The header is one row: icon,
+  title, catch phrase.
+- Cursors: hand for clickable, default for plain text, `help` for a tooltip
+  without an action. Tooltip + clickable uses the hand.
 - Test tooltips in the footer are wider than other tooltips, so their text fits on fewer
   lines.
 - Use one name for one thing. The browser test suite is called “E2E”, never “browser”.

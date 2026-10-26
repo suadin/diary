@@ -1,5 +1,18 @@
 # Release notes
 
+## 1.2.0 — Shared contract in the footer
+
+- The footer opens README, APP SPECS, BASIC SPECS and RELEASE NOTES directly; the
+  reader keeps them as tabs.
+- The root follows the browser base at `100%`, so Ctrl + wheel zoom scales the
+  page and the layout still fits at 80–200 %.
+- Unit and E2E icons are a clipboard check and a browser with a play triangle.
+  A suite that has not run is red, shows no percentage, and says `not executed`.
+  Test tooltips always carry `Measured`, `Duration`, and `Per test` on three rows.
+- Cursors distinguish clickable (hand), plain text (default), and tooltip-only
+  (`help`); a clickable tooltip keeps the hand.
+- 51 unit tests (77.1 % line coverage) and 27 E2E journeys (72.4 % of `app.js`) pass.
+
 ## 1.1.1 — Release notes as one page
 
 - Release notes are now the last tab, after README and the SPECS.

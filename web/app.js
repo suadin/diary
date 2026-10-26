@@ -605,7 +605,7 @@ function startTestPolling() {
 function metricParts(label, item) {
   const parts = [`${label} ${item.tests}`];
   if (item.failures) parts.push({ fail: `${item.failures} fail` });
-  parts.push(`${item.coverage} %`);
+  if (item.coverage != null) parts.push(`${item.coverage} %`);
   return parts;
 }
 
@@ -631,21 +631,22 @@ function formatMeasured(value) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-function measurementTip(item, fallback) {
-  const lines = [];
-  if (item.measuredAt) lines.push(`Measured: ${formatMeasured(item.measuredAt)}`);
-  if (item.durationSeconds) {
-    const seconds = Math.max(0, Math.round(Number(item.durationSeconds) || 0));
-    lines.push(`Duration: ${seconds} s`);
-    if (item.tests) lines.push(`Per test: ${(seconds / item.tests).toFixed(1)} s`);
-  }
-  return lines.join("\n") || fallback;
+function measurementTip(item) {
+  const seconds = item.durationSeconds == null
+    ? null
+    : Math.max(0, Math.round(Number(item.durationSeconds) || 0));
+  return [
+    `Measured: ${item.measuredAt ? formatMeasured(item.measuredAt) : "—"}`,
+    `Duration: ${seconds == null ? "—" : `${seconds} s`}`,
+    `Per test: ${seconds == null || !item.tests ? "—" : `${(seconds / item.tests).toFixed(1)} s`}`,
+  ].join("\n");
 }
 
 function renderMetrics(metrics) {
   if (metrics.running) {
     elements.runTests.setAttribute("aria-disabled", "true");
     elements.runTests.classList.add("running");
+    elements.runTests.classList.remove("failed");
     elements.unitMetrics.textContent = "unit running…";
     elements.runTests.dataset.tip = "The suite is running";
     startTestPolling();
@@ -654,12 +655,14 @@ function renderMetrics(metrics) {
     elements.runTests.classList.remove("running");
     if (metrics.measuredAt) {
       elements.runTests.setAttribute("aria-disabled", "true");
+      elements.runTests.classList.remove("failed");
       setMetricLabel(elements.unitMetrics, metricParts("unit", metrics));
-      elements.runTests.dataset.tip = measurementTip(metrics, "Measured once; results are final.");
+      elements.runTests.dataset.tip = measurementTip(metrics);
     } else {
       elements.runTests.setAttribute("aria-disabled", "false");
-      elements.unitMetrics.textContent = "unit not measured — run";
-      elements.runTests.dataset.tip = "Run the test suite once";
+      elements.runTests.classList.add("failed");
+      elements.unitMetrics.textContent = "unit not executed — run";
+      elements.runTests.dataset.tip = "not executed";
     }
   }
   renderE2E(metrics.e2e);
@@ -667,12 +670,14 @@ function renderMetrics(metrics) {
 
 function renderE2E(e2e) {
   if (!e2e) {
-    elements.e2eMetricsLabel.textContent = "e2e not measured";
-    elements.e2eMetrics.dataset.tip = "Playwright E2E results are not installed here.";
+    elements.e2eMetrics.classList.add("failed");
+    elements.e2eMetricsLabel.textContent = "e2e not executed";
+    elements.e2eMetrics.dataset.tip = "not executed";
     return;
   }
+  elements.e2eMetrics.classList.remove("failed");
   setMetricLabel(elements.e2eMetricsLabel, metricParts("e2e", e2e));
-  elements.e2eMetrics.dataset.tip = measurementTip(e2e, "Playwright E2E results.");
+  elements.e2eMetrics.dataset.tip = measurementTip(e2e);
 }
 
 async function loadMetrics() {
@@ -1242,7 +1247,11 @@ elements.sparkButton.addEventListener("click", async () => {
     showToast(error.message);
   }
 });
-elements.readmeButton.addEventListener("click", () => navigate(ROUTE.docs("readme")).catch((error) => showToast(error.message)));
+for (const button of document.querySelectorAll("[data-doc]")) {
+  button.addEventListener("click", () => {
+    navigate(ROUTE.docs(button.dataset.doc)).catch((error) => showToast(error.message));
+  });
+}
 elements.docsBack.addEventListener("click", () => navigate(state.selectedDate ? ROUTE.day(state.selectedDate) : ROUTE.welcome).catch((error) => showToast(error.message)));
 
 function followDocLink(event) {

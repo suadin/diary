@@ -197,16 +197,17 @@ test("the header, footer and sidebar stay in place, and the card is the scrollin
   await expect(page.locator(".sidebar")).toBeInViewport();
 });
 
-test("layout sizes follow the viewport, so 1080p, 1440p and 2160p look alike", { tag: ["@style-and-vocabulary"] }, async ({ page }) => {
-  const ratio = async (width, height) => {
+test("the layout stays usable from 800 px to 3840 px and follows browser zoom", { tag: ["@style-and-vocabulary"] }, async ({ page }) => {
+  for (const [width, height] of [[800, 900], [1920, 1080], [3840, 2160]]) {
     await page.setViewportSize({ width, height });
     await page.goto("/");
     const side = await page.locator(".sidebar").boundingBox();
-    return Math.round((side.width / width) * 1000) / 1000;
-  };
-  const fullHd = await ratio(1920, 1080);
-  expect(await ratio(2560, 1440)).toBeCloseTo(fullHd, 2);
-  expect(await ratio(3840, 2160)).toBeCloseTo(fullHd, 2);
+    expect(side.width).toBeCloseTo(384, 0);
+    const root = await page.evaluate(() => getComputedStyle(document.documentElement).fontSize);
+    expect(root).toBe("16px");
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
+  }
 });
 
 test("the show-all bubble wobbles on hover and the selected doc is yellow", { tag: ["@style-and-vocabulary", "@documentation-reader", "@diary-look"] }, async ({ page }) => {
@@ -423,8 +424,8 @@ test("the footer is centred with separators and renders end-to-end numbers", { t
   }));
   await page.goto("/");
   await expect(page.locator("#e2e-metrics")).toHaveText("e2e 12 · 61.5 %");
-  await expect(page.locator(".footer-sep")).toHaveCount(3);
-  await expect(page.locator(".footer-items svg")).toHaveCount(4);
+  await expect(page.locator(".footer-sep")).toHaveCount(6);
+  await expect(page.locator(".footer-items svg")).toHaveCount(7);
   await expect(page.locator(".fail-count")).toHaveCount(0);
   const tip = await page.locator("#e2e-metrics").getAttribute("data-tip");
   expect(tip).toContain("Measured: 2026-10-22");
@@ -485,7 +486,8 @@ test("specs list the tests that verify them", { tag: ["@tests", "@documentation-
 test("the unit button runs the suite once", { tag: ["@tests"] }, async ({ page }) => {
   test.setTimeout(150_000);
   await page.goto("/");
-  await expect(page.locator("#run-tests")).toHaveText("unit not measured — run");
+  await expect(page.locator("#run-tests")).toHaveText("unit not executed — run");
+  await expect(page.locator("#run-tests")).toHaveCSS("color", "rgb(232, 76, 61)");
   await page.locator("#run-tests").click();
   await expect(page.locator("#run-tests")).toHaveText(/unit \d+ · [\d.]+ %/, { timeout: 120_000 });
   await expect(page.locator("#run-tests")).toHaveAttribute("aria-disabled", "true");

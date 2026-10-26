@@ -55,17 +55,21 @@ rules live in [BASIC SPECS](docs/BASIC-SPECS.md); the Diary-specific rules live 
 - Shows the latest unit-test count and coverage, plus the Playwright E2E
   numbers, in a compact centred footer separated by `|`. The unit button starts the
   suite once and then polls until it finishes; once results exist it shows them and
-  refuses to run again. E2E results are display-only in the container.
+  refuses to run again. A missing run is red and says `not executed`; test tooltips
+  always carry `Measured`, `Duration`, and `Per test` on three rows. E2E results are
+  display-only in the container.
 - Includes a small purple **Memory spark** button that resurfaces a random older entry.
-- Serves this README, the release notes, and the SPECS under `docs/`: a book icon in
-  the footer opens the reader. README and SPECS use one page per heading with a row of
-  section icons instead of arrows; release notes stay one continuous page. The editable
-  AI guide has its own editor and is not duplicated in the reader.
+- Serves this README, the release notes, and the SPECS under `docs/`: each has its own
+  footer item that opens it directly, and the reader lists all of them as tabs. README
+  and SPECS use one page per heading with a row of section icons instead of arrows;
+  release notes stay one continuous page. The editable AI guide has its own editor and
+  is not duplicated in the reader.
 - Follows the operating system's light/dark preference and links to this repository.
 
-The interface follows the workspace contract: README, source, and test numbers in one
-centred footer; deep links; paging and lazy loading; `yyyy-mm-dd` and `hh24:mi`;
-quiet colours with a playful edge; one name for one thing.
+The interface follows the workspace contract: documentation, source, and test numbers
+in one centred footer; deep links; paging and lazy loading; `yyyy-mm-dd` and `hh24:mi`;
+quiet colours with a playful edge; browser zoom from 80 to 200 %; cursors that say what
+is clickable, text, or a tooltip; one name for one thing.
 
 ## Local setup
 
