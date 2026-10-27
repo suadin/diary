@@ -1,6 +1,6 @@
 # Release notes
 
-## 1.3.0 — Basic Specs 1.0.0
+## 1.3.0 — Basic Specs 1.0.2
 
 - Pinned the public Basic Specs standard in `basics.json`, `basics.lock` and
   `basics/`; the generated `docs/BASIC-SPECS.md` is checked in CI.
