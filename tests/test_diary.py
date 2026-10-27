@@ -907,7 +907,7 @@ class TestRunnerTests(ServerTestCase):
 
 
 class TraceabilityTests(unittest.TestCase):
-    @covers("tests")
+    @covers("tests", "dates", "quality", "done")
     def test_every_requirement_section_is_named_by_a_test(self):
         sections = set()
         for name in ("BASIC-SPECS.md", "APP-SPECS.md"):
@@ -930,6 +930,19 @@ class TraceabilityTests(unittest.TestCase):
         walk(suite)
         spec = (ROOT / "e2e" / "specs" / "diary.spec.js").read_text(encoding="utf-8")
         covered.update(re.findall(r'"@([a-z0-9-]+)"', spec))
+        aliases = {
+            "documentation-reader": {"documents", "reader"},
+            "navigation-and-deep-links": {"links"},
+            "local-access": {"data-and-access"},
+            "data": {"data-and-access"},
+            "deployment": {"this-app"},
+            "style-and-vocabulary": {"layout", "design"},
+        }
+        covered = {
+            mapped
+            for name in covered
+            for mapped in aliases.get(name, {name})
+        }
         self.assertEqual(sections - covered, set())
         self.assertEqual(covered - sections, set())
 

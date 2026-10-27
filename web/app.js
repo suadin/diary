@@ -171,6 +171,18 @@ function svgIcon(name) {
   return `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
 }
 
+const ICON_POOL = Object.keys(ICONS);
+
+function uniqueIcons(titles) {
+  const used = new Set();
+  return titles.map((title) => {
+    let icon = iconFor(title);
+    if (used.has(icon)) icon = ICON_POOL.find((candidate) => !used.has(candidate)) ?? "doc";
+    used.add(icon);
+    return icon;
+  });
+}
+
 function iconFor(title) {
   const text = title.toLowerCase();
   if (text.includes("overview")) return "overview";
@@ -929,11 +941,12 @@ async function renderDocs(doc, page) {
   elements.docSections.hidden = continuous;
   elements.docSectionTitle.hidden = continuous;
   if (!continuous) {
-    for (const item of doc.pages) {
+    const icons = uniqueIcons(doc.pages.map((item) => item.title));
+    for (const [index, item] of doc.pages.entries()) {
       const button = document.createElement("button");
       button.type = "button";
       button.className = `doc-section${item.slug === page.slug ? " active" : ""}`;
-      button.innerHTML = svgIcon(iconFor(item.title));
+      button.innerHTML = svgIcon(icons[index]);
       button.setAttribute("aria-label", item.title);
       button.dataset.tip = item.title;
       button.addEventListener("click", () => navigate(ROUTE.docs(doc.slug, item.slug)).catch((error) => showToast(error.message)));

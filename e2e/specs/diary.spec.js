@@ -1,7 +1,7 @@
 const { test, expect } = require("@playwright/test");
 const { startCoverage, stopCoverage } = require("./coverage");
 
-test("a journey through days, entries, documents, and the guide", { tag: ["@entries-and-writing", "@navigation-and-deep-links", "@journal-navigation", "@documentation-reader", "@writing-guide", "@diary-look"] }, async ({ page }) => {
+test("a journey through days, entries, documents, and the guide", { tag: ["@entries-and-writing", "@links", "@journal-navigation", "@documents", "@reader", "@writing-guide", "@diary-look"] }, async ({ page }) => {
   const measured = await startCoverage(page);
   try {
     await page.goto("/");
@@ -83,7 +83,7 @@ test("entry content renders as Markdown", { tag: ["@entries-and-writing"] }, asy
   await expect(page.locator("#entry-view")).not.toContainText("**");
 });
 
-test("tag chips filter entries by title topic", { tag: ["@navigation-and-deep-links", "@journal-navigation"] }, async ({ page }) => {
+test("tag chips filter entries by title topic", { tag: ["@links", "@journal-navigation"] }, async ({ page }) => {
   await page.route("**/api/tags", (route) => route.fulfill({
     json: [
       { tag: "Diary", count: 1 },
@@ -114,7 +114,7 @@ test("tag chips filter entries by title topic", { tag: ["@navigation-and-deep-li
   await expect(page.locator(".day-button.active")).toHaveCount(1);
 });
 
-test("search narrows the selected tag", { tag: ["@navigation-and-deep-links", "@journal-navigation"] }, async ({ page }) => {
+test("search narrows the selected tag", { tag: ["@links", "@journal-navigation"] }, async ({ page }) => {
   await page.goto("/#/tag/Diary");
   await expect(page.locator(".result-card")).toHaveCount(2);
   await page.locator("#search-input").fill("alpha");
@@ -128,7 +128,7 @@ test("search narrows the selected tag", { tag: ["@navigation-and-deep-links", "@
   await expect(page).toHaveURL(/#\/tag\/Diary$/);
 });
 
-test("search narrows the selected date and the sidebar note is gone", { tag: ["@navigation-and-deep-links", "@journal-navigation"] }, async ({ page }) => {
+test("search narrows the selected date and the sidebar note is gone", { tag: ["@links", "@journal-navigation"] }, async ({ page }) => {
   await page.goto("/#/day/2026-10-22");
   await expect(page.locator("#selection")).toBeVisible();
   await expect(page.locator(".sidebar-note")).toHaveCount(0);
@@ -141,7 +141,7 @@ test("search narrows the selected date and the sidebar note is gone", { tag: ["@
   await expect(page.locator("#selection")).toBeVisible();
 });
 
-test("the entry count opens the whole journal, and search runs inside it", { tag: ["@navigation-and-deep-links", "@journal-navigation"] }, async ({ page }) => {
+test("the entry count opens the whole journal, and search runs inside it", { tag: ["@links", "@journal-navigation"] }, async ({ page }) => {
   await page.goto("/#/day/2026-10-22");
   await page.locator("#day-count").click();
   await expect(page).toHaveURL(/#\/all$/);
@@ -153,7 +153,7 @@ test("the entry count opens the whole journal, and search runs inside it", { tag
   await expect(page.locator("#result-pager")).toBeHidden();
 });
 
-test("tag results page eight at a time", { tag: ["@navigation-and-deep-links", "@journal-navigation"] }, async ({ page }) => {
+test("tag results page eight at a time", { tag: ["@links", "@journal-navigation"] }, async ({ page }) => {
   await page.goto("/#/tag/Hub");
   await expect(page.locator(".result-card")).toHaveCount(8);
   await expect(page.locator("#result-range")).toHaveText("1–8 / 11");
@@ -164,7 +164,7 @@ test("tag results page eight at a time", { tag: ["@navigation-and-deep-links", "
   await expect(page.locator(".result-card")).toHaveCount(8);
 });
 
-test("deep links restore the search text and typing updates the link", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
+test("deep links restore the search text and typing updates the link", { tag: ["@links"] }, async ({ page }) => {
   await page.goto("/#/tag/Diary?q=alpha");
   await expect(page.locator("#search-input")).toHaveValue("alpha");
   await expect(page.locator(".result-card")).toHaveCount(1);
@@ -185,7 +185,7 @@ test("deep links restore the search text and typing updates the link", { tag: ["
   await expect(page).toHaveURL(/#\/day\/2026-10-22$/);
 });
 
-test("the header, footer and sidebar stay in place, and the card is the scrolling part", { tag: ["@style-and-vocabulary"] }, async ({ page }) => {
+test("the header, footer and sidebar stay in place, and the card is the scrolling part", { tag: ["@layout", "@design"] }, async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto("/#/docs/readme/what-it-does");
   await expect(page.locator("#doc-body")).toBeVisible();
@@ -197,7 +197,7 @@ test("the header, footer and sidebar stay in place, and the card is the scrollin
   await expect(page.locator(".sidebar")).toBeInViewport();
 });
 
-test("the layout stays usable from 800 px to 3840 px and follows browser zoom", { tag: ["@style-and-vocabulary"] }, async ({ page }) => {
+test("the layout stays usable from 800 px to 3840 px and follows browser zoom", { tag: ["@layout", "@design"] }, async ({ page }) => {
   for (const [width, height] of [[800, 900], [1920, 1080], [3840, 2160]]) {
     await page.setViewportSize({ width, height });
     await page.goto("/");
@@ -210,7 +210,7 @@ test("the layout stays usable from 800 px to 3840 px and follows browser zoom", 
   }
 });
 
-test("the show-all bubble wobbles on hover and the selected doc is yellow", { tag: ["@style-and-vocabulary", "@documentation-reader", "@diary-look"] }, async ({ page }) => {
+test("the show-all bubble wobbles on hover and the selected doc is yellow", { tag: ["@layout", "@design", "@documents", "@reader", "@diary-look"] }, async ({ page }) => {
   await page.goto("/");
   await page.locator("#day-count").hover();
   await expect(page.locator("#day-count")).toHaveCSS("animation-name", "wiggle");
@@ -218,7 +218,7 @@ test("the show-all bubble wobbles on hover and the selected doc is yellow", { ta
   await expect(page.locator(".doc-tab.active")).toHaveCSS("background-color", "rgb(255, 212, 92)");
 });
 
-test("entry cards browse the list they came from", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
+test("entry cards browse the list they came from", { tag: ["@links"] }, async ({ page }) => {
   await page.goto("/#/day/2026-10-22");
   await page.locator(".entry-card").first().click();
   await expect(page.locator("#entry-view h2")).toHaveText("Today 7");
@@ -240,7 +240,7 @@ test("entry cards browse the list they came from", { tag: ["@navigation-and-deep
   await expect(page.locator(".result-card")).toHaveCount(2);
 });
 
-test("the day pager sits under the day list, and no day is marked in the docs", { tag: ["@navigation-and-deep-links", "@journal-navigation", "@documentation-reader"] }, async ({ page }) => {
+test("the day pager sits under the day list, and no day is marked in the docs", { tag: ["@links", "@journal-navigation", "@documents", "@reader"] }, async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto("/#/day/2026-10-22");
   const list = await page.locator("#day-list").boundingBox();
@@ -252,7 +252,7 @@ test("the day pager sits under the day list, and no day is marked in the docs", 
   await expect(page.locator(".tag-chip.active")).toHaveCount(0);
 });
 
-test("the sidebar is wider and the card spans the main panel", { tag: ["@style-and-vocabulary"] }, async ({ page }) => {
+test("the sidebar is wider and the card spans the main panel", { tag: ["@layout", "@design"] }, async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto("/#/day/2026-10-22");
   const side = await page.locator(".sidebar").boundingBox();
@@ -280,7 +280,7 @@ test("the writing guide grows to at most twice its compact height", { tag: ["@wr
   await expect.poll(() => page.locator("#skill-editor").evaluate((node) => parseFloat(getComputedStyle(node).maxHeight))).toBeCloseTo(compact * 2, 0);
 });
 
-test("documentation wraps bullets, follows links, and the card scrolls", { tag: ["@documentation-reader"] }, async ({ page }) => {
+test("documentation wraps bullets, follows links, and the card scrolls", { tag: ["@documents", "@reader"] }, async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto("/#/docs/readme/what-it-does");
   await expect(page.locator("#doc-body li").first()).toContainText("previous or next window");
@@ -299,17 +299,17 @@ test("documentation wraps bullets, follows links, and the card scrolls", { tag: 
   await expect(page.locator("#doc-section-title")).toHaveText("Tests");
 
   await page.goto("/#/docs/basic-specs/overview");
-  await page.locator('a[data-doc-link="readme#overview"]').first().click();
+  await page.locator('a[data-doc-link^="readme"]').first().click();
   await expect(page).toHaveURL(/#\/docs\/readme\/overview$/);
 
   await page.goto("/#/docs/app-specs/human-controls");
-  await page.locator('a[data-doc-link="basic-specs#local-access"]').click();
-  await expect(page).toHaveURL(/#\/docs\/basic-specs\/local-access$/);
-  await expect(page.locator("#doc-section-title")).toHaveText("Local access");
+  await page.locator('a[data-doc-link="basic-specs#data-and-access"]').click();
+  await expect(page).toHaveURL(/#\/docs\/basic-specs\/data-and-access$/);
+  await expect(page.locator("#doc-section-title")).toHaveText("Data and access");
 });
 
-test("specs sections use distinct icons", { tag: ["@documentation-reader", "@style-and-vocabulary"] }, async ({ page }) => {
-  for (const [slug, count] of [["app-specs", 8], ["basic-specs", 9]]) {
+test("specs sections use distinct icons", { tag: ["@documents", "@reader", "@layout", "@design"] }, async ({ page }) => {
+  for (const [slug, count] of [["app-specs", 8], ["basic-specs", 13]]) {
     await page.goto(`/#/docs/${slug}`);
     const icons = await page.locator(".doc-section svg").evaluateAll(
       (nodes) => nodes.map((node) => node.innerHTML),
@@ -319,7 +319,7 @@ test("specs sections use distinct icons", { tag: ["@documentation-reader", "@sty
   }
 });
 
-test("tooltip-only text uses the help cursor and the sidebar stays fixed", { tag: ["@style-and-vocabulary"] }, async ({ page }) => {
+test("tooltip-only text uses the help cursor and the sidebar stays fixed", { tag: ["@layout", "@design"] }, async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("#e2e-metrics")).toHaveCSS("cursor", "help");
   await expect(page.locator("#readme-button")).toHaveCSS("cursor", "pointer");
@@ -328,7 +328,7 @@ test("tooltip-only text uses the help cursor and the sidebar stays fixed", { tag
   await expect(page.locator("#day-list")).toHaveCSS("overflow-x", "hidden");
 });
 
-test("the layout spans the full width like the header", { tag: ["@style-and-vocabulary"] }, async ({ page }) => {
+test("the layout spans the full width like the header", { tag: ["@layout", "@design"] }, async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto("/");
   for (const selector of [".topbar", ".layout", ".footer"]) {
@@ -338,7 +338,7 @@ test("the layout spans the full width like the header", { tag: ["@style-and-voca
   }
 });
 
-test("the welcome panel does not flash before the first route", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
+test("the welcome panel does not flash before the first route", { tag: ["@links"] }, async ({ page }) => {
   let release;
   const gate = new Promise((resolve) => { release = resolve; });
   await page.route("**/api/days/page?*", async (route) => {
@@ -352,7 +352,7 @@ test("the welcome panel does not flash before the first route", { tag: ["@naviga
   await expect(page.locator("#welcome")).toBeHidden();
 });
 
-test("an unknown deep link returns to the start", { tag: ["@navigation-and-deep-links"] }, async ({ page }) => {
+test("an unknown deep link returns to the start", { tag: ["@links"] }, async ({ page }) => {
   await page.goto("/#/day/2026-10-22");
   await expect(page.locator(".day-button.active")).toHaveCount(1);
   await page.evaluate(() => { window.location.hash = "#/day/2020-01-01"; });
@@ -375,7 +375,7 @@ test("an unknown deep link returns to the start", { tag: ["@navigation-and-deep-
   await expect(page.locator("#doc-section-title")).toHaveText("Tests and coverage");
 });
 
-test("day arrows cross the seven-day window", { tag: ["@navigation-and-deep-links", "@journal-navigation"] }, async ({ page }) => {
+test("day arrows cross the seven-day window", { tag: ["@links", "@journal-navigation"] }, async ({ page }) => {
   await page.goto("/#/day/2026-10-15");
   await expect(page.locator("#selected-date")).toHaveText("2026-10-15");
   await expect(page.locator("#day-range")).toHaveText("1–7 / 12");
@@ -385,7 +385,7 @@ test("day arrows cross the seven-day window", { tag: ["@navigation-and-deep-link
   await expect(page).toHaveURL(/#\/day\/2026-10-14$/);
 });
 
-test("tooltips stay inside the viewport", { tag: ["@style-and-vocabulary"] }, async ({ page }) => {
+test("tooltips stay inside the viewport", { tag: ["@layout", "@design"] }, async ({ page }) => {
   await page.setViewportSize({ width: 900, height: 620 });
   await page.goto("/");
   const tooltip = page.locator("#tooltip");
@@ -455,7 +455,7 @@ test("the footer is centred with separators and renders end-to-end numbers", { t
   await expect(page.locator("#run-tests .fail-count")).toHaveCSS("color", "rgb(232, 76, 61)");
 });
 
-test("specs list the tests that verify them", { tag: ["@tests", "@documentation-reader"] }, async ({ page }) => {
+test("specs list the tests that verify them", { tag: ["@tests", "@documents", "@reader"] }, async ({ page }) => {
   await page.route("**/api/metrics", (route) => route.fulfill({
     json: {
       tests: 44,

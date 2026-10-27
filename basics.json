@@ -1,0 +1,41 @@
+{
+  "name": "diary",
+  "standard": "1.0.0",
+  "profiles": ["web-server"],
+  "docs": "docs/BASIC-SPECS.md",
+  "appSpecs": "docs/APP-SPECS.md",
+  "releaseNotes": "RELEASE-NOTES.md",
+  "deviations": [
+    {
+      "rule": "BASIC-DESIGN-01",
+      "reason": "the theme is covered by the style journeys, but no dedicated OS colour-scheme journey exists",
+      "review": "2027-01-31"
+    },
+    {
+      "rule": "BASIC-DATES-01",
+      "reason": "the calendar dates are checked in the app journeys; the footer measurement format has no separate Basic journey",
+      "review": "2027-01-31"
+    }
+  ],
+  "tests": {
+    "BASIC-READER-01": ["a journey through days, entries, documents, and the guide"],
+    "BASIC-READER-02": ["test_pages_are_split_at_level_two_headings_with_an_overview", "test_duplicate_headings_get_distinct_slugs"],
+    "BASIC-READER-03": ["specs sections use distinct icons"],
+    "BASIC-READER-04": ["documentation wraps bullets, follows links, and the card scrolls"],
+    "BASIC-FOOTER-01": ["the footer is centred with separators and renders end-to-end numbers"],
+    "BASIC-FOOTER-02": ["the footer is centred with separators and renders end-to-end numbers", "the unit button runs the suite once"],
+    "BASIC-FOOTER-03": ["footer test tooltips are wide, other tooltips stay narrow"],
+    "BASIC-FOOTER-04": ["the header, footer and sidebar stay in place, and the card is the scrolling part"],
+    "BASIC-LINKS-01": ["deep links restore the search text and typing updates the link", "an unknown deep link returns to the start"],
+    "BASIC-LAYOUT-01": ["the header, footer and sidebar stay in place, and the card is the scrolling part"],
+    "BASIC-LAYOUT-02": ["the header, footer and sidebar stay in place, and the card is the scrolling part"],
+    "BASIC-DESIGN-02": ["tooltip-only text uses the help cursor and the sidebar stays fixed"],
+    "BASIC-DESIGN-04": ["the layout stays usable from 800 px to 3840 px and follows browser zoom"],
+    "BASIC-DATA-02": ["test_local_human_mutations_need_same_origin_but_no_sign_in", "test_human_mutations_reject_missing_or_foreign_origin", "test_configured_https_origin_allows_human_mutations_only_for_exact_host"]
+  },
+  "commands": {
+    "unit": "python3 -m diary test",
+    "e2e": "cd e2e && pnpm test",
+    "metrics": "python3 -m diary test"
+  }
+}

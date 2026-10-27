@@ -1,124 +1,153 @@
+<!-- basic-specs: 1.0.0; generated; do not edit -->
 # Basic specs
 
-These rules are the reusable base for a small, local web app whose primary reader is
-a future AI session. They are not tied to Diary's journal domain, so a later app can
-adopt them as they are. Diary's own rules are in [APP SPECS](APP-SPECS.md).
+The reusable base for a small web app whose primary reader is a future AI session.
+Project rules stay in the app and never weaken a rule here. See
+[README](../README.md#overview) for setup, operation and deployment. A rule that does
+not apply is named with its ID, a reason and a review date in `basics.json`; it is never
+dropped silently.
 
-This document lists the rules the app must satisfy: what must be true, not how to run
-it. [README](../README.md) explains setup, operation, and deployment.
+## Documents
 
-## Documentation reader
+- **BASIC-DOCS-01** — The app has `README.md`, `APP-SPECS.md`, `BASIC-SPECS.md` and
+  `RELEASE-NOTES.md`. README explains setup, operation and deployment. APP-SPECS holds
+  the rules specific to the app. This document is generated from the pinned standard.
+- **BASIC-DOCS-02** — The root README is the single source. Copies used by the deployed
+  page are checked against their source; a copy that differs is a defect.
 
-How the README, release notes, and `docs/*.md` are read in the page.
+## Reader
 
-- The footer serves the documentation: a book icon opens the README in the main panel.
-  The reader also lists the documentation files under `docs/`, one tab per document and
-  one page per level-two heading. An editable guide kept in the data directory has its
-  own editor and is not duplicated in the reader.
-- A `RELEASE-NOTES.md` at the repository root is the last read-only tab, after the
-  SPECS. It is one continuous page: versions stay together, newest first, with no
-  overview page and no section row.
-- Sections are navigated by a row of icons, not arrows. Each icon symbolises its
-  section, its tooltip gives the section title, and a click opens that page with its
-  heading. Long pages keep the card width and scroll inside the main panel; the reader
-  never widens the page.
-- Relative Markdown links between documents open in the reader, whether the link names
-  a file in `docs/` or a sibling document. The same links keep working on GitHub, and
-  each section has a stable anchor.
+- **BASIC-READER-01** — The footer opens a documentation reader in the main panel. It
+  lists every document as a tab: README, APP SPECS, BASIC SPECS and RELEASE NOTES.
+  Only README is a footer item.
+- **BASIC-READER-02** — README and SPECS use one page per level-two heading; text before
+  the first heading is an overview. RELEASE NOTES stays one continuous page, newest
+  first. An optional API document stays continuous. The level-one title names the
+  document and is not repeated in the body.
+- **BASIC-READER-03** — Sections are a row of line icons, not text chips. Each icon
+  symbolises its section, its tooltip gives the heading, the active icon is yellow and
+  rotated by `-2deg`. Within one document no icon repeats.
+- **BASIC-READER-04** — Relative Markdown links between documents open in the reader.
+  Raw HTML is escaped before any markup is added.
 
 ## Footer
 
-What the page points to.
+- **BASIC-FOOTER-01** — One centred footer carries exactly four items:
+  `README | source | unit | E2E`, separated by `|`. Each item has its own icon:
+  README a book, source chevrons, unit a clipboard with a check mark, E2E a browser
+  with a play triangle. No icon repeats.
+- **BASIC-FOOTER-02** — Unit and E2E show their count and line coverage separately.
+  A failure count appears only when at least one test failed, and then in red. A
+  missing run is red and says `not executed`; a run without coverage says
+  `coverage not measured`, never `0`.
+- **BASIC-FOOTER-03** — A measured run's tooltip always has three rows:
+  `Measured <date> <time>`, `Duration <s> s`, `Per test <s> s`. A missing value is
+  `—`. A missing run's tooltip is the single word `not executed`. Test tooltips are
+  the wide variant.
+- **BASIC-FOOTER-04** — The footer stays on one line at desktop width and wraps
+  cleanly when narrow. It is fixed and always visible; the main panel scrolls.
 
-- One compact, centred footer carries README, source, unit tests, and E2E tests,
-  separated by `|`. Only README is a documentation item: it opens the reader,
-  which lists README, APP SPECS, BASIC SPECS and RELEASE NOTES as tabs. Each item
-  has its own icon and must stay on one line at desktop width.
-- The items name what they open: the documentation reader, the source repository, the
-  unit report, and the E2E report. A failure count appears only when at least one test
-  failed, and then in red.
+## Links
+
+- **BASIC-LINKS-01** — Every view has a stable hash, for example
+  `#/docs/readme/tests` or `#/play/ai`. A reload restores the view; an unknown address
+  returns to the start. Search text and mode are in the address when they define the
+  view. Unlinkable state is named in README.
+
+## Layout
+
+- **BASIC-LAYOUT-01** — Header and footer are fixed and always visible; the main panel
+  scrolls. The reader opens in the main panel and never covers or hides header or
+  footer. A sidebar, when present, is fixed and becomes a horizontal strip at narrow
+  widths.
+- **BASIC-LAYOUT-02** — The header is one row: icon, title, small catch phrase and
+  actions on the right, with a dashed bottom edge.
+
+## Design
+
+- **BASIC-DESIGN-01** — The page follows the operating system's light/dark preference.
+  Yellow marks selection and emphasis; red warns; green marks good and links; purple
+  marks one special action. Yellow is a fill, not a second accent.
+- **BASIC-DESIGN-02** — Focus is a `3px solid green` outline with `2px` offset. Cursors
+  say what a thing does: pointer for clickable, default for text, help for a tooltip
+  without an action; a tooltip on a clickable item uses the pointer.
+- **BASIC-DESIGN-03** — The visual language is paper, card, ink and muted, with `2px`
+  ink outlines, hard offset shadows, dashed ink lines and speech-bubble tooltips. Type
+  is `"Comic Sans MS","Trebuchet MS",sans-serif`; code is `ui-monospace,monospace`.
+  Headings are 800–900, body 400–500. Dates, times, counts and pagers use tabular
+  numerals.
+- **BASIC-DESIGN-04** — The root stays at `100%`. Sizes use `rem`, widths use
+  `clamp()`, so browser zoom scales the page and the layout fits at 80–200%. All motion
+  sits behind `prefers-reduced-motion`.
+
+## Dates
+
+- **BASIC-DATES-01** — Dates use `yyyy-mm-dd`, times use `hh24:mi`.
+
+## Data and access
+
+- **BASIC-DATA-01** — Private data lives outside the repository; only generated sample
+  data may be public. One token has one `secrets/` file and never appears in the
+  repository, README, screenshot or log. A static page reads only.
+- **BASIC-DATA-02** — Local human edits need no sign-in. Browser mutations are
+  same-origin to loopback or to the exact configured HTTPS origin. That check is not
+  authentication for a LAN or internet service.
 
 ## Tests
 
-What the page claims about its own state.
+- **BASIC-TESTS-01** — Every app has unit tests and a Playwright E2E suite in `e2e/`.
+  The footer shows both counts. Tests always run; a static page runs them by a named
+  command and reads the result.
+- **BASIC-TESTS-02** — Coverage is line coverage and is measured with a real library:
+  Node's built-in test coverage or Python's `trace` for unit code, Playwright
+  `page.coverage` for browser JavaScript. A missing percentage is a defect, not a
+  display state.
+- **BASIC-TESTS-03** — Every test that protects a rule here carries the rule ID in its
+  name or docstring, or the app maps the rule to the test in `basics.json`. Each
+  MUST rule has a test, a built-in check, or an approved deviation.
 
-Run commands and measured numbers are in
-[README › Tests and coverage](../README.md#tests-and-coverage).
+## Quality
 
-- The unit button shows the latest count and application line coverage and starts the
-  suite once. Results are one-shot: once they exist the button shows them and refuses
-  another start. It polls every five seconds while a run is active.
-- The E2E item shows Playwright journeys and `web/app.js` line coverage from
-  `test-metrics.e2e.json`. Playwright runs locally, not in the container; a missing
-  file shows “not measured”, never zero.
-- Coverage is line coverage, not branch coverage. A missing unit report is shown as
-  “not measured”, not as zero.
-- Tests cover the API, storage, search, deletion, AI/human mutation boundaries, deep
-  links, and legacy Markdown import.
-- Every automated test names the rule it protects: unit tests carry a `covers` tag,
-  E2E journeys a Playwright tag. Each SPECS page lists the concrete test names under
-  “Automated tests”, unit methods as readable sentences and numbered below their
-  group; a section without names is a gap, not a pass.
-- Test tooltips always show three rows: `Measured`, `Duration`, `Per test`; a
-  missing value is `—`. A test that has not run is red, shows no percentage, and
-  its tooltip says `not executed`.
+- **BASIC-QUALITY-01** — A profile may require static analysis: typecheck, lint,
+  formatter check, link check, secret scan. The app supplies the command; the standard
+  supplies the rule. New quality rules enter as advisory in a minor version and become
+  mandatory in the next major version.
 
-## Navigation and deep links
+## Done
 
-How a reader reaches a view, and how a link survives a refresh.
+README and specs updated; unit tests green and metrics regenerated; E2E green where
+present; `basics check` green; committed, pushed and deployed where a rollout exists.
 
-- Deep links are first-class: every view has a stable address. Opening one restores
-  the same view and the surrounding list or window; an unknown link returns to the
-  start.
-- A refresh opens the requested view directly. The welcome panel stays hidden until
-  the first route has resolved, so it never flashes before content appears.
-- Lists page in fixed windows with arrows and lazy loading; the window size is an app
-  decision. An open item steps to the newer or older item of the list it came from,
-  and Back returns to that list with its search text.
-- Search text stays in the address, so a refresh or a shared link shows the same
-  filtered list. The result heading names the current scope and adds “(filtered)”
-  while search text narrows it.
+## This app
 
-## Local access
+- Name: `diary`
+- Standard: **1.0.0**
+- Profiles: `web-server`
+- Source: https://github.com/suadin/basic-specs
 
-Who may change state, and how the server tells a local browser from a foreign one.
+### Deviations
 
-- The local human may change app state without a sign-in. Browser mutations require a
-  same-origin loopback request, or the explicitly configured HTTPS origin behind a
-  local reverse proxy.
-- The same-origin check is not authentication. A server exposed to a LAN or the
-  internet needs its own protection.
+- `BASIC-DESIGN-01` — the theme is covered by the style journeys, but no dedicated OS colour-scheme journey exists (review 2027-01-31)
+- `BASIC-DATES-01` — the calendar dates are checked in the app journeys; the footer measurement format has no separate Basic journey (review 2027-01-31)
 
-## Data
+### Automated tests
 
-Where entries live.
-
-- The app uses private data storage outside the repository. User data and the writing
-  guide are not committed; only generated sample data may be public.
-
-## Deployment
-
-How the page is exposed.
-
-- A manual NAS deployment may expose the app on a trusted LAN HTTPS origin; the
-  application server itself remains loopback-bound. No CI/CD pipeline is part of the
-  deployment.
-
-## Style and vocabulary
-
-How the interface should feel and speak.
-
-- The visual style is simple and playful: thicker outlines, short hover motion, and
-  tooltips as speech bubbles that stay inside the viewport. Yellow marks the selection
-  and emphasis, red warns, green marks good.
-- The root stays at `100%`, so browser zoom (Ctrl + wheel) scales the page and the
-  layout still fits at 80–200%; sizes use `rem`, widths use `clamp()`. The header,
-  footer, and sidebar stay in place; only the main card scrolls. The sidebar is
-  24rem wide, and the card spans the main panel. The header is one row: icon,
-  title, catch phrase.
-- Cursors: hand for clickable, default for plain text, `help` for a tooltip
-  without an action. Tooltip + clickable uses the hand.
-- Test tooltips in the footer are wider than other tooltips, so their text fits on fewer
-  lines.
-- Use one name for one thing. The browser test suite is called “E2E”, never “browser”.
-  Sentences are short.
+- `[BASIC-READER-01] a journey through days, entries, documents, and the guide`
+- `[BASIC-READER-02] test_pages_are_split_at_level_two_headings_with_an_overview`
+- `[BASIC-READER-02] test_duplicate_headings_get_distinct_slugs`
+- `[BASIC-READER-03] specs sections use distinct icons`
+- `[BASIC-READER-04] documentation wraps bullets, follows links, and the card scrolls`
+- `[BASIC-FOOTER-01] the footer is centred with separators and renders end-to-end numbers`
+- `[BASIC-FOOTER-02] the footer is centred with separators and renders end-to-end numbers`
+- `[BASIC-FOOTER-02] the unit button runs the suite once`
+- `[BASIC-FOOTER-03] footer test tooltips are wide, other tooltips stay narrow`
+- `[BASIC-FOOTER-04] the header, footer and sidebar stay in place, and the card is the scrolling part`
+- `[BASIC-LINKS-01] deep links restore the search text and typing updates the link`
+- `[BASIC-LINKS-01] an unknown deep link returns to the start`
+- `[BASIC-LAYOUT-01] the header, footer and sidebar stay in place, and the card is the scrolling part`
+- `[BASIC-LAYOUT-02] the header, footer and sidebar stay in place, and the card is the scrolling part`
+- `[BASIC-DESIGN-02] tooltip-only text uses the help cursor and the sidebar stays fixed`
+- `[BASIC-DESIGN-04] the layout stays usable from 800 px to 3840 px and follows browser zoom`
+- `[BASIC-DATA-02] test_local_human_mutations_need_same_origin_but_no_sign_in`
+- `[BASIC-DATA-02] test_human_mutations_reject_missing_or_foreign_origin`
+- `[BASIC-DATA-02] test_configured_https_origin_allows_human_mutations_only_for_exact_host`

@@ -69,7 +69,7 @@ What the local human may change without a sign-in.
 
 - The local human can edit the AI writing guide and delete entries by date or through
   an inclusive date without signing in. Browser mutations follow
-  [BASIC SPECS › Local access](BASIC-SPECS.md#local-access).
+  [BASIC SPECS › Data and access](BASIC-SPECS.md#data-and-access).
 - Delete controls take dates as `yyyy-mm-dd` in plain text fields. Every destructive
   action previews the count and asks for confirmation.
 - A round badge shows the total entry count. It stays neutral below 2,000 entries,

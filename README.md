@@ -66,7 +66,7 @@ rules live in [BASIC SPECS](docs/BASIC-SPECS.md); the Diary-specific rules live 
   in the reader.
 - Follows the operating system's light/dark preference and links to this repository.
 
-The interface follows the workspace contract: documentation, source, and test numbers
+The interface follows [Basic Specs](https://github.com/suadin/basic-specs): documentation, source, and test numbers
 in one centred footer; deep links; paging and lazy loading; `yyyy-mm-dd` and `hh24:mi`;
 quiet colours with a playful edge; browser zoom from 80 to 200 %; cursors that say what
 is clickable, text, or a tooltip; one name for one thing.
