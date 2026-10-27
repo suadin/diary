@@ -1,5 +1,11 @@
 # Release notes
 
+## 1.3.0 — Basic Specs 1.0.0
+
+- Pinned the public Basic Specs standard in `basics.json`, `basics.lock` and
+  `basics/`; the generated `docs/BASIC-SPECS.md` is checked in CI.
+- The reader now derives unique section icons and uses the canonical section names.
+
 ## 1.2.0 — Shared contract in the footer
 
 - README in the footer opens the reader; it lists README, APP SPECS, BASIC SPECS
