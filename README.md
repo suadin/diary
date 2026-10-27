@@ -128,7 +128,7 @@ expose the port beyond a trusted LAN or publish the service through a tunnel.
 To import existing dated Markdown logs without changing or deleting the originals:
 
 ```bash
-python3 -m diary import ~/dev/logs
+python3 -m diary import ~/path/to/old-logs
 ```
 
 The importer turns each level-two section into an entry and keeps any introductory
