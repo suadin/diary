@@ -1,7 +1,7 @@
 const { test, expect } = require("@playwright/test");
 const { startCoverage, stopCoverage } = require("./coverage");
 
-async function mockLatest(page, latest = "1.1.0") {
+async function mockLatest(page, latest = "1.1.1") {
   if (latest === null) {
     await page.route("**/version.json", (route) => route.abort());
     return;
@@ -517,7 +517,7 @@ test("[BASIC-VERSION-01] the app version opens SPECS", { tag: ["@versions"] }, a
 test("[BASIC-VERSION-02] the Basic Specs version opens BASIC SPECS", { tag: ["@versions"] }, async ({ page }) => {
   await mockLatest(page);
   await page.goto("/");
-  await expect(page.locator("#basic-version")).toHaveText("1.1.0");
+  await expect(page.locator("#basic-version")).toHaveText("1.1.1");
   await page.locator("#basic-specs-button").click();
   await expect(page.locator("#docs-title")).toHaveText("BASIC SPECS");
 });
