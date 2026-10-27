@@ -1,6 +1,6 @@
 [project]
 name = "diary-mcp"
-version = "1.1.1"
+version = "1.4.0"
 description = "Model Context Protocol server for Diary"
 readme = "README.md"
 requires-python = ">=3.12"

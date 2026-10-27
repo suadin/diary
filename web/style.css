@@ -248,3 +248,7 @@ span.has-tip { cursor: help; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+.footer-logo { width: 15px; height: 15px; display: block; }
+#basic-specs-button.outdated { color: var(--red); }
+button.footer-item { cursor: pointer; }

@@ -1,13 +1,9 @@
 # App specs
 
-These rules are specific to Diary: its entries, topics, writing guide, AI access, and
-the look that carries its name. The reusable base is in
-[BASIC SPECS](BASIC-SPECS.md).
-
-This document lists the rules Diary must satisfy: what must be true, not how to run
-it. [README](../README.md) explains setup, operation, and deployment.
-
 ## Entries and writing
+
+These rules are specific to Diary and extend [BASIC SPECS](BASIC-SPECS.md).
+[README](../README.md) explains setup, operation, and deployment.
 
 What an entry is, and who may write one.
 

@@ -12,7 +12,7 @@ def _slug(value: str) -> str:
     return SLUG.sub("-", value.lower()).strip("-") or "page"
 
 
-def readme_pages(path: Path) -> dict[str, object]:
+def readme_pages_text(markdown: str) -> dict[str, object]:
     """Return the document title and one page per level-two heading."""
     title = "Diary"
     pages: list[dict[str, str]] = []
@@ -28,7 +28,7 @@ def readme_pages(path: Path) -> dict[str, object]:
             slug = f"{slug}-{count + 1}"
         pages.append({"title": page_title, "slug": slug, "markdown": body})
 
-    for line in path.read_text(encoding="utf-8").splitlines():
+    for line in markdown.splitlines():
         if line.startswith("# ") and not pages and not any(part.strip() for part in current_lines):
             title = line[2:].strip()
             continue
@@ -47,6 +47,18 @@ def readme_pages(path: Path) -> dict[str, object]:
     return {"title": title, "pages": pages}
 
 
+def readme_pages(path: Path) -> dict[str, object]:
+    return readme_pages_text(path.read_text(encoding="utf-8"))
+
+
+def compose_specs(app_specs: str, release_notes: str) -> str:
+    """One continuous Changelog page before the app rules."""
+    notes = re.sub(r"^#\s+.*$", "", release_notes, count=1, flags=re.M)
+    notes = re.sub(r"^##\s+", "### ", notes, flags=re.M).strip()
+    rules = re.sub(r"^#\s+.*$", "", app_specs, count=1, flags=re.M).strip()
+    return f"# SPECS\n\n## Changelog\n\n{notes}\n\n{rules}\n"
+
+
 def continuous_page(path: Path) -> dict[str, object]:
     """Return one page for the whole document, without an overview page."""
     lines = path.read_text(encoding="utf-8").splitlines()
@@ -59,21 +71,24 @@ def continuous_page(path: Path) -> dict[str, object]:
 
 
 def documents(root: Path) -> list[dict[str, object]]:
-    """Return the README, docs, and release notes in reader order."""
-    candidates: list[tuple[str, str, Path]] = [("readme", "README", root / "README.md")]
-    for path in sorted((root / "docs").glob("*.md")):
-        if path.name == "AI-SKILL.md":
-            continue
-        if path.stem.isupper():
-            title = path.stem.replace("-", " ").replace("_", " ")
-        else:
-            title = path.stem.replace("_", " ").title()
-        candidates.append((_slug(path.stem), title, path))
-    candidates.append(("release-notes", "RELEASE NOTES", root / "RELEASE-NOTES.md"))
+    """Return README, SPECS and BASIC SPECS in reader order."""
+    candidates = [
+        ("readme", "README", root / "README.md"),
+        ("app-specs", "SPECS", root / "docs" / "APP-SPECS.md"),
+        ("basic-specs", "BASIC SPECS", root / "docs" / "BASIC-SPECS.md"),
+    ]
     result: list[dict[str, object]] = []
     for slug, title, path in candidates:
         if not path.is_file():
             continue
-        page = continuous_page(path) if slug == "release-notes" else readme_pages(path)
+        if slug == "app-specs":
+            notes = root / "RELEASE-NOTES.md"
+            if notes.is_file():
+                page = readme_pages_text(compose_specs(path.read_text(encoding="utf-8"),
+                                                       notes.read_text(encoding="utf-8")))
+            else:
+                page = readme_pages(path)
+        else:
+            page = readme_pages(path)
         result.append({"slug": slug, "title": title, "pages": page["pages"]})
     return result

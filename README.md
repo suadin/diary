@@ -7,10 +7,10 @@ or erase history.
 
 This README explains what Diary is, how to run it, and how to operate it. The reusable
 rules live in [BASIC SPECS](docs/BASIC-SPECS.md); the Diary-specific rules live in
-[APP SPECS](docs/APP-SPECS.md). Changes by version are in [RELEASE NOTES](RELEASE-NOTES.md).
+[APP SPECS](docs/APP-SPECS.md). Changes by version are in the Changelog inside SPECS; the source is [RELEASE-NOTES.md](RELEASE-NOTES.md).
 
 > 🗂️ Dated entries · 🔗 deep links to every view · 🤖 append-only AI access ·
-> 🧪 51 unit tests and 27 E2E journeys
+> 🧪 51 unit tests and 32 E2E journeys
 
 ## What it does
 
@@ -41,8 +41,8 @@ rules live in [BASIC SPECS](docs/BASIC-SPECS.md); the Diary-specific rules live 
   sidebar window; a refresh does not flash the welcome panel first.
 - Keeps the writing guide and the documentation apart: the guide is editable; the
   README, the release notes, and the SPECS under `docs/` are read-only. Documentation
-  opens in the main panel with one tab per document; README and SPECS offer one icon per
-  heading, while release notes stay one continuous page, newest version first. The icon
+  opens in the main panel with one tab per document; SPECS starts with one continuous Changelog page, followed by the app rules;
+  README and BASIC SPECS use one icon per heading. The icon
   tooltip names the section, and clicking it opens that page with its heading. The AI
   guide seed is not part of the reader.
 - Keeps the AI writing guide editable from the local web page, without a sign-in flow.
@@ -59,15 +59,14 @@ rules live in [BASIC SPECS](docs/BASIC-SPECS.md); the Diary-specific rules live 
   always carry `Measured`, `Duration`, and `Per test` on three rows. E2E results are
   display-only in the container.
 - Includes a small purple **Memory spark** button that resurfaces a random older entry.
-- Serves this README, the release notes, and the SPECS under `docs/`: README in the
-  footer opens the reader, which lists all of them as tabs. README and SPECS use one
-  page per heading with a row of section icons instead of arrows; release notes stay
-  one continuous page. The editable AI guide has its own editor and is not duplicated
-  in the reader.
+- Serves README, SPECS and BASIC SPECS in the reader. README and BASIC SPECS use one
+  page per heading with a row of section icons instead of arrows; SPECS starts with
+  one continuous Changelog page from `RELEASE-NOTES.md`, followed by the app rules.
+  The editable AI guide has its own editor and is not duplicated in the reader.
 - Follows the operating system's light/dark preference and links to this repository.
 
-The interface follows [Basic Specs](https://github.com/suadin/basic-specs): documentation, source, and test numbers
-in one centred footer; deep links; paging and lazy loading; `yyyy-mm-dd` and `hh24:mi`;
+The interface follows [Basic Specs](https://github.com/suadin/basic-specs): README, SPECS, BASIC SPECS, source and
+test numbers in one centred footer; deep links; paging and lazy loading; `yyyy-mm-dd` and `hh24:mi`;
 quiet colours with a playful edge; browser zoom from 80 to 200 %; cursors that say what
 is clickable, text, or a tooltip; one name for one thing.
 
@@ -247,8 +246,8 @@ and every page in BASIC SPECS and APP SPECS lists the concrete test names under
 “Automated tests”, so a rule without a test is visible instead of implied.
 
 The unit suite has 51 tests and currently covers 497 of 645 lines (77.1 %). The
-Playwright suite in `e2e/` has 27 journeys and touches 870 of 1202 `web/app.js` lines
-(72.4 %). It needs Node, pnpm, and a Chromium build:
+Playwright suite in `e2e/` has 32 journeys and touches 914 of 1258 `web/app.js` lines
+(72.7 %). It needs Node, pnpm, and a Chromium build:
 
 ```bash
 cd e2e
@@ -269,7 +268,7 @@ the numbers in the footer; the container never runs Playwright itself.
 | `diary/server.py` | Local HTTP API, same-origin human mutations, AI permissions, static files |
 | `diary/store.py` | SQLite schema, entries, text search, deletion |
 | `diary/importer.py` | Idempotent import of dated Markdown files |
-| `diary/readme.py` | Splits the README, release notes, and `docs/*.md` into pages for the reader |
+| `diary/readme.py` | Builds README, SPECS with Changelog, and BASIC SPECS for the reader |
 | `diary/config.py` | XDG paths, local credentials, setup |
 | `diary/coverage.py` | Test suite execution and standard-library line coverage |
 | `diary/testrunner.py` | Starts a test run from the page and blocks duplicate runs |

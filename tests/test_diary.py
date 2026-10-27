@@ -316,21 +316,20 @@ class ReadmeTests(unittest.TestCase):
             (root / "RELEASE-NOTES.md").write_text(
                 "# Release notes\n\nIntro.\n\n## 1.1.0\nNew.\n", encoding="utf-8"
             )
-            (root / "docs" / "guide.md").write_text("# Guide\n\n## Part\nText.\n", encoding="utf-8")
+            (root / "docs" / "APP-SPECS.md").write_text("# App specs\n\n## Rule\nText.\n", encoding="utf-8")
+            (root / "docs" / "BASIC-SPECS.md").write_text("# Basic specs\n\n## Reader\nText.\n", encoding="utf-8")
             (root / "docs" / "AI-SKILL.md").write_text("# Hidden\n", encoding="utf-8")
             result = documents(root)
             self.assertEqual(
-                [item["slug"] for item in result], ["readme", "guide", "release-notes"]
+                [item["slug"] for item in result], ["readme", "app-specs", "basic-specs"]
             )
             self.assertEqual(
-                [item["title"] for item in result], ["README", "Guide", "RELEASE NOTES"]
+                [item["title"] for item in result], ["README", "SPECS", "BASIC SPECS"]
             )
             self.assertEqual(result[0]["pages"][0]["slug"], "one")
-            self.assertEqual(
-                [page["title"] for page in result[2]["pages"]], ["All versions"]
-            )
-            self.assertEqual([page["slug"] for page in result[2]["pages"]], ["all"])
-            self.assertNotIn("Overview", result[2]["pages"][0]["markdown"])
+            self.assertEqual(result[1]["pages"][0]["title"], "Changelog")
+            self.assertEqual(result[1]["pages"][0]["slug"], "changelog")
+            self.assertIn("### 1.1.0", result[1]["pages"][0]["markdown"])
 
 
 class ConfigTests(unittest.TestCase):
@@ -701,16 +700,15 @@ class HttpTests(ServerTestCase):
         result = json.loads(text)
         self.assertEqual(
             [item["slug"] for item in result["documents"]],
-            ["readme", "app-specs", "basic-specs", "release-notes"],
+            ["readme", "app-specs", "basic-specs"],
         )
-        self.assertEqual(result["documents"][1]["title"], "APP SPECS")
+        self.assertEqual(result["documents"][1]["title"], "SPECS")
         self.assertEqual(result["documents"][2]["title"], "BASIC SPECS")
-        self.assertEqual(result["documents"][3]["title"], "RELEASE NOTES")
-        release_notes = result["documents"][3]
-        self.assertEqual([page["title"] for page in release_notes["pages"]], ["All versions"])
-        self.assertEqual([page["slug"] for page in release_notes["pages"]], ["all"])
-        self.assertIn("## 1.1.0", release_notes["pages"][0]["markdown"])
-        self.assertIn("## 1.0.0", release_notes["pages"][0]["markdown"])
+        specs = result["documents"][1]
+        self.assertEqual(specs["pages"][0]["title"], "Changelog")
+        self.assertEqual(specs["pages"][0]["slug"], "changelog")
+        self.assertIn("### 1.1.0", specs["pages"][0]["markdown"])
+        self.assertIn("### 1.0.0", specs["pages"][0]["markdown"])
         readme = result["documents"][0]
         titles = [page["title"] for page in readme["pages"]]
         self.assertIn("What it does", titles)
@@ -907,7 +905,7 @@ class TestRunnerTests(ServerTestCase):
 
 
 class TraceabilityTests(unittest.TestCase):
-    @covers("tests", "dates", "quality", "done")
+    @covers("tests", "dates", "quality", "done", "versions")
     def test_every_requirement_section_is_named_by_a_test(self):
         sections = set()
         for name in ("BASIC-SPECS.md", "APP-SPECS.md"):

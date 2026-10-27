@@ -62,7 +62,7 @@ class DiaryHandler(BaseHTTPRequestHandler):
         try:
             if route.path == "/":
                 self._static("index.html")
-            elif route.path in {"/app.js", "/style.css", "/diary.svg"}:
+            elif route.path in {"/app.js", "/style.css", "/diary.svg", "/version.js", "/basic-specs.json"}:
                 self._static(route.path.lstrip("/"))
             elif route.path == "/api/days":
                 self._json(200, list_days(self.server.settings.database_path))
@@ -383,7 +383,7 @@ class DiaryHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(encoded)))
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
-        self.send_header("Content-Security-Policy", "default-src 'self'; img-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'")
+        self.send_header("Content-Security-Policy", "default-src 'self'; img-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://suadin.github.io; object-src 'none'; base-uri 'self'; frame-ancestors 'none'")
         if headers:
             for key, value in headers.items():
                 self.send_header(key, value)
@@ -397,7 +397,7 @@ class DiaryHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(encoded)))
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
-        self.send_header("Content-Security-Policy", "default-src 'self'; img-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'")
+        self.send_header("Content-Security-Policy", "default-src 'self'; img-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://suadin.github.io; object-src 'none'; base-uri 'self'; frame-ancestors 'none'")
         if headers:
             for key, value in headers.items():
                 self.send_header(key, value)

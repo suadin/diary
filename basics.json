@@ -1,6 +1,6 @@
 {
   "name": "diary",
-  "standard": "1.0.2",
+  "standard": "1.1.0",
   "profiles": [
     "web-server"
   ],
@@ -72,5 +72,7 @@
     "unit": "python3 -m diary test",
     "e2e": "cd e2e && pnpm test",
     "metrics": "python3 -m diary test"
-  }
+  },
+  "appVersion": "1.4.0",
+  "runtime": "web/basic-specs.json"
 }

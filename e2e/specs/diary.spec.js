@@ -1,6 +1,15 @@
 const { test, expect } = require("@playwright/test");
 const { startCoverage, stopCoverage } = require("./coverage");
 
+async function mockLatest(page, latest = "1.1.0") {
+  if (latest === null) {
+    await page.route("**/version.json", (route) => route.abort());
+    return;
+  }
+  await page.route("**/version.json", (route) =>
+    route.fulfill({ json: { version: latest, releasedAt: "2026-10-27", url: "#" }, headers: { "access-control-allow-origin": "*" } }));
+}
+
 test("a journey through days, entries, documents, and the guide", { tag: ["@entries-and-writing", "@links", "@journal-navigation", "@documents", "@reader", "@writing-guide", "@diary-look"] }, async ({ page }) => {
   const measured = await startCoverage(page);
   try {
@@ -26,25 +35,20 @@ test("a journey through days, entries, documents, and the guide", { tag: ["@entr
     await expect(page).toHaveURL(new RegExp(`#/entry/${entries[0].id}$`));
 
     await page.goto("/#/docs/readme");
-    await expect(page.locator(".doc-tab")).toHaveCount(4);
+    await expect(page.locator(".doc-tab")).toHaveCount(3);
     await expect(page.locator(".doc-section")).toHaveCount(11);
     await page.locator('.doc-section[data-tip="AI API"]').click();
     await expect(page.locator("#doc-section-title")).toHaveText("AI API");
     await expect(page).toHaveURL(/#\/docs\/readme\/ai-api$/);
     await expect(page.locator("#doc-body")).toContainText("/ai/entries");
 
-    await expect(page.locator(".doc-tab").last()).toHaveText("RELEASE NOTES");
-    await page.locator(".doc-tab", { hasText: "RELEASE NOTES" }).click();
-    await expect(page.locator("#docs-title")).toHaveText("RELEASE NOTES");
-    await expect(page).toHaveURL(/#\/docs\/release-notes$/);
-    await expect(page.locator(".doc-section")).toHaveCount(0);
-    await expect(page.locator("#doc-section-title")).toBeHidden();
+    await page.locator(".doc-tab", { hasText: "SPECS" }).first().click();
+    await expect(page.locator("#docs-title")).toHaveText("SPECS");
+    await expect(page).toHaveURL(/#\/docs\/app-specs\/changelog$/);
+    await expect(page.locator("#doc-section-title")).toHaveText("Changelog");
+    await expect(page.locator("#doc-body")).toContainText("1.4.0");
     await expect(page.locator("#doc-body")).toContainText("1.1.0");
-    await expect(page.locator("#doc-body")).toContainText("1.0.0");
-
-    await page.locator(".doc-tab", { hasText: "APP SPECS" }).click();
-    await expect(page.locator("#docs-title")).toHaveText("APP SPECS");
-    await expect(page).toHaveURL(/#\/docs\/app-specs\/overview$/);
+    await expect(page.locator(".doc-tab", { hasText: "RELEASE NOTES" })).toHaveCount(0);
 
     await page.goto("/#/guide");
     await page.locator("#skill-editor").fill("# Changed\n");
@@ -309,7 +313,7 @@ test("documentation wraps bullets, follows links, and the card scrolls", { tag: 
 });
 
 test("specs sections use distinct icons", { tag: ["@documents", "@reader", "@layout", "@design"] }, async ({ page }) => {
-  for (const [slug, count] of [["app-specs", 8], ["basic-specs", 13]]) {
+  for (const [slug, count] of [["app-specs", 8], ["basic-specs", 14]]) {
     await page.goto(`/#/docs/${slug}`);
     const icons = await page.locator(".doc-section svg").evaluateAll(
       (nodes) => nodes.map((node) => node.innerHTML),
@@ -424,8 +428,8 @@ test("the footer is centred with separators and renders end-to-end numbers", { t
   }));
   await page.goto("/");
   await expect(page.locator("#e2e-metrics")).toHaveText("e2e 12 · 61.5 %");
-  await expect(page.locator(".footer-sep")).toHaveCount(3);
-  await expect(page.locator(".footer-items svg")).toHaveCount(4);
+  await expect(page.locator(".footer-sep")).toHaveCount(5);
+  await expect(page.locator(".footer-items svg, .footer-items img")).toHaveCount(6);
   await expect(page.locator(".fail-count")).toHaveCount(0);
   const tip = await page.locator("#e2e-metrics").getAttribute("data-tip");
   expect(tip).toContain("Measured: 2026-10-22");
@@ -498,4 +502,49 @@ test("the unit button runs the suite once", { tag: ["@tests"] }, async ({ page }
   await page.locator("#run-tests").evaluate((node) => node.click());
   await page.waitForTimeout(500);
   await expect(page.locator("#run-tests")).toHaveText(before);
+});
+
+test("[BASIC-VERSION-01] the app version opens SPECS", { tag: ["@versions"] }, async ({ page }) => {
+  await mockLatest(page, "2.0.0");
+  await page.goto("/");
+  await expect(page.locator("#app-version")).toHaveText("1.4.0");
+  await expect(page.locator("#specs-button")).not.toHaveClass(/outdated/);
+  await expect(page.locator("#specs-button")).toHaveAttribute("data-tip", "diary 1.4.0 — open SPECS");
+  await page.locator("#specs-button").click();
+  await expect(page).toHaveURL(/#\/docs\/app-specs\/changelog$/);
+});
+
+test("[BASIC-VERSION-02] the Basic Specs version opens BASIC SPECS", { tag: ["@versions"] }, async ({ page }) => {
+  await mockLatest(page);
+  await page.goto("/");
+  await expect(page.locator("#basic-version")).toHaveText("1.1.0");
+  await page.locator("#basic-specs-button").click();
+  await expect(page.locator("#docs-title")).toHaveText("BASIC SPECS");
+});
+
+test("[BASIC-VERSION-03] only a major update turns red", { tag: ["@versions"] }, async ({ page }) => {
+  await mockLatest(page, "1.2.0");
+  await page.goto("/");
+  const basic = page.locator("#basic-specs-button");
+  await expect(basic).not.toHaveClass(/outdated/);
+  await expect(basic).toHaveAttribute("data-tip", /1\.2\.0 available/);
+  await mockLatest(page, "2.0.0");
+  await page.reload();
+  await expect(basic).toHaveClass(/outdated/);
+  await expect(basic).toHaveAttribute("data-tip", /2\.0\.0 available/);
+});
+
+test("[BASIC-VERSION-04] an unavailable latest version stays neutral", { tag: ["@versions"] }, async ({ page }) => {
+  await mockLatest(page, null);
+  await page.goto("/");
+  await expect(page.locator("#basic-specs-button")).not.toHaveClass(/outdated/);
+  await expect(page.locator("#basic-specs-button")).toHaveAttribute("data-tip", /latest not checked/);
+});
+
+test("[BASIC-READER-05] SPECS starts with Changelog", { tag: ["@documents", "@reader"] }, async ({ page }) => {
+  await page.goto("/#/docs/app-specs");
+  await expect(page.locator("#docs-title")).toHaveText("SPECS");
+  await expect(page.locator("#doc-section-title")).toHaveText("Changelog");
+  await expect(page.locator(".doc-section").first()).toHaveAttribute("aria-label", "Changelog");
+  await expect(page.locator(".doc-tab", { hasText: "RELEASE NOTES" })).toHaveCount(0);
 });

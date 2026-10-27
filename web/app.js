@@ -1,3 +1,5 @@
+import { LATEST_URL, appVersionTip, basicVersionTip, updateState } from "./version.js";
+
 const elements = {
   dayList: document.getElementById("day-list"),
   dayCount: document.getElementById("day-count"),
@@ -31,6 +33,10 @@ const elements = {
   unitMetrics: document.getElementById("unit-metrics"),
   e2eMetrics: document.getElementById("e2e-metrics"),
   e2eMetricsLabel: document.getElementById("e2e-metrics-label"),
+  specsButton: document.getElementById("specs-button"),
+  appVersion: document.getElementById("app-version"),
+  basicSpecsButton: document.getElementById("basic-specs-button"),
+  basicVersion: document.getElementById("basic-version"),
   sparkButton: document.getElementById("spark-button"),
   guideButton: document.getElementById("guide-button"),
   editor: document.getElementById("editor"),
@@ -69,6 +75,7 @@ const DOC_SPECS = new Set(["basic-specs", "app-specs"]);
 function queryPart(query) {
   return query ? `?q=${encodeURIComponent(query)}` : "";
 }
+
 
 const ROUTE = {
   welcome: "#/",
@@ -127,6 +134,8 @@ const state = {
   testTimer: null,
   docs: null,
   metrics: null,
+  runtime: null,
+  latest: null,
   tags: [],
   activeTag: null,
   globalSearch: false,
@@ -690,6 +699,34 @@ function renderE2E(e2e) {
   elements.e2eMetrics.classList.remove("failed");
   setMetricLabel(elements.e2eMetricsLabel, metricParts("e2e", e2e));
   elements.e2eMetrics.dataset.tip = measurementTip(e2e);
+}
+
+async function fetchJson(url) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 3000);
+  try {
+    const response = await fetch(url, { cache: "no-store", signal: controller.signal });
+    return response.ok ? await response.json() : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function loadVersions() {
+  state.runtime = await fetchJson("/basic-specs.json");
+  const latest = await fetchJson(LATEST_URL);
+  state.latest = latest?.version ?? null;
+  if (!state.runtime) return;
+  const view = updateState(state.runtime.standard, state.latest);
+  elements.appVersion.textContent = state.runtime.appVersion;
+  elements.specsButton.dataset.tip = appVersionTip(state.runtime.app, state.runtime.appVersion);
+  elements.specsButton.setAttribute("aria-label", `${state.runtime.app} ${state.runtime.appVersion}, open SPECS`);
+  elements.basicVersion.textContent = state.runtime.standard;
+  elements.basicSpecsButton.dataset.tip = basicVersionTip(state.runtime.standard, state.latest, view);
+  elements.basicSpecsButton.setAttribute("aria-label", elements.basicSpecsButton.dataset.tip.replace(/\n/g, ", "));
+  elements.basicSpecsButton.classList.toggle("outdated", view === "major");
 }
 
 async function loadMetrics() {
@@ -1277,6 +1314,8 @@ function followDocLink(event) {
 
 elements.docBody.addEventListener("click", followDocLink);
 elements.entryView.addEventListener("click", followDocLink);
+elements.specsButton.addEventListener("click", () => navigate(ROUTE.docs("app-specs")).catch((error) => showToast(error.message)));
+elements.basicSpecsButton.addEventListener("click", () => navigate(ROUTE.docs("basic-specs")).catch((error) => showToast(error.message)));
 
 
 window.addEventListener("popstate", () => { applyRoute().catch((error) => showToast(error.message)); });
@@ -1286,6 +1325,7 @@ async function init() {
   await loadDayPage(0);
   await loadTags();
   loadMetrics().catch(() => {});
+  loadVersions().catch(() => {});
   const hash = window.location.hash;
   if (hash && hash !== "#/" && hash !== "#") {
     await applyRoute();
