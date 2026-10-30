@@ -1,6 +1,6 @@
 {
   "name": "diary",
-  "standard": "1.1.1",
+  "standard": "1.2.0",
   "profiles": [
     "web-server"
   ],
