@@ -1,7 +1,18 @@
+const { readFileSync } = require("node:fs");
+const { join } = require("node:path");
 const { test, expect } = require("@playwright/test");
 const { startCoverage, stopCoverage } = require("./coverage");
 
-async function mockLatest(page, latest = "1.1.1") {
+// The standard moves; the suite must not. Both versions come from the app own runtime
+// metadata, and the "newer" case is derived from that major.
+const RUNTIME = JSON.parse(readFileSync(join(__dirname, "..", "..", "web", "basic-specs.json"), "utf8"));
+const STANDARD = RUNTIME.standard;
+const APP_VERSION = RUNTIME.appVersion;
+const [MAJOR, MINOR] = STANDARD.split(".").map(Number);
+const NEXT_MINOR = `${MAJOR}.${MINOR + 1}.0`;
+const NEXT_MAJOR = `${MAJOR + 1}.0.0`;
+
+async function mockLatest(page, latest = STANDARD) {
   if (latest === null) {
     await page.route("**/version.json", (route) => route.abort());
     return;
@@ -507,9 +518,9 @@ test("the unit button runs the suite once", { tag: ["@tests"] }, async ({ page }
 test("[BASIC-VERSION-01] the app version opens SPECS", { tag: ["@versions"] }, async ({ page }) => {
   await mockLatest(page, "2.0.0");
   await page.goto("/");
-  await expect(page.locator("#app-version")).toHaveText("1.4.0");
+  await expect(page.locator("#app-version")).toHaveText(APP_VERSION);
   await expect(page.locator("#specs-button")).not.toHaveClass(/outdated/);
-  await expect(page.locator("#specs-button")).toHaveAttribute("data-tip", "diary 1.4.0 — open SPECS");
+  await expect(page.locator("#specs-button")).toHaveAttribute("data-tip", `diary ${APP_VERSION} — open SPECS`);
   await page.locator("#specs-button").click();
   await expect(page).toHaveURL(/#\/docs\/app-specs\/changelog$/);
 });
@@ -517,21 +528,21 @@ test("[BASIC-VERSION-01] the app version opens SPECS", { tag: ["@versions"] }, a
 test("[BASIC-VERSION-02] the Basic Specs version opens BASIC SPECS", { tag: ["@versions"] }, async ({ page }) => {
   await mockLatest(page);
   await page.goto("/");
-  await expect(page.locator("#basic-version")).toHaveText("1.1.1");
+  await expect(page.locator("#basic-version")).toHaveText(STANDARD);
   await page.locator("#basic-specs-button").click();
   await expect(page.locator("#docs-title")).toHaveText("BASIC SPECS");
 });
 
 test("[BASIC-VERSION-03] only a major update turns red", { tag: ["@versions"] }, async ({ page }) => {
-  await mockLatest(page, "1.2.0");
+  await mockLatest(page, NEXT_MINOR);
   await page.goto("/");
   const basic = page.locator("#basic-specs-button");
   await expect(basic).not.toHaveClass(/outdated/);
-  await expect(basic).toHaveAttribute("data-tip", /1\.2\.0 available/);
-  await mockLatest(page, "2.0.0");
+  await expect(basic).toHaveAttribute("data-tip", new RegExp(`${NEXT_MINOR.replaceAll(".", "\\.")} available`));
+  await mockLatest(page, NEXT_MAJOR);
   await page.reload();
   await expect(basic).toHaveClass(/outdated/);
-  await expect(basic).toHaveAttribute("data-tip", /2\.0\.0 available/);
+  await expect(basic).toHaveAttribute("data-tip", new RegExp(`${NEXT_MAJOR.replaceAll(".", "\\.")} available`));
 });
 
 test("[BASIC-VERSION-04] an unavailable latest version stays neutral", { tag: ["@versions"] }, async ({ page }) => {
