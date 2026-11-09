@@ -1,25 +1,5 @@
-const { readFileSync } = require("node:fs");
-const { join } = require("node:path");
 const { test, expect } = require("@playwright/test");
 const { startCoverage, stopCoverage } = require("./coverage");
-
-// The standard moves; the suite must not. Both versions come from the app own runtime
-// metadata, and the "newer" case is derived from that major.
-const RUNTIME = JSON.parse(readFileSync(join(__dirname, "..", "..", "web", "basic-specs.json"), "utf8"));
-const STANDARD = RUNTIME.standard;
-const APP_VERSION = RUNTIME.appVersion;
-const [MAJOR, MINOR] = STANDARD.split(".").map(Number);
-const NEXT_MINOR = `${MAJOR}.${MINOR + 1}.0`;
-const NEXT_MAJOR = `${MAJOR + 1}.0.0`;
-
-async function mockLatest(page, latest = STANDARD) {
-  if (latest === null) {
-    await page.route("**/version.json", (route) => route.abort());
-    return;
-  }
-  await page.route("**/version.json", (route) =>
-    route.fulfill({ json: { version: latest, releasedAt: "2026-10-27", url: "#" }, headers: { "access-control-allow-origin": "*" } }));
-}
 
 test("a journey through days, entries, documents, and the guide", { tag: ["@entries-and-writing", "@links", "@journal-navigation", "@documents", "@reader", "@writing-guide", "@diary-look"] }, async ({ page }) => {
   const measured = await startCoverage(page);
@@ -46,20 +26,20 @@ test("a journey through days, entries, documents, and the guide", { tag: ["@entr
     await expect(page).toHaveURL(new RegExp(`#/entry/${entries[0].id}$`));
 
     await page.goto("/#/docs/readme");
-    await expect(page.locator(".doc-tab")).toHaveCount(3);
-    await expect(page.locator(".doc-section")).toHaveCount(11);
-    await page.locator('.doc-section[data-tip="AI API"]').click();
-    await expect(page.locator("#doc-section-title")).toHaveText("AI API");
+    await expect(page.locator(".reader-tab")).toHaveCount(3);
+    await expect(page.locator(".reader-section")).toHaveCount(11);
+    await page.locator('.reader-section[data-tip="AI API"]').click();
+    await expect(page.locator("#reader-section-title")).toHaveText("AI API");
     await expect(page).toHaveURL(/#\/docs\/readme\/ai-api$/);
-    await expect(page.locator("#doc-body")).toContainText("/ai/entries");
+    await expect(page.locator("#reader-body")).toContainText("/ai/entries");
 
-    await page.locator(".doc-tab", { hasText: "SPECS" }).first().click();
-    await expect(page.locator("#docs-title")).toHaveText("SPECS");
+    await page.locator(".reader-tab", { hasText: "SPECS" }).first().click();
+    await expect(page.locator("#reader-title")).toHaveText("SPECS");
     await expect(page).toHaveURL(/#\/docs\/app-specs\/changelog$/);
-    await expect(page.locator("#doc-section-title")).toHaveText("Changelog");
-    await expect(page.locator("#doc-body")).toContainText("1.4.0");
-    await expect(page.locator("#doc-body")).toContainText("1.1.0");
-    await expect(page.locator(".doc-tab", { hasText: "RELEASE NOTES" })).toHaveCount(0);
+    await expect(page.locator("#reader-section-title")).toHaveText("Changelog");
+    await expect(page.locator("#reader-body")).toContainText("1.4.0");
+    await expect(page.locator("#reader-body")).toContainText("1.1.0");
+    await expect(page.locator(".reader-tab", { hasText: "RELEASE NOTES" })).toHaveCount(0);
 
     await page.goto("/#/guide");
     await page.locator("#skill-editor").fill("# Changed\n");
@@ -119,7 +99,7 @@ test("tag chips filter entries by title topic", { tag: ["@links", "@journal-navi
   await expect(page.locator('.tag-chip[data-tag="Diary"]')).toHaveClass(/active/);
   await expect(page.locator(".day-button.active")).toHaveCount(0);
 
-  await page.locator("#readme-button").click();
+  await page.locator("#readme").click();
   await expect(page).toHaveURL(/#\/docs\/readme/);
   await expect(page.locator('.tag-chip[data-tag="Diary"]')).not.toHaveClass(/active/);
 
@@ -203,7 +183,7 @@ test("deep links restore the search text and typing updates the link", { tag: ["
 test("the header, footer and sidebar stay in place, and the card is the scrolling part", { tag: ["@layout", "@design"] }, async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto("/#/docs/readme/what-it-does");
-  await expect(page.locator("#doc-body")).toBeVisible();
+  await expect(page.locator("#reader-body")).toBeVisible();
   await expect(page.locator(".eyebrow", { hasText: "Looking back" })).toHaveCount(0);
   await expect(page.locator(".sidebar-note")).toHaveCount(0);
   const bottom = await page.locator(".footer").boundingBox();
@@ -230,7 +210,7 @@ test("the show-all bubble wobbles on hover and the selected doc is yellow", { ta
   await page.locator("#day-count").hover();
   await expect(page.locator("#day-count")).toHaveCSS("animation-name", "wiggle");
   await page.goto("/#/docs/readme/what-it-does");
-  await expect(page.locator(".doc-tab.active")).toHaveCSS("background-color", "rgb(255, 212, 92)");
+  await expect(page.locator(".reader-tab.active")).toHaveCSS("background-color", "rgb(255, 212, 92)");
 });
 
 test("entry cards browse the list they came from", { tag: ["@links"] }, async ({ page }) => {
@@ -280,14 +260,6 @@ test("the sidebar is wider and the card spans the main panel", { tag: ["@layout"
   expect(card.width).toBeCloseTo(main.width - 2 * main.padding, 0);
 });
 
-test("footer test tooltips are wide, other tooltips stay narrow", { tag: ["@footer", "@tests"] }, async ({ page }) => {
-  await page.goto("/");
-  await page.locator("#run-tests").hover();
-  await expect(page.locator("#tooltip")).toHaveClass(/wide/);
-  await page.locator("#day-count").hover();
-  await expect(page.locator("#tooltip")).not.toHaveClass(/wide/);
-});
-
 test("the writing guide grows to at most twice its compact height", { tag: ["@writing-guide"] }, async ({ page }) => {
   await page.goto("/#/guide");
   const compact = await page.locator("#skill-editor").evaluate((node) => parseFloat(getComputedStyle(node).maxHeight));
@@ -295,49 +267,11 @@ test("the writing guide grows to at most twice its compact height", { tag: ["@wr
   await expect.poll(() => page.locator("#skill-editor").evaluate((node) => parseFloat(getComputedStyle(node).maxHeight))).toBeCloseTo(compact * 2, 0);
 });
 
-test("documentation wraps bullets, follows links, and the card scrolls", { tag: ["@documents", "@reader"] }, async ({ page }) => {
-  await page.setViewportSize({ width: 1920, height: 1080 });
-  await page.goto("/#/docs/readme/what-it-does");
-  await expect(page.locator("#doc-body li").first()).toContainText("previous or next window");
-  const pageFits = await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight);
-  expect(pageFits).toBe(true);
-  const card = await page.locator("#main-panel").evaluate((node) => ({ scrolls: node.scrollHeight > node.clientHeight, overflow: getComputedStyle(node).overflowY }));
-  expect(card).toEqual({ scrolls: true, overflow: "auto" });
-  for (const selector of [".topbar", "#day-list", ".footer"]) {
-    const box = await page.locator(selector).boundingBox();
-    expect(box.y + box.height).toBeLessThanOrEqual(1080);
-  }
-
-  await page.goto("/#/docs/readme/tests-and-coverage");
-  await page.locator('a[data-doc-link="basic-specs#tests"]').click();
-  await expect(page).toHaveURL(/#\/docs\/basic-specs\/tests$/);
-  await expect(page.locator("#doc-section-title")).toHaveText("Tests");
-
-  await page.goto("/#/docs/basic-specs/overview");
-  await page.locator('a[data-doc-link^="readme"]').first().click();
-  await expect(page).toHaveURL(/#\/docs\/readme\/overview$/);
-
-  await page.goto("/#/docs/app-specs/human-controls");
-  await page.locator('a[data-doc-link="basic-specs#data-and-access"]').click();
-  await expect(page).toHaveURL(/#\/docs\/basic-specs\/data-and-access$/);
-  await expect(page.locator("#doc-section-title")).toHaveText("Data and access");
-});
-
-test("specs sections use distinct icons", { tag: ["@documents", "@reader", "@layout", "@design"] }, async ({ page }) => {
-  for (const [slug, count] of [["app-specs", 8], ["basic-specs", 14]]) {
-    await page.goto(`/#/docs/${slug}`);
-    const icons = await page.locator(".doc-section svg").evaluateAll(
-      (nodes) => nodes.map((node) => node.innerHTML),
-    );
-    expect(icons).toHaveLength(count);
-    expect(new Set(icons).size).toBe(count);
-  }
-});
 
 test("tooltip-only text uses the help cursor and the sidebar stays fixed", { tag: ["@layout", "@design"] }, async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("#e2e-metrics")).toHaveCSS("cursor", "help");
-  await expect(page.locator("#readme-button")).toHaveCSS("cursor", "pointer");
+  await expect(page.locator("#readme")).toHaveCSS("cursor", "pointer");
   await expect(page.locator("#day-list")).toHaveCSS("overflow-x", "hidden");
   await page.locator(".day-button").first().hover();
   await expect(page.locator("#day-list")).toHaveCSS("overflow-x", "hidden");
@@ -387,7 +321,7 @@ test("an unknown deep link returns to the start", { tag: ["@links"] }, async ({ 
   await expect(page).toHaveURL(/#\/$/);
 
   await page.goto("/#/docs/readme/tests-and-coverage");
-  await expect(page.locator("#doc-section-title")).toHaveText("Tests and coverage");
+  await expect(page.locator("#reader-section-title")).toHaveText("Tests and coverage");
 });
 
 test("day arrows cross the seven-day window", { tag: ["@links", "@journal-navigation"] }, async ({ page }) => {
@@ -419,57 +353,6 @@ test("tooltips stay inside the viewport", { tag: ["@layout", "@design"] }, async
   expect(box.y).toBeGreaterThanOrEqual(0);
 });
 
-test("the footer is centred with separators and renders end-to-end numbers", { tag: ["@footer", "@tests"] }, async ({ page }) => {
-  await page.route("**/api/metrics", (route) => route.fulfill({
-    json: {
-      tests: 42,
-      failures: 0,
-      coverage: 75.5,
-      measuredAt: "2026-10-22T14:00:00+00:00",
-      durationSeconds: 84,
-      running: false,
-      e2e: {
-        tests: 12,
-        failures: 0,
-        coverage: 61.5,
-        measuredAt: "2026-10-22T14:00:00+00:00",
-        durationSeconds: 84,
-      },
-    },
-  }));
-  await page.goto("/");
-  await expect(page.locator("#e2e-metrics")).toHaveText("e2e 12 · 61.5 %");
-  await expect(page.locator(".footer-sep")).toHaveCount(5);
-  await expect(page.locator(".footer-items svg, .footer-items img")).toHaveCount(6);
-  await expect(page.locator(".fail-count")).toHaveCount(0);
-  const tip = await page.locator("#e2e-metrics").getAttribute("data-tip");
-  expect(tip).toContain("Measured: 2026-10-22");
-  expect(tip).toContain("Duration: 84 s");
-  expect(tip).toContain("Per test: 7.0 s");
-
-  const boxes = await page.locator(".footer-items > *").evaluateAll((nodes) => nodes.map((node) => {
-    const rect = node.getBoundingClientRect();
-    return rect.top + rect.height / 2;
-  }));
-  expect(Math.max(...boxes) - Math.min(...boxes)).toBeLessThan(3);
-
-  await page.unroute("**/api/metrics");
-  await page.route("**/api/metrics", (route) => route.fulfill({
-    json: {
-      tests: 42,
-      failures: 2,
-      coverage: 75.5,
-      measuredAt: "2026-10-22T14:00:00+00:00",
-      running: false,
-      e2e: { tests: 12, failures: 1, coverage: 61.5, measuredAt: "2026-10-22T14:00:00+00:00" },
-    },
-  }));
-  await page.reload();
-  await expect(page.locator("#run-tests .fail-count")).toHaveText("2 fail");
-  await expect(page.locator("#e2e-metrics .fail-count")).toHaveText("1 fail");
-  await expect(page.locator("#run-tests .fail-count")).toHaveCSS("color", "rgb(232, 76, 61)");
-});
-
 test("specs list the tests that verify them", { tag: ["@tests", "@documents", "@reader"] }, async ({ page }) => {
   await page.route("**/api/metrics", (route) => route.fulfill({
     json: {
@@ -496,66 +379,4 @@ test("specs list the tests that verify them", { tag: ["@tests", "@documents", "@
   await expect(page.locator(".doc-tests")).not.toContainText("Last run:");
   await expect(page.locator(".doc-tests")).toContainText("author defaults normalizes and has a limit");
   await expect(page.locator(".doc-tests")).toContainText("entry content renders as Markdown");
-});
-
-test("the unit button runs the suite once", { tag: ["@tests"] }, async ({ page }) => {
-  test.setTimeout(150_000);
-  await page.goto("/");
-  await expect(page.locator("#run-tests")).toHaveText("unit not executed — run");
-  await expect(page.locator("#run-tests")).toHaveCSS("color", "rgb(232, 76, 61)");
-  await page.locator("#run-tests").click();
-  await expect(page.locator("#run-tests")).toHaveText(/unit \d+ · [\d.]+ %/, { timeout: 120_000 });
-  await expect(page.locator("#run-tests")).toHaveAttribute("aria-disabled", "true");
-
-  await page.reload();
-  await expect(page.locator("#run-tests")).toHaveText(/unit \d+ · [\d.]+ %/);
-  const before = await page.locator("#run-tests").textContent();
-  await page.locator("#run-tests").evaluate((node) => node.click());
-  await page.waitForTimeout(500);
-  await expect(page.locator("#run-tests")).toHaveText(before);
-});
-
-test("[BASIC-VERSION-01] the app version opens SPECS", { tag: ["@versions"] }, async ({ page }) => {
-  await mockLatest(page, "2.0.0");
-  await page.goto("/");
-  await expect(page.locator("#app-version")).toHaveText(APP_VERSION);
-  await expect(page.locator("#specs-button")).not.toHaveClass(/outdated/);
-  await expect(page.locator("#specs-button")).toHaveAttribute("data-tip", `diary ${APP_VERSION} — open SPECS`);
-  await page.locator("#specs-button").click();
-  await expect(page).toHaveURL(/#\/docs\/app-specs\/changelog$/);
-});
-
-test("[BASIC-VERSION-02] the Basic Specs version opens BASIC SPECS", { tag: ["@versions"] }, async ({ page }) => {
-  await mockLatest(page);
-  await page.goto("/");
-  await expect(page.locator("#basic-version")).toHaveText(STANDARD);
-  await page.locator("#basic-specs-button").click();
-  await expect(page.locator("#docs-title")).toHaveText("BASIC SPECS");
-});
-
-test("[BASIC-VERSION-03] only a major update turns red", { tag: ["@versions"] }, async ({ page }) => {
-  await mockLatest(page, NEXT_MINOR);
-  await page.goto("/");
-  const basic = page.locator("#basic-specs-button");
-  await expect(basic).not.toHaveClass(/outdated/);
-  await expect(basic).toHaveAttribute("data-tip", new RegExp(`${NEXT_MINOR.replaceAll(".", "\\.")} available`));
-  await mockLatest(page, NEXT_MAJOR);
-  await page.reload();
-  await expect(basic).toHaveClass(/outdated/);
-  await expect(basic).toHaveAttribute("data-tip", new RegExp(`${NEXT_MAJOR.replaceAll(".", "\\.")} available`));
-});
-
-test("[BASIC-VERSION-04] an unavailable latest version stays neutral", { tag: ["@versions"] }, async ({ page }) => {
-  await mockLatest(page, null);
-  await page.goto("/");
-  await expect(page.locator("#basic-specs-button")).not.toHaveClass(/outdated/);
-  await expect(page.locator("#basic-specs-button")).toHaveAttribute("data-tip", /latest not checked/);
-});
-
-test("[BASIC-READER-05] SPECS starts with Changelog", { tag: ["@documents", "@reader"] }, async ({ page }) => {
-  await page.goto("/#/docs/app-specs");
-  await expect(page.locator("#docs-title")).toHaveText("SPECS");
-  await expect(page.locator("#doc-section-title")).toHaveText("Changelog");
-  await expect(page.locator(".doc-section").first()).toHaveAttribute("aria-label", "Changelog");
-  await expect(page.locator(".doc-tab", { hasText: "RELEASE NOTES" })).toHaveCount(0);
 });

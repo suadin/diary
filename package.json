@@ -1,0 +1,16 @@
+{
+  "name": "diary",
+  "version": "1.4.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.1.0",
+  "scripts": {
+    "unit": "python3 -m diary test",
+    "e2e": "cd e2e && pnpm test",
+    "metrics": "python3 -m diary test",
+    "check": "pnpm norm check"
+  },
+  "devDependencies": {
+    "@suadin/norm": "file:../norm"
+  }
+}

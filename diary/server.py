@@ -62,7 +62,7 @@ class DiaryHandler(BaseHTTPRequestHandler):
         try:
             if route.path == "/":
                 self._static("index.html")
-            elif route.path in {"/app.js", "/style.css", "/diary.svg", "/version.js", "/basic-specs.json"}:
+            elif route.path in {"/app.js", "/style.css", "/diary.svg"} or route.path.startswith("/norm/"):
                 self._static(route.path.lstrip("/"))
             elif route.path == "/api/days":
                 self._json(200, list_days(self.server.settings.database_path))
@@ -252,23 +252,23 @@ class DiaryHandler(BaseHTTPRequestHandler):
 
     def _metrics(self) -> None:
         path = self.server.settings.metrics_path
-        running = self.server.test_runner.running()
-        metrics: dict[str, object]
         if not path.exists():
-            metrics = {"tests": 0, "coverage": None, "measuredAt": None}
+            unit = {"tests": 0, "coverage": None, "measuredAt": None, "requirements": {}}
         else:
             try:
-                metrics = json.loads(path.read_text(encoding="utf-8"))
+                unit = json.loads(path.read_text(encoding="utf-8"))
             except (OSError, json.JSONDecodeError) as error:
                 self._json(500, {"error": f"cannot read test metrics: {error}"})
                 return
-        metrics["running"] = running
         e2e = self._e2e_metrics()
-        metrics["e2e"] = e2e
-        metrics["requirements"] = self._requirements(
-            metrics.get("requirements"), (e2e or {}).get("requirements")
-        )
-        self._json(200, metrics)
+        self._json(200, {
+            "unit": unit,
+            "e2e": e2e,
+            "requirements": self._requirements(
+                unit.get("requirements"), (e2e or {}).get("requirements")
+            ),
+            "running": self.server.test_runner.running(),
+        })
 
     def _requirements(self, unit, e2e) -> dict[str, dict[str, list[str]]]:
         unit = unit if isinstance(unit, dict) else {}

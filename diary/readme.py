@@ -71,11 +71,11 @@ def continuous_page(path: Path) -> dict[str, object]:
 
 
 def documents(root: Path) -> list[dict[str, object]]:
-    """Return README, SPECS and BASIC SPECS in reader order."""
+    """Return README, SPECS and NORM in reader order, already split."""
     candidates = [
         ("readme", "README", root / "README.md"),
         ("app-specs", "SPECS", root / "docs" / "APP-SPECS.md"),
-        ("basic-specs", "BASIC SPECS", root / "docs" / "BASIC-SPECS.md"),
+        ("norm", "NORM", root / "web" / "norm" / "NORM.md"),
     ]
     result: list[dict[str, object]] = []
     for slug, title, path in candidates:
@@ -90,5 +90,5 @@ def documents(root: Path) -> list[dict[str, object]]:
                 page = readme_pages(path)
         else:
             page = readme_pages(path)
-        result.append({"slug": slug, "title": title, "pages": page["pages"]})
+        result.append({"slug": slug, "title": title, "file": path.name, "pages": page["pages"]})
     return result

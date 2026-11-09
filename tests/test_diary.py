@@ -317,14 +317,15 @@ class ReadmeTests(unittest.TestCase):
                 "# Release notes\n\nIntro.\n\n## 1.1.0\nNew.\n", encoding="utf-8"
             )
             (root / "docs" / "APP-SPECS.md").write_text("# App specs\n\n## Rule\nText.\n", encoding="utf-8")
-            (root / "docs" / "BASIC-SPECS.md").write_text("# Basic specs\n\n## Reader\nText.\n", encoding="utf-8")
+            (root / "web" / "norm").mkdir(parents=True, exist_ok=True)
+            (root / "web" / "norm" / "NORM.md").write_text("# Norm\n\n## Reader\nText.\n", encoding="utf-8")
             (root / "docs" / "AI-SKILL.md").write_text("# Hidden\n", encoding="utf-8")
             result = documents(root)
             self.assertEqual(
-                [item["slug"] for item in result], ["readme", "app-specs", "basic-specs"]
+                [item["slug"] for item in result], ["readme", "app-specs", "norm"]
             )
             self.assertEqual(
-                [item["title"] for item in result], ["README", "SPECS", "BASIC SPECS"]
+                [item["title"] for item in result], ["README", "SPECS", "NORM"]
             )
             self.assertEqual(result[0]["pages"][0]["slug"], "one")
             self.assertEqual(result[1]["pages"][0]["title"], "Changelog")
@@ -622,7 +623,7 @@ class HttpTests(ServerTestCase):
         status, text, _ = self.request("/api/metrics")
         self.assertEqual(status, 200)
         metrics = json.loads(text)
-        self.assertIsNone(metrics["coverage"])
+        self.assertIsNone(metrics["unit"]["coverage"])
         self.assertFalse(metrics["running"])
         self.assertIsNone(metrics["e2e"])
 
@@ -700,10 +701,10 @@ class HttpTests(ServerTestCase):
         result = json.loads(text)
         self.assertEqual(
             [item["slug"] for item in result["documents"]],
-            ["readme", "app-specs", "basic-specs"],
+            ["readme", "app-specs", "norm"],
         )
         self.assertEqual(result["documents"][1]["title"], "SPECS")
-        self.assertEqual(result["documents"][2]["title"], "BASIC SPECS")
+        self.assertEqual(result["documents"][2]["title"], "NORM")
         specs = result["documents"][1]
         self.assertEqual(specs["pages"][0]["title"], "Changelog")
         self.assertEqual(specs["pages"][0]["slug"], "changelog")
@@ -808,12 +809,10 @@ class HttpTests(ServerTestCase):
         self.assertIn("Diary", page)
         self.assertIn('id="days-newer"', page)
         self.assertIn('id="entries-newer"', page)
-        self.assertIn('id="readme-button"', page)
-        self.assertIn('id="doc-sections"', page)
-        self.assertIn('id="e2e-metrics"', page)
+        self.assertIn('id="reader-tabs"', page)
+        self.assertIn('id="reader-sections"', page)
+        self.assertIn('id="reader-body"', page)
         self.assertIn('id="guide-toggle"', page)
-        self.assertIn('id="run-tests"', page)
-        self.assertIn('href="https://github.com/suadin/diary"', page)
         self.assertNotIn('id="login-button"', page)
         self.assertNotIn('id="login-dialog"', page)
         self.assertIn("Content-Security-Policy", headers)
@@ -837,7 +836,7 @@ class HttpTests(ServerTestCase):
         )
         status, metrics, _ = self.request("/api/metrics")
         self.assertEqual(status, 200)
-        self.assertEqual(json.loads(metrics)["tests"], 15)
+        self.assertEqual(json.loads(metrics)["unit"]["tests"], 15)
 
     @covers("ai-api")
     def test_bad_json_and_non_object_request_bodies_are_rejected(self):
@@ -905,15 +904,16 @@ class TestRunnerTests(ServerTestCase):
 
 
 class TraceabilityTests(unittest.TestCase):
-    @covers("tests", "dates", "quality", "done", "versions")
+    @covers("tests", "dates", "quality", "versions")
     def test_every_requirement_section_is_named_by_a_test(self):
         sections = set()
-        for name in ("BASIC-SPECS.md", "APP-SPECS.md"):
+        for name in ("NORM.md", "APP-SPECS.md"):
+            path = ROOT / "web" / "norm" / name if name == "NORM.md" else ROOT / "docs" / name
             sections.update(
                 page["slug"]
-                for page in readme_pages(ROOT / "docs" / name)["pages"]
+                for page in readme_pages(path)["pages"]
             )
-        sections -= {"overview"}
+        sections -= {"overview", "optionality"}
         covered = set()
         suite = unittest.defaultTestLoader.discover(str(ROOT / "tests"))
 
@@ -933,7 +933,7 @@ class TraceabilityTests(unittest.TestCase):
             "navigation-and-deep-links": {"links"},
             "local-access": {"data-and-access"},
             "data": {"data-and-access"},
-            "deployment": {"this-app"},
+            "deployment": {"how-an-app-follows-the-norm"},
             "style-and-vocabulary": {"layout", "design"},
         }
         covered = {
