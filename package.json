@@ -11,6 +11,6 @@
     "check": "pnpm norm check"
   },
   "devDependencies": {
-    "@suadin/norm": "file:../norm"
+    "@suadin/norm": "2.0.0"
   }
 }
