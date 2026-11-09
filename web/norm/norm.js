@@ -63,8 +63,9 @@ export async function mountNorm(options = {}) {
 
   const home = options.home ? root.querySelector(options.home) : root.querySelector('#home');
   if (!root.querySelector('#reader')) {
-    if (!home) throw new Error('mountNorm: no #reader and no #home element found');
-    home.insertAdjacentHTML('afterend', READER_HTML);
+    const anchor = home ?? root.querySelector('main');
+    if (!anchor) throw new Error('mountNorm: no #reader, #home or <main> element found');
+    anchor.insertAdjacentHTML('afterend', READER_HTML);
   }
 
   if (options.footer !== false) {
