@@ -10,14 +10,14 @@ module.exports = defineConfig({
   retries: 0,
   reporter: [["list"], [path.join(__dirname, "reporter.js"), {}]],
   use: {
-    baseURL: "http://127.0.0.1:8126",
+    baseURL: "http://127.0.0.1:8128",
     viewport: { width: 1280, height: 800 },
     trace: "retain-on-failure",
   },
   webServer: {
     command: "bash ./start.sh",
     cwd: __dirname,
-    url: "http://127.0.0.1:8126/api/metrics",
+    url: "http://127.0.0.1:8128/api/metrics",
     reuseExistingServer: false,
     timeout: 60_000,
     stdout: "pipe",

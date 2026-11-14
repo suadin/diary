@@ -11,7 +11,7 @@ mkdir -p "$DATA" "$CONFIG"
 export DIARY_DATA_DIR="$DATA"
 export DIARY_CONFIG_DIR="$CONFIG"
 export DIARY_HOST="127.0.0.1"
-export DIARY_PORT="8126"
+export DIARY_PORT="8128"
 export DIARY_AI_READ_TOKEN="e2e-read"
 export DIARY_AI_WRITE_TOKEN="e2e-write"
 

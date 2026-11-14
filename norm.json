@@ -1,0 +1,27 @@
+{
+  "name": "diary",
+  "appVersion": "1.4.0",
+  "vendorDir": "web",
+  "source": "https://github.com/suadin/diary",
+  "profiles": [
+    "web-server"
+  ],
+  "docs": {
+    "appSpecs": "docs/APP-SPECS.md",
+    "releaseNotes": "RELEASE-NOTES.md"
+  },
+  "runtime": "web/norm/app.json",
+  "tests": {
+    "NORM-DATA-02": [
+      "test_local_human_mutations_need_same_origin_but_no_sign_in",
+      "test_human_mutations_reject_missing_or_foreign_origin",
+      "test_configured_https_origin_allows_human_mutations_only_for_exact_host"
+    ]
+  },
+  "commands": {
+    "unit": "python3 -m diary test",
+    "e2e": "cd e2e && pnpm test",
+    "metrics": "python3 -m diary test"
+  },
+  "allow": []
+}

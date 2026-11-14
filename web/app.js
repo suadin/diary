@@ -1,5 +1,3 @@
-import { LATEST_URL, appVersionTip, basicVersionTip, updateState } from "./version.js";
-
 const elements = {
   dayList: document.getElementById("day-list"),
   dayCount: document.getElementById("day-count"),
@@ -29,14 +27,6 @@ const elements = {
   resultRange: document.getElementById("result-range"),
   resultsNewer: document.getElementById("results-newer"),
   resultsOlder: document.getElementById("results-older"),
-  runTests: document.getElementById("run-tests"),
-  unitMetrics: document.getElementById("unit-metrics"),
-  e2eMetrics: document.getElementById("e2e-metrics"),
-  e2eMetricsLabel: document.getElementById("e2e-metrics-label"),
-  specsButton: document.getElementById("specs-button"),
-  appVersion: document.getElementById("app-version"),
-  basicSpecsButton: document.getElementById("basic-specs-button"),
-  basicVersion: document.getElementById("basic-version"),
   sparkButton: document.getElementById("spark-button"),
   guideButton: document.getElementById("guide-button"),
   editor: document.getElementById("editor"),
@@ -52,14 +42,6 @@ const elements = {
   deleteBeforeButton: document.getElementById("delete-before-button"),
   deleteStatus: document.getElementById("delete-status"),
   readmeButton: document.getElementById("readme-button"),
-  docsView: document.getElementById("docs-view"),
-  docsTitle: document.getElementById("docs-title"),
-  docsBack: document.getElementById("docs-back"),
-  docTabs: document.getElementById("doc-tabs"),
-  docSections: document.getElementById("doc-sections"),
-  docSectionTitle: document.getElementById("doc-section-title"),
-  docBody: document.getElementById("doc-body"),
-  tooltip: document.getElementById("tooltip"),
   toast: document.getElementById("toast"),
 };
 
@@ -97,26 +79,6 @@ function parseRoute() {
   }
   return { parts, query: (new URLSearchParams(search).get("q") || "").trim() };
 }
-
-const ICONS = {
-  overview: '<path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1v-9.5Z"/>',
-  what: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/>',
-  install: '<rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="m7.5 10 2.5 2-2.5 2M12.5 14h4"/>',
-  package: '<path d="M12 3 20 7.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="M4 7.5 12 12l8-4.5M12 12v9"/>',
-  pencil: '<path d="M6 3.5h8l4 4V14"/><path d="M14 3.5v4h4"/><path d="M6 3.5v17h5"/><path d="M8.5 20.5h3l8-8a2 2 0 0 0-3-3l-8 8v3Z"/><path d="M15.5 10.5l3 3"/>',
-  link: '<path d="M10 13.5a3.5 3.5 0 0 0 5 0l2.5-2.5a3.5 3.5 0 0 0-5-5L11.5 7"/><path d="M14 10.5a3.5 3.5 0 0 0-5 0L6.5 13a3.5 3.5 0 0 0 5 5l1-1"/>',
-  foot: '<path d="M8.5 13.5c2.4-.9 5.8-.5 7.7.9 1.2.9 1.8 2.2 1.6 3.4-.2 1.2-1.1 1.9-2.5 1.9-2.4 0-4.2-.8-5.8-1.7-1.4-.8-2.4-1.1-3.3-1.4-.9-.3-1-1.2-.3-1.9.8-.8 1.6-1 2.6-1.2Z"/><circle cx="8.4" cy="7.6" r="1.6"/><circle cx="11.8" cy="5.8" r="1.3"/><circle cx="14.6" cy="8" r="1.2"/><circle cx="15.4" cy="11.2" r="1.1"/>',
-  guide: '<path d="M12 6.5C10 4.8 7.2 4.5 4 5v13c3.2-.5 6-.2 8 1.5 2-1.7 4.8-2 8-1.5V5c-3.2-.5-6-.2-8 1.5Z"/><path d="M12 6.5v13"/>',
-  comic: '<circle cx="12" cy="12" r="8.5"/><path d="M9 10h.01M15 10h.01M8.5 14c1.2 1.6 5.8 1.6 7 0"/>',
-  api: '<path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0V8ZM12 17v4"/>',
-  web: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.6 2.5 14.4 0 17M12 3.5c-2.5 2.6-2.5 14.4 0 17"/>',
-  client: '<rect x="6.5" y="6.5" width="11" height="11" rx="2"/><path d="M9.5 3v3.5M14.5 3v3.5M9.5 17.5V21M14.5 17.5V21M3 9.5h3.5M3 14.5h3.5M17.5 9.5H21M17.5 14.5H21"/>',
-  controls: '<path d="M8 11V5.5a1.5 1.5 0 0 1 3 0V10M11 10V4.5a1.5 1.5 0 0 1 3 0V10M14 10V6a1.5 1.5 0 0 1 3 0v7.5a6 6 0 0 1-6 6h-.5A6.5 6.5 0 0 1 5 13l-.4-1.6a1.5 1.5 0 0 1 2.6-1.3L8 11"/>',
-  test: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
-  map: '<path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-10Z"/>',
-  data: '<path d="M12 3.5 19 6v6c0 4.2-2.8 7.3-7 8.5C7.8 19.3 5 16.2 5 12V6l7-2.5Z"/>',
-  doc: '<path d="M6 3.5h7l5 5v12H6v-17Z"/><path d="M13 3.5v5h5"/>',
-};
 
 const state = {
   days: [],
@@ -169,48 +131,10 @@ function showToast(message) {
 }
 
 function showOnly(section) {
-  for (const item of [elements.welcome, elements.selection, elements.searchResults, elements.entryView, elements.editor, elements.docsView]) {
+  for (const item of [elements.welcome, elements.selection, elements.searchResults, elements.entryView, elements.editor]) {
     item.hidden = item !== section;
   }
   elements.mainPanel.scrollTop = 0;
-}
-
-function svgIcon(name) {
-  const paths = ICONS[name] || ICONS.doc;
-  return `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
-}
-
-const ICON_POOL = Object.keys(ICONS);
-
-function uniqueIcons(titles) {
-  const used = new Set();
-  return titles.map((title) => {
-    let icon = iconFor(title);
-    if (used.has(icon)) icon = ICON_POOL.find((candidate) => !used.has(candidate)) ?? "doc";
-    used.add(icon);
-    return icon;
-  });
-}
-
-function iconFor(title) {
-  const text = title.toLowerCase();
-  if (text.includes("overview")) return "overview";
-  if (text.includes("what")) return "what";
-  if (text.includes("navigation") || text.includes("deep link")) return "link";
-  if (text.includes("footer")) return "foot";
-  if (text.includes("guide")) return "guide";
-  if (text.includes("writing") || text.includes("entry")) return "pencil";
-  if (text.includes("install") || text.includes("setup")) return "install";
-  if (text.includes("deploy") || text.includes("nas")) return "package";
-  if (text.includes("api")) return "api";
-  if (text.includes("client") || text.includes("mcp")) return "client";
-  if (text.includes("web") || text.includes("endpoint")) return "web";
-  if (text.includes("control") || text.includes("access")) return "controls";
-  if (text.includes("test")) return "test";
-  if (text.includes("map") || text.includes("repository")) return "map";
-  if (text.includes("data") || text.includes("trust")) return "data";
-  if (text.includes("style") || text.includes("vocabulary")) return "comic";
-  return "doc";
 }
 
 function renderDays() {
@@ -287,12 +211,6 @@ async function toggleTag(tag) {
     return;
   }
   await navigate(ROUTE.tag(tag));
-}
-
-function readableTestName(name) {
-  const marker = name.lastIndexOf(".test_");
-  if (marker === -1) return name;
-  return name.slice(marker + 6).replace(/_/g, " ");
 }
 
 function entryTime(entry) {
@@ -610,131 +528,6 @@ async function search() {
   await showResults(0);
 }
 
-function stopTestPolling() {
-  if (state.testTimer === null) return;
-  window.clearInterval(state.testTimer);
-  state.testTimer = null;
-}
-
-function startTestPolling() {
-  if (state.testTimer !== null) return;
-  state.testTimer = window.setInterval(() => {
-    loadMetrics().catch(() => stopTestPolling());
-  }, TEST_POLL_MS);
-}
-
-function metricParts(label, item) {
-  const parts = [`${label} ${item.tests}`];
-  if (item.failures) parts.push({ fail: `${item.failures} fail` });
-  if (item.coverage != null) parts.push(`${item.coverage} %`);
-  return parts;
-}
-
-function setMetricLabel(node, parts) {
-  node.replaceChildren();
-  for (const [index, part] of parts.entries()) {
-    if (index) node.append(document.createTextNode(" · "));
-    if (typeof part === "string") {
-      node.append(document.createTextNode(part));
-    } else {
-      const failure = document.createElement("span");
-      failure.className = "fail-count";
-      failure.textContent = part.fail;
-      node.append(failure);
-    }
-  }
-}
-
-function formatMeasured(value) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value).replace("T", " ").slice(0, 16);
-  const pad = (number) => String(number).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-
-function measurementTip(item) {
-  const seconds = item.durationSeconds == null
-    ? null
-    : Math.max(0, Math.round(Number(item.durationSeconds) || 0));
-  return [
-    `Measured: ${item.measuredAt ? formatMeasured(item.measuredAt) : "—"}`,
-    `Duration: ${seconds == null ? "—" : `${seconds} s`}`,
-    `Per test: ${seconds == null || !item.tests ? "—" : `${(seconds / item.tests).toFixed(1)} s`}`,
-  ].join("\n");
-}
-
-function renderMetrics(metrics) {
-  if (metrics.running) {
-    elements.runTests.setAttribute("aria-disabled", "true");
-    elements.runTests.classList.add("running");
-    elements.runTests.classList.remove("failed");
-    elements.unitMetrics.textContent = "unit running…";
-    elements.runTests.dataset.tip = "The suite is running";
-    startTestPolling();
-  } else {
-    stopTestPolling();
-    elements.runTests.classList.remove("running");
-    if (metrics.measuredAt) {
-      elements.runTests.setAttribute("aria-disabled", "true");
-      elements.runTests.classList.remove("failed");
-      setMetricLabel(elements.unitMetrics, metricParts("unit", metrics));
-      elements.runTests.dataset.tip = measurementTip(metrics);
-    } else {
-      elements.runTests.setAttribute("aria-disabled", "false");
-      elements.runTests.classList.add("failed");
-      elements.unitMetrics.textContent = "unit not executed — run";
-      elements.runTests.dataset.tip = "not executed";
-    }
-  }
-  renderE2E(metrics.e2e);
-}
-
-function renderE2E(e2e) {
-  if (!e2e) {
-    elements.e2eMetrics.classList.add("failed");
-    elements.e2eMetricsLabel.textContent = "e2e not executed";
-    elements.e2eMetrics.dataset.tip = "not executed";
-    return;
-  }
-  elements.e2eMetrics.classList.remove("failed");
-  setMetricLabel(elements.e2eMetricsLabel, metricParts("e2e", e2e));
-  elements.e2eMetrics.dataset.tip = measurementTip(e2e);
-}
-
-async function fetchJson(url) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 3000);
-  try {
-    const response = await fetch(url, { cache: "no-store", signal: controller.signal });
-    return response.ok ? await response.json() : null;
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-async function loadVersions() {
-  state.runtime = await fetchJson("/basic-specs.json");
-  const latest = await fetchJson(LATEST_URL);
-  state.latest = latest?.version ?? null;
-  if (!state.runtime) return;
-  const view = updateState(state.runtime.standard, state.latest);
-  elements.appVersion.textContent = state.runtime.appVersion;
-  elements.specsButton.dataset.tip = appVersionTip(state.runtime.app, state.runtime.appVersion);
-  elements.specsButton.setAttribute("aria-label", `${state.runtime.app} ${state.runtime.appVersion}, open SPECS`);
-  elements.basicVersion.textContent = state.runtime.standard;
-  elements.basicSpecsButton.dataset.tip = basicVersionTip(state.runtime.standard, state.latest, view);
-  elements.basicSpecsButton.setAttribute("aria-label", elements.basicSpecsButton.dataset.tip.replace(/\n/g, ", "));
-  elements.basicSpecsButton.classList.toggle("outdated", view === "major");
-}
-
-async function loadMetrics() {
-  const metrics = await request("/api/metrics");
-  state.metrics = metrics;
-  renderMetrics(metrics);
-  return metrics;
-}
 
 async function loadDayPage(offset) {
   const lastOffset = Math.max(0, Math.floor((state.totalDays - 1) / state.pageSize) * state.pageSize);
@@ -953,84 +746,6 @@ function renderMarkdown(markdown) {
   return html.join("");
 }
 
-async function loadDocs() {
-  if (state.docs) return state.docs;
-  const result = await request("/api/docs");
-  state.docs = Array.isArray(result.documents) ? result : { documents: [] };
-  return state.docs;
-}
-
-async function renderDocs(doc, page) {
-  elements.docsTitle.textContent = doc.title;
-  elements.docTabs.replaceChildren();
-  for (const item of state.docs.documents) {
-    const tab = document.createElement("button");
-    tab.type = "button";
-    tab.className = `doc-tab${item.slug === doc.slug ? " active" : ""}`;
-    tab.textContent = item.title;
-    tab.setAttribute("role", "tab");
-    tab.setAttribute("aria-selected", String(item.slug === doc.slug));
-    tab.addEventListener("click", () => navigate(ROUTE.docs(item.slug)).catch((error) => showToast(error.message)));
-    elements.docTabs.append(tab);
-  }
-  const continuous = doc.pages.length === 1;
-  elements.docSections.replaceChildren();
-  elements.docSections.hidden = continuous;
-  elements.docSectionTitle.hidden = continuous;
-  if (!continuous) {
-    const icons = uniqueIcons(doc.pages.map((item) => item.title));
-    for (const [index, item] of doc.pages.entries()) {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = `doc-section${item.slug === page.slug ? " active" : ""}`;
-      button.innerHTML = svgIcon(icons[index]);
-      button.setAttribute("aria-label", item.title);
-      button.dataset.tip = item.title;
-      button.addEventListener("click", () => navigate(ROUTE.docs(doc.slug, item.slug)).catch((error) => showToast(error.message)));
-      elements.docSections.append(button);
-    }
-    elements.docSectionTitle.textContent = page.title;
-  }
-  elements.docBody.innerHTML = renderMarkdown(page.markdown);
-  if (DOC_SPECS.has(doc.slug)) {
-    const metrics = state.metrics || await loadMetrics();
-    renderRequirementTests(page.slug, metrics);
-  }
-  showOnly(elements.docsView);
-}
-
-function renderRequirementTests(slug, metrics) {
-  const groups = (metrics.requirements || {})[slug] || {};
-  const unit = groups.unit || [];
-  const e2e = groups.e2e || [];
-  const box = document.createElement("section");
-  box.className = "doc-tests";
-  const heading = document.createElement("h4");
-  heading.textContent = "Automated tests";
-  box.append(heading);
-  if (!unit.length && !e2e.length) {
-    const empty = document.createElement("p");
-    empty.textContent = "No automated test names this requirement yet.";
-    box.append(empty);
-  }
-  for (const [label, names] of [["Unit", unit], ["E2E", e2e]]) {
-    if (!names.length) continue;
-    const group = document.createElement("div");
-    group.className = "doc-test-group";
-    const kind = document.createElement("span");
-    kind.className = "doc-test-kind";
-    kind.textContent = `${label} · ${names.length}`;
-    const list = document.createElement("ol");
-    for (const name of names) {
-      const item = document.createElement("li");
-      item.textContent = label === "Unit" ? readableTestName(name) : name;
-      list.append(item);
-    }
-    group.append(kind, list);
-    box.append(group);
-  }
-  elements.docBody.append(box);
-}
 
 
 
@@ -1086,26 +801,6 @@ async function showTagRoute(tag, query = "") {
   if (window.location.hash !== ROUTE.tag(tag, query)) history.replaceState({}, "", ROUTE.tag(tag, query));
 }
 
-async function showDocsRoute(docSlug, sectionSlug) {
-  await loadDocs();
-  if (!state.docs.documents.length) {
-    showToast("No documentation is installed.");
-    state.inDocs = false;
-    state.selectedDate = null;
-    state.entryOffset = 0;
-    state.entryTotal = 0;
-    state.entryPages.clear();
-    renderDays();
-    showOnly(elements.welcome);
-    history.replaceState({}, "", ROUTE.welcome);
-    return;
-  }
-  const doc = state.docs.documents.find((item) => item.slug === docSlug) || state.docs.documents[0];
-  const page = doc.pages.find((item) => item.slug === sectionSlug) || doc.pages[0];
-  await renderDocs(doc, page);
-  const canonical = doc.pages.length === 1 ? ROUTE.docs(doc.slug) : ROUTE.docs(doc.slug, page.slug);
-  if (window.location.hash !== canonical) history.replaceState({}, "", canonical);
-}
 
 async function applyRoute() {
   const ticket = ++state.routeTicket;
@@ -1116,6 +811,13 @@ async function applyRoute() {
   state.inDocs = kind === "docs";
   renderDays();
   renderTags();
+  if (kind === "docs") {
+    elements.searchInput.value = "";
+    showOnly(null);
+    norm?.open(first || "readme", second || null);
+    return;
+  }
+  norm?.close();
   if (kind === "day" && first) {
     await showDayRoute(first, query);
     return;
@@ -1123,11 +825,6 @@ async function applyRoute() {
   if (kind === "entry" && first) {
     elements.searchInput.value = "";
     await showEntryRoute(first);
-    return;
-  }
-  if (kind === "docs") {
-    elements.searchInput.value = "";
-    await showDocsRoute(first || "readme", second || null);
     return;
   }
   if (kind === "tag" && first) {
@@ -1162,58 +859,6 @@ async function navigate(hash, { replace = false } = {}) {
   await applyRoute();
 }
 
-let tooltipTarget = null;
-
-function showTooltip(target) {
-  const text = target.dataset.tip;
-  if (!text) return;
-  tooltipTarget = target;
-  elements.tooltip.textContent = text;
-  elements.tooltip.classList.toggle("wide", target.hasAttribute("data-tip-wide"));
-  elements.tooltip.hidden = false;
-  const rect = target.getBoundingClientRect();
-  const tip = elements.tooltip.getBoundingClientRect();
-  const margin = 8;
-  let left = rect.left + rect.width / 2 - tip.width / 2;
-  left = Math.max(margin, Math.min(left, window.innerWidth - tip.width - margin));
-  let top = rect.top - tip.height - 10;
-  let placement = "top";
-  if (top < margin) {
-    top = rect.bottom + 10;
-    placement = "bottom";
-  }
-  elements.tooltip.style.left = `${Math.round(left)}px`;
-  elements.tooltip.style.top = `${Math.round(top)}px`;
-  elements.tooltip.dataset.placement = placement;
-}
-
-function hideTooltip() {
-  tooltipTarget = null;
-  elements.tooltip.hidden = true;
-}
-
-document.addEventListener("pointerover", (event) => {
-  const target = event.target.closest?.("[data-tip]");
-  if (!target) return;
-  if (event.relatedTarget && target.contains(event.relatedTarget)) return;
-  showTooltip(target);
-});
-document.addEventListener("pointerout", (event) => {
-  const target = event.target.closest?.("[data-tip]");
-  if (!target) return;
-  if (event.relatedTarget && target.contains(event.relatedTarget)) return;
-  hideTooltip();
-});
-document.addEventListener("focusin", (event) => {
-  const target = event.target.closest?.("[data-tip]");
-  if (target) showTooltip(target);
-});
-document.addEventListener("focusout", hideTooltip);
-function repositionTooltip() {
-  if (tooltipTarget && !elements.tooltip.hidden) showTooltip(tooltipTarget);
-}
-window.addEventListener("scroll", repositionTooltip, true);
-window.addEventListener("resize", repositionTooltip);
 
 elements.daysNewer.addEventListener("click", () => loadDayPage(state.pageOffset - state.pageSize).catch((error) => showToast(error.message)));
 elements.daysOlder.addEventListener("click", () => loadDayPage(state.pageOffset + state.pageSize).catch((error) => showToast(error.message)));
@@ -1228,20 +873,6 @@ elements.entriesOlder.addEventListener("click", () => loadEntryPage(state.entryO
 elements.resultsNewer.addEventListener("click", () => showResults(state.resultOffset - RESULT_PAGE_SIZE).catch((error) => showToast(error.message)));
 elements.resultsOlder.addEventListener("click", () => showResults(state.resultOffset + RESULT_PAGE_SIZE).catch((error) => showToast(error.message)));
 elements.dayCount.addEventListener("click", () => navigate(ROUTE.all()).catch((error) => showToast(error.message)));
-elements.runTests.addEventListener("click", async () => {
-  if (elements.runTests.getAttribute("aria-disabled") === "true") return;
-  elements.runTests.setAttribute("aria-disabled", "true");
-  try {
-    await request("/api/tests", { method: "POST" });
-    elements.runTests.classList.add("running");
-    elements.unitMetrics.textContent = "unit running…";
-    startTestPolling();
-  } catch (error) {
-    elements.runTests.setAttribute("aria-disabled", "false");
-    showToast(error.message);
-    loadMetrics().catch(() => {});
-  }
-});
 elements.searchInput.addEventListener("input", () => {
   window.clearTimeout(state.searchTimer);
   state.searchTimer = window.setTimeout(() => search().catch((error) => showToast(error.message)), 180);
@@ -1297,12 +928,6 @@ elements.sparkButton.addEventListener("click", async () => {
     showToast(error.message);
   }
 });
-for (const button of document.querySelectorAll("[data-doc]")) {
-  button.addEventListener("click", () => {
-    navigate(ROUTE.docs(button.dataset.doc)).catch((error) => showToast(error.message));
-  });
-}
-elements.docsBack.addEventListener("click", () => navigate(state.selectedDate ? ROUTE.day(state.selectedDate) : ROUTE.welcome).catch((error) => showToast(error.message)));
 
 function followDocLink(event) {
   const link = event.target.closest?.("a[data-doc-link]");
@@ -1312,20 +937,34 @@ function followDocLink(event) {
   navigate(ROUTE.docs(slug, section || "overview")).catch((error) => showToast(error.message));
 }
 
-elements.docBody.addEventListener("click", followDocLink);
 elements.entryView.addEventListener("click", followDocLink);
-elements.specsButton.addEventListener("click", () => navigate(ROUTE.docs("app-specs")).catch((error) => showToast(error.message)));
-elements.basicSpecsButton.addEventListener("click", () => navigate(ROUTE.docs("basic-specs")).catch((error) => showToast(error.message)));
-
 
 window.addEventListener("popstate", () => { applyRoute().catch((error) => showToast(error.message)); });
 window.addEventListener("hashchange", () => { applyRoute().catch((error) => showToast(error.message)); });
 
+let norm = null;
+
 async function init() {
   await loadDayPage(0);
   await loadTags();
-  loadMetrics().catch(() => {});
-  loadVersions().catch(() => {});
+
+  try {
+    const { mountNorm } = await import("./norm/norm.js");
+    const response = await fetch("norm/app.json");
+    const runtime = response.ok ? await response.json() : null;
+    norm = await mountNorm({
+      app: { name: "diary", version: runtime?.appVersion ?? "1.4.0", logo: "diary.svg" },
+      source: "https://github.com/suadin/diary",
+      normVersion: runtime?.norm ?? "2.0.0",
+      docs: async () => (await request("/api/docs")).documents,
+      metrics: "/api/metrics",
+      autoRoute: false,
+      homeHash: () => (state.selectedDate ? ROUTE.day(state.selectedDate) : ROUTE.welcome),
+    });
+  } catch (error) {
+    showToast(error.message);
+  }
+
   const hash = window.location.hash;
   if (hash && hash !== "#/" && hash !== "#") {
     await applyRoute();

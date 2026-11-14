@@ -1,28 +1,14 @@
 :root {
   color-scheme: light dark;
-  --paper: #f5f0e5;
-  --card: #fffaf0;
-  --ink: #191919;
-  --muted: #68645d;
-  --red: #e84c3d;
-  --green: #588b55;
-  --yellow: #ffd45c;
-  --purple: #b18cff;
   --purple-ink: #1d1238;
   --quiet: #45413b;
-  --hover: #fff2c9;
-  --danger: #8e1e15;
-  --line: 0.1875rem dashed var(--ink);
-  font-family: "Comic Sans MS", "Trebuchet MS", sans-serif;
-  color: var(--ink);
-  background: var(--paper);
 }
 
 /* The root stays the browser base, so Ctrl + wheel zoom scales the page. */
 html { font-size: 100%; }
 
 * { box-sizing: border-box; }
-body { margin: 0; min-width: 20rem; height: 100vh; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; background: var(--paper); }
+body { margin: 0; padding: 0; min-width: 20rem; height: 100vh; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; background: var(--paper); }
 button, input, textarea { font: inherit; }
 button { color: inherit; cursor: pointer; }
 [hidden] { display: none !important; }
@@ -172,7 +158,7 @@ button.count:hover { background: var(--yellow); animation: wiggle .5s ease-in-ou
 .doc-body table { width: 100%; margin: .8rem 0; border-collapse: collapse; font-size: .88em; }
 .doc-body th, .doc-body td { border: 0.0625rem solid var(--muted); padding: .35rem .5rem; text-align: left; vertical-align: top; }
 
-.footer { flex-shrink: 0; display: flex; justify-content: center; padding: .7rem clamp(1rem, 4vw, 3.5rem); border-top: var(--line); color: var(--muted); font-size: .76rem; }
+.footer { position: static; flex-shrink: 0; display: flex; justify-content: center; padding: .7rem clamp(1rem, 4vw, 3.5rem); border-top: var(--line); color: var(--muted); font-size: .76rem; }
 .footer-items { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .3rem .55rem; text-align: center; }
 .footer-item { display: inline-flex; align-items: center; gap: .25rem; border: 0; background: transparent; padding: 0; color: var(--muted); font-size: .76rem; font-weight: 800; white-space: nowrap; }
 .footer a { color: var(--green); font-weight: 900; text-decoration: none; }
